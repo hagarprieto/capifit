@@ -15,7 +15,11 @@ param(
   [string]$Database = 'capifit',
   [string]$Mysql = 'mysql',
   [switch]$WithSeed,
-  [switch]$Recreate
+  [switch]$Recreate,
+  # Cria/atualiza o usuário da aplicação com SOMENTE SELECT, INSERT, UPDATE e DELETE (Documento 06 §5).
+  # A senha vem da variável de ambiente APP_DB_PASSWORD (nunca por parâmetro).
+  [string]$AppUser = '',
+  [string]$AppHost = 'localhost'
 )
 $ErrorActionPreference = 'Stop'
 if ($PSVersionTable.PSVersion.Major -lt 7) { throw 'Requer PowerShell 7+ (pwsh): o Windows PowerShell 5.1 corrompe a codificação UTF-8 ao enviar o SQL.' }
@@ -50,6 +54,23 @@ foreach ($f in $files) {
   # (`-e "source arquivo"` NÃO serve: o cliente continua após erro e retorna 0.)
   Get-Content -LiteralPath $path -Raw -Encoding utf8 | & $Mysql @base
   if ($LASTEXITCODE -ne 0) { throw "Falha ao aplicar $f" }
+}
+
+if ($AppUser) {
+  $appPassword = $env:APP_DB_PASSWORD
+  if (-not $appPassword) { throw 'Defina APP_DB_PASSWORD para criar o usuário da aplicação.' }
+  if ($AppUser -notmatch '^[A-Za-z0-9_]{1,32}$' -or $AppHost -notmatch '^[A-Za-z0-9_.%:-]{1,60}$') { throw 'Nome de usuário ou host inválido.' }
+  $pw = $appPassword.Replace('\', '\\').Replace("'", "''")
+  $grants = @(
+    "CREATE USER IF NOT EXISTS '$AppUser'@'$AppHost' IDENTIFIED BY '$pw';",
+    "ALTER USER '$AppUser'@'$AppHost' IDENTIFIED BY '$pw';",
+    "REVOKE ALL PRIVILEGES, GRANT OPTION FROM '$AppUser'@'$AppHost';",
+    "GRANT SELECT, INSERT, UPDATE, DELETE ON ``$Database``.* TO '$AppUser'@'$AppHost';"
+  ) -join "`n"
+  # Via stdin: a senha não aparece na linha de comando do processo.
+  $grants | & $Mysql @base
+  if ($LASTEXITCODE -ne 0) { throw 'Falha ao criar o usuário da aplicação.' }
+  Write-Host "Usuário da aplicação '$AppUser'@'$AppHost' com apenas SELECT, INSERT, UPDATE e DELETE em $Database."
 }
 
 # Conferência
