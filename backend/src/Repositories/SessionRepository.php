@@ -102,6 +102,8 @@ final class SessionRepository
     /** Conclui a sessão calculando a duração ativa (sem as pausas já encerradas). */
     public function complete(int $sessionId, string $endedAtDb): void
     {
+        // Uma pausa ainda aberta termina junto com a sessão.
+        $this->db->execute('UPDATE sessoes_pausas SET encerrada_em = ? WHERE sessao_id = ? AND encerrada_em IS NULL', 'si', $endedAtDb, $sessionId);
         $this->db->execute(
             "UPDATE sessoes_treino SET status = 'concluida', encerrada_em = ?,
                     duracao_ativa_segundos = GREATEST(0, TIMESTAMPDIFF(SECOND, iniciada_em, ?) - COALESCE((
@@ -124,11 +126,12 @@ final class SessionRepository
     public function exercises(int $sessionId): array
     {
         return $this->db->fetchAll(
-            'SELECT se.id, se.uuid, se.ordem, se.tipo_item, se.ficha_exercicio_id, se.exercicio_prescrito_id,
+            'SELECT se.id, se.uuid, se.ordem, se.tipo_item, se.ficha_exercicio_id, se.exercicio_prescrito_id, p.uuid AS prescrito_uuid,
                     e.id AS exercicio_id, e.uuid AS exercicio_uuid, e.nome, e.modalidade, eq.id AS equipamento_id, eq.nome AS equipamento_nome
                FROM sessoes_exercicios se
                JOIN exercicios e ON e.id = se.exercicio_id
                LEFT JOIN equipamentos eq ON eq.id = e.equipamento_id
+               LEFT JOIN exercicios p ON p.id = se.exercicio_prescrito_id
               WHERE se.sessao_id = ?
               ORDER BY se.ordem, se.id',
             'i',
@@ -140,7 +143,7 @@ final class SessionRepository
     public function findExercise(int $sessionId, string $uuid): ?array
     {
         return $this->db->fetchOne(
-            'SELECT se.id, se.uuid, se.ordem, se.tipo_item, se.exercicio_id, e.modalidade
+            'SELECT se.id, se.uuid, se.ordem, se.tipo_item, se.exercicio_id, se.exercicio_prescrito_id, e.modalidade
                FROM sessoes_exercicios se JOIN exercicios e ON e.id = se.exercicio_id
               WHERE se.sessao_id = ? AND se.uuid = ?',
             'is',
@@ -167,18 +170,54 @@ final class SessionRepository
         return $this->db->fetchOne('SELECT 1 AS x FROM sessoes_exercicios WHERE sessao_id = ? AND ordem = ?', 'ii', $sessionId, $order) !== null;
     }
 
-    public function insertExercise(string $uuid, int $sessionId, int $exerciseId, int $order): int
+    public function insertExercise(string $uuid, int $sessionId, int $exerciseId, int $order, string $itemType = 'adicionado', ?int $prescribedExerciseId = null): int
     {
         $this->db->execute(
-            "INSERT INTO sessoes_exercicios(uuid, sessao_id, exercicio_id, ordem, tipo_item) VALUES (?, ?, ?, ?, 'adicionado')",
-            'siii',
+            'INSERT INTO sessoes_exercicios(uuid, sessao_id, exercicio_id, ordem, tipo_item, exercicio_prescrito_id) VALUES (?, ?, ?, ?, ?, ?)',
+            'siiisi',
             $uuid,
             $sessionId,
             $exerciseId,
             $order,
+            $itemType,
+            $prescribedExerciseId,
         );
 
         return $this->db->lastInsertId();
+    }
+
+    /** Abre espaço logo depois de um item (para o substituto): desloca os seguintes, do último para o primeiro. */
+    public function shiftOrdersAfter(int $sessionId, int $order): void
+    {
+        $this->db->execute('UPDATE sessoes_exercicios SET ordem = ordem + 1 WHERE sessao_id = ? AND ordem > ? ORDER BY ordem DESC', 'ii', $sessionId, $order);
+    }
+
+    /** Séries ainda pendentes passam para o exercício substituto; as realizadas ou ignoradas ficam no original. */
+    public function migratePendingSeries(int $fromItemId, int $toItemId): int
+    {
+        return $this->db->execute("UPDATE sessoes_series SET sessao_exercicio_id = ?, revision = revision + 1 WHERE sessao_exercicio_id = ? AND status = 'pendente'", 'ii', $toItemId, $fromItemId);
+    }
+
+    /** @return array<string, mixed>|null pausa em aberto da sessão */
+    public function openPause(int $sessionId): ?array
+    {
+        return $this->db->fetchOne('SELECT id, uuid, iniciada_em, encerrada_em FROM sessoes_pausas WHERE sessao_id = ? AND encerrada_em IS NULL ORDER BY id DESC LIMIT 1 FOR UPDATE', 'i', $sessionId);
+    }
+
+    public function insertPause(string $uuid, int $sessionId, string $startedAtDb): void
+    {
+        $this->db->execute('INSERT INTO sessoes_pausas(uuid, sessao_id, iniciada_em) VALUES (?, ?, ?)', 'sis', $uuid, $sessionId, $startedAtDb);
+    }
+
+    public function closePause(int $pauseId, string $endedAtDb): void
+    {
+        $this->db->execute('UPDATE sessoes_pausas SET encerrada_em = ? WHERE id = ?', 'si', $endedAtDb, $pauseId);
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findPause(string $uuid): ?array
+    {
+        return $this->db->fetchOne('SELECT id, uuid, iniciada_em, encerrada_em FROM sessoes_pausas WHERE uuid = ?', 's', $uuid);
     }
 
     /** @return list<array<string, mixed>> séries da sessão, com o id da linha do exercício da sessão */

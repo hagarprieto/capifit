@@ -80,6 +80,28 @@ final class SessionController
         return ApiResponse::data($request, $result['data'], $result['status']);
     }
 
+    public function replaceExercise(ServerRequestInterface $request): ResponseInterface
+    {
+        $user = $this->user($request);
+        $result = $this->db->transaction(fn (): array => $this->sessions->replaceExercise($user, $this->param($request, 'uuid'), $this->param($request, 'ex_uuid'), $this->body($request)));
+
+        return ApiResponse::data($request, $result['data'], $result['status']);
+    }
+
+    public function pause(ServerRequestInterface $request): ResponseInterface
+    {
+        $user = $this->user($request);
+
+        return ApiResponse::data($request, $this->db->transaction(fn (): array => $this->sessions->pause($user, $this->param($request, 'uuid'))));
+    }
+
+    public function resume(ServerRequestInterface $request): ResponseInterface
+    {
+        $user = $this->user($request);
+
+        return ApiResponse::data($request, $this->db->transaction(fn (): array => $this->sessions->resume($user, $this->param($request, 'uuid'))));
+    }
+
     public function complete(ServerRequestInterface $request): ResponseInterface
     {
         $user = $this->user($request);

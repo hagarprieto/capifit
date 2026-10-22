@@ -223,6 +223,97 @@ final class SessionService
     }
 
     /**
+     * Troca o exercício no meio da sessão sem perder o histórico (Doc 06 §8.1, CT-34): o item original continua com
+     * o que já foi registrado; as séries pendentes passam ao substituto, que fica logo depois e guarda qual era
+     * o exercício originalmente previsto.
+     *
+     * @param array<string, mixed> $input
+     * @return array{status: int, data: array<string, mixed>}
+     */
+    public function replaceExercise(AuthenticatedUser $user, string $uuid, string $itemUuid, array $input): array
+    {
+        $errors = new FieldErrors();
+        $errors->rejectUnknown($input, ['uuid', 'exercicio_uuid']);
+        $clientUuid = $this->optionalUuid($input, 'uuid', $errors);
+        $exercise = null;
+        $exerciseUuid = $input['exercicio_uuid'] ?? null;
+        if (!Uuid::isValid($exerciseUuid)) {
+            $errors->add('exercicio_uuid', 'Informe um UUID válido.');
+        } else {
+            $exercise = $this->sessions->findPublishedExercise(strtolower((string) $exerciseUuid));
+            if ($exercise === null) {
+                $errors->add('exercicio_uuid', 'Exercício inexistente ou não publicado.');
+            }
+        }
+        $errors->throwIfAny();
+
+        $session = $this->openOwned($user, $uuid, true);
+        $sessionId = (int) $session['id'];
+        $old = Uuid::isValid($itemUuid) ? $this->sessions->findExercise($sessionId, strtolower($itemUuid)) : null;
+        if ($old === null) {
+            throw new ApiException(ErrorCode::ResourceNotFound);
+        }
+        if ($clientUuid !== null && $this->sessions->findExercise($sessionId, $clientUuid) !== null) {
+            return ['status' => 200, 'data' => $this->exercisePayload($sessionId, $clientUuid)];
+        }
+        $newExerciseId = (int) ($exercise['id'] ?? 0);
+        if ($newExerciseId === (int) $old['exercicio_id']) {
+            throw new ApiException(ErrorCode::ValidationError, null, ['fields' => ['exercicio_uuid' => ['Escolha um exercício diferente do atual.']]]);
+        }
+
+        $newUuid = $clientUuid ?? Uuid::v4();
+        $originalPlanned = $old['exercicio_prescrito_id'] !== null ? (int) $old['exercicio_prescrito_id'] : (int) $old['exercicio_id'];
+        $this->sessions->shiftOrdersAfter($sessionId, (int) $old['ordem']);
+        try {
+            $newItemId = $this->sessions->insertExercise($newUuid, $sessionId, $newExerciseId, (int) $old['ordem'] + 1, 'substituido', $originalPlanned);
+        } catch (\mysqli_sql_exception $e) {
+            if ($e->getCode() === 1062 && $clientUuid !== null) {
+                throw new ApiException(ErrorCode::ValidationError, null, ['fields' => ['uuid' => ['Este UUID já foi utilizado.']]], [], $e);
+            }
+            throw $e;
+        }
+        $this->sessions->migratePendingSeries((int) $old['id'], $newItemId);
+
+        return ['status' => 201, 'data' => $this->exercisePayload($sessionId, $newUuid)];
+    }
+
+    /**
+     * Pausa a sessão. Se já estiver pausada, devolve a pausa em aberto (idempotente).
+     *
+     * @return array<string, mixed>
+     */
+    public function pause(AuthenticatedUser $user, string $uuid): array
+    {
+        $session = $this->openOwned($user, $uuid, true);
+        $sessionId = (int) $session['id'];
+        $open = $this->sessions->openPause($sessionId);
+        if ($open === null) {
+            $pauseUuid = Uuid::v4();
+            $this->sessions->insertPause($pauseUuid, $sessionId, Dates::toDb(Dates::nowUtc()));
+            $open = $this->sessions->findPause($pauseUuid);
+        }
+
+        return $this->presentPause($open ?? []);
+    }
+
+    /**
+     * Retoma a sessão, encerrando a pausa em aberto. Sem pausa em aberto, não há o que retomar.
+     *
+     * @return array<string, mixed>
+     */
+    public function resume(AuthenticatedUser $user, string $uuid): array
+    {
+        $session = $this->openOwned($user, $uuid, true);
+        $open = $this->sessions->openPause((int) $session['id']);
+        if ($open === null) {
+            throw new ApiException(ErrorCode::ValidationError, 'Não há pausa em andamento para retomar.', ['fields' => ['sessao' => ['A sessão não está pausada.']]]);
+        }
+        $this->sessions->closePause((int) $open['id'], Dates::toDb(Dates::nowUtc()));
+
+        return $this->presentPause($this->sessions->findPause((string) $open['uuid']) ?? []);
+    }
+
+    /**
      * @param array<string, mixed> $input
      * @return array{status: int, data: array<string, mixed>}
      */
@@ -548,11 +639,7 @@ final class SessionService
         return $this->summary($row) + [
             'observacoes' => $row['observacoes'],
             'exercicios' => $items,
-            'pausas' => array_map(static fn (array $p): array => [
-                'id' => $p['uuid'],
-                'iniciada_em' => Dates::fromDb($p['iniciada_em']),
-                'encerrada_em' => Dates::fromDb($p['encerrada_em']),
-            ], $this->sessions->pauses($sessionId)),
+            'pausas' => array_map(fn (array $p): array => $this->presentPause($p), $this->sessions->pauses($sessionId)),
         ];
     }
 
@@ -585,11 +672,20 @@ final class SessionService
             'id' => $e['uuid'],
             'ficha_exercicio_id' => null,
             'exercicio' => ExercisePresenter::summary(['uuid' => $e['exercicio_uuid']] + $e, $groups),
-            'exercicio_prescrito_id' => null,
+            'exercicio_prescrito_id' => $e['prescrito_uuid'] ?? null,
             'tipo_item' => $e['tipo_item'],
             'ordem' => (int) $e['ordem'],
             'series' => $series,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $p
+     * @return array<string, mixed>
+     */
+    private function presentPause(array $p): array
+    {
+        return ['id' => $p['uuid'] ?? null, 'iniciada_em' => Dates::fromDb($p['iniciada_em'] ?? null), 'encerrada_em' => Dates::fromDb($p['encerrada_em'] ?? null)];
     }
 
     /**

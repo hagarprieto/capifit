@@ -72,7 +72,10 @@ final class Kernel
             ->add('POST', '/me/sessoes/{uuid}/series', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->addSeries($r))
             ->add('POST', '/me/sessoes/{uuid}/exercicios', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->addExercise($r))
             ->add('POST', '/me/sessoes/{uuid}/concluir', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->complete($r))
-            ->add('POST', '/me/sessoes/{uuid}/cancelar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->cancel($r));
+            ->add('POST', '/me/sessoes/{uuid}/cancelar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->cancel($r))
+            ->add('POST', '/me/sessoes/{uuid}/exercicios/{ex_uuid}/substituir', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->replaceExercise($r))
+            ->add('POST', '/me/sessoes/{uuid}/pausar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->pause($r))
+            ->add('POST', '/me/sessoes/{uuid}/retomar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->resume($r));
 
         return (new Pipeline([
             new RequestIdMiddleware(),
