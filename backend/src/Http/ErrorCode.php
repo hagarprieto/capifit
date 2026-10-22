@@ -17,6 +17,7 @@ enum ErrorCode: string
     case ProgramVersionConflict = 'PROGRAM_VERSION_CONFLICT';
     case VersionImmutable = 'VERSION_IMMUTABLE';
     case RevisionConflict = 'REVISION_CONFLICT';
+    case EmailAlreadyRegistered = 'EMAIL_ALREADY_REGISTERED';
     case SessionAlreadyOpen = 'SESSION_ALREADY_OPEN';
     case SessionClosed = 'SESSION_CLOSED';
     case IdempotencyKeyReused = 'IDEMPOTENCY_KEY_REUSED';
@@ -38,7 +39,7 @@ enum ErrorCode: string
             self::Forbidden, self::CoachNotVerified, self::ConsentRequired => 403,
             self::ResourceNotFound => 404,
             self::ProgramVersionConflict, self::VersionImmutable, self::RevisionConflict,
-            self::SessionAlreadyOpen, self::SessionClosed, self::IdempotencyKeyReused,
+            self::EmailAlreadyRegistered, self::SessionAlreadyOpen, self::SessionClosed, self::IdempotencyKeyReused,
             self::PrescriptionNotPending => 409,
             self::UnderageNotAllowed, self::ValidationError => 422,
             self::RateLimited => 429,
@@ -58,6 +59,7 @@ enum ErrorCode: string
             self::ProgramVersionConflict => 'A versão do programa foi alterada. Atualize os dados.',
             self::VersionImmutable => 'Esta versão já foi publicada e não pode ser alterada. Crie uma nova versão.',
             self::RevisionConflict => 'Os dados foram alterados por outra operação. Atualize e tente de novo.',
+            self::EmailAlreadyRegistered => 'Este e-mail já está cadastrado.',
             self::SessionAlreadyOpen => 'Você já tem um treino em andamento.',
             self::SessionClosed => 'Este treino já foi encerrado e não pode mais ser alterado.',
             self::IdempotencyKeyReused => 'Esta chave de idempotência já foi usada com outro conteúdo.',

@@ -17,6 +17,11 @@ final class Config
         public readonly string $dbPassword,
         public readonly array $corsOrigins,
         public readonly int $maxBodyBytes,
+        public readonly string $jwtSecret = '',
+        public readonly string $jwtIssuer = 'capifit',
+        public readonly int $accessTtlSeconds = 900,
+        public readonly int $refreshTtlSeconds = 2_592_000,
+        public readonly int $refreshReuseGraceSeconds = 10,
     ) {
     }
 
@@ -35,6 +40,11 @@ final class Config
             dbPassword: $get('DB_PASSWORD'),
             corsOrigins: $origins,
             maxBodyBytes: max(1024, (int) $get('MAX_BODY_BYTES', '1048576')),
+            jwtSecret: $get('JWT_SECRET'),
+            jwtIssuer: $get('JWT_ISSUER', 'capifit'),
+            accessTtlSeconds: max(60, (int) $get('ACCESS_TOKEN_TTL', '900')),
+            refreshTtlSeconds: max(3600, (int) $get('REFRESH_TOKEN_TTL', '2592000')),
+            refreshReuseGraceSeconds: max(0, (int) $get('REFRESH_REUSE_GRACE', '10')),
         );
     }
 }

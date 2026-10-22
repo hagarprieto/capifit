@@ -8,7 +8,7 @@ use CapiFit\Config;
 
 /**
  * Conexão mysqli preguiçosa: utf8mb4, exceções estritas e sessão em UTC (Doc 04 RG-014).
- * Consultas devem usar prepared statements; nunca interpolar valores do cliente.
+ * Todas as consultas usam prepared statements; nunca interpolar valores do cliente.
  */
 final class Connection
 {
@@ -31,6 +31,60 @@ final class Connection
         }
 
         return $this->mysqli;
+    }
+
+    /**
+     * Primeira linha do resultado (coluna => valor) ou null.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function fetchOne(string $sql, string $types = '', mixed ...$params): ?array
+    {
+        $rows = $this->fetchAll($sql, $types, ...$params);
+
+        return $rows[0] ?? null;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function fetchAll(string $sql, string $types = '', mixed ...$params): array
+    {
+        $stmt = $this->mysqli()->prepare($sql);
+        try {
+            if ($params !== []) {
+                $stmt->bind_param($types, ...$params);
+            }
+            $stmt->execute();
+            $result = $stmt->get_result();
+            /** @var list<array<string, mixed>> $rows */
+            $rows = $result === false ? [] : $result->fetch_all(MYSQLI_ASSOC);
+
+            return $rows;
+        } finally {
+            $stmt->close();
+        }
+    }
+
+    /** Executa INSERT/UPDATE/DELETE e devolve o número de linhas afetadas. */
+    public function execute(string $sql, string $types = '', mixed ...$params): int
+    {
+        $stmt = $this->mysqli()->prepare($sql);
+        try {
+            if ($params !== []) {
+                $stmt->bind_param($types, ...$params);
+            }
+            $stmt->execute();
+
+            return $stmt->affected_rows;
+        } finally {
+            $stmt->close();
+        }
+    }
+
+    public function lastInsertId(): int
+    {
+        return (int) $this->mysqli()->insert_id;
     }
 
     /**

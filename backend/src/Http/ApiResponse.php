@@ -33,6 +33,13 @@ final class ApiResponse
         return $response;
     }
 
+    public static function noContent(): ResponseInterface
+    {
+        return (new Psr17Factory())->createResponse(204)
+            ->withHeader('Cache-Control', 'no-store')
+            ->withHeader('X-Content-Type-Options', 'nosniff');
+    }
+
     public static function data(ServerRequestInterface $request, mixed $data, int $status = 200): ResponseInterface
     {
         return self::json($status, ['data' => $data, 'meta' => self::meta($request)]);

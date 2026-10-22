@@ -7,21 +7,30 @@ namespace CapiFit\Http;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-/** Tabela de rotas. Cada rota guarda o seu padrão para o log de acesso e as métricas. */
+/**
+ * Tabela de rotas. Cada rota guarda o seu padrão (para log de acesso e métricas) e se é pública.
+ * Negar por padrão: toda rota exige autenticação, a menos que seja declarada pública de forma explícita.
+ */
 final class Routes
 {
-    /** @var list<array{string, string, callable(ServerRequestInterface): ResponseInterface}> */
+    /** @var list<array{string, string, callable(ServerRequestInterface): ResponseInterface, bool}> */
     private array $items = [];
 
     /** @param callable(ServerRequestInterface): ResponseInterface $handler */
-    public function add(string $method, string $pattern, callable $handler): self
+    public function add(string $method, string $pattern, callable $handler, bool $public = false): self
     {
-        $this->items[] = [$method, $pattern, $handler];
+        $this->items[] = [$method, $pattern, $handler, $public];
 
         return $this;
     }
 
-    /** @return list<array{string, string, callable(ServerRequestInterface): ResponseInterface}> */
+    /** @param callable(ServerRequestInterface): ResponseInterface $handler */
+    public function public(string $method, string $pattern, callable $handler): self
+    {
+        return $this->add($method, $pattern, $handler, true);
+    }
+
+    /** @return list<array{string, string, callable(ServerRequestInterface): ResponseInterface, bool}> */
     public function all(): array
     {
         return $this->items;
