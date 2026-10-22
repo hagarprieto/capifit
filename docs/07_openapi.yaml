@@ -4080,6 +4080,7 @@ components:
         - COACH_NOT_VERIFIED
         - CONSENT_REQUIRED
         - CONSENT_MANDATORY
+        - INVALID_STATE
         - UNDERAGE_NOT_ALLOWED
         - VALIDATION_ERROR
         - RATE_LIMITED

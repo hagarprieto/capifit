@@ -8,6 +8,7 @@ use CapiFit\Auth\Authenticator;
 use CapiFit\Auth\PasswordHasher;
 use CapiFit\Auth\TokenService;
 use CapiFit\Controllers\AccountDataController;
+use CapiFit\Controllers\AdminController;
 use CapiFit\Controllers\AuthController;
 use CapiFit\Controllers\CatalogController;
 use CapiFit\Controllers\HealthController;
@@ -32,6 +33,8 @@ use CapiFit\Repositories\ProgramRepository;
 use CapiFit\Repositories\SessionRepository;
 use CapiFit\Repositories\StructureRepository;
 use CapiFit\Services\AccountTokens;
+use CapiFit\Services\AdminExerciseService;
+use CapiFit\Services\AuditService;
 use CapiFit\Services\AuthService;
 use CapiFit\Services\ConsentService;
 use CapiFit\Services\DeviceService;
@@ -103,6 +106,12 @@ final class Kernel
             ->add('POST', '/me/sessoes/{uuid}/pausar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->pause($r))
             ->add('POST', '/me/sessoes/{uuid}/retomar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->resume($r))
             ->add('POST', '/sync/push', fn (ServerRequestInterface $r): ResponseInterface => $this->syncController()->push($r))
+            ->add('POST', '/admin/exercicios', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->createExercise($r))
+            ->add('PATCH', '/admin/exercicios/{uuid}', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->updateExercise($r))
+            ->add('POST', '/admin/exercicios/{uuid}/enviar-revisao', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->submitExercise($r))
+            ->add('POST', '/admin/exercicios/{uuid}/revisar', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->reviewExercise($r))
+            ->add('POST', '/admin/exercicios/{uuid}/publicar', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->publishExercise($r))
+            ->add('GET', '/admin/auditoria', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->audit($r))
             ->add('GET', '/me/consentimentos', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->listConsents($r))
             ->add('POST', '/me/consentimentos', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->grantConsent($r))
             ->add('POST', '/me/consentimentos/{id}/revogar', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->revokeConsent($r))
@@ -157,6 +166,13 @@ final class Kernel
     private function syncController(): SyncController
     {
         return new SyncController(new SyncService($this->db, $this->sessionService()));
+    }
+
+    private function adminController(): AdminController
+    {
+        $audit = new AuditService($this->db);
+
+        return new AdminController(new AdminExerciseService($this->db, new CatalogRepository($this->db), $audit), $audit, $this->db);
     }
 
     private function accountDataController(): AccountDataController

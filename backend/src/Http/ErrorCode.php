@@ -25,6 +25,7 @@ enum ErrorCode: string
     case CoachNotVerified = 'COACH_NOT_VERIFIED';
     case ConsentRequired = 'CONSENT_REQUIRED';
     case ConsentMandatory = 'CONSENT_MANDATORY';
+    case InvalidState = 'INVALID_STATE';
     case UnderageNotAllowed = 'UNDERAGE_NOT_ALLOWED';
     case ValidationError = 'VALIDATION_ERROR';
     case RateLimited = 'RATE_LIMITED';
@@ -40,7 +41,7 @@ enum ErrorCode: string
             self::Forbidden, self::CoachNotVerified, self::ConsentRequired => 403,
             self::ResourceNotFound => 404,
             self::ProgramVersionConflict, self::VersionImmutable, self::RevisionConflict,
-            self::EmailAlreadyRegistered, self::ConsentMandatory, self::SessionAlreadyOpen, self::SessionClosed, self::IdempotencyKeyReused,
+            self::EmailAlreadyRegistered, self::ConsentMandatory, self::InvalidState, self::SessionAlreadyOpen, self::SessionClosed, self::IdempotencyKeyReused,
             self::PrescriptionNotPending => 409,
             self::UnderageNotAllowed, self::ValidationError => 422,
             self::RateLimited => 429,
@@ -68,6 +69,7 @@ enum ErrorCode: string
             self::CoachNotVerified => 'O profissional ainda não foi verificado.',
             self::ConsentRequired => 'É necessário o consentimento do titular para esta ação.',
             self::ConsentMandatory => 'Este consentimento é necessário para usar o CapiFit. Para encerrar o uso, solicite a exclusão da conta.',
+            self::InvalidState => 'Esta ação não é permitida no estado atual do recurso.',
             self::UnderageNotAllowed => 'O cadastro é permitido apenas para maiores de 18 anos.',
             self::ValidationError => 'Alguns dados são inválidos.',
             self::RateLimited => 'Muitas requisições. Tente novamente em instantes.',

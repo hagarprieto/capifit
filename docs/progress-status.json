@@ -25,7 +25,9 @@
     "E02-01": "done",
     "E01-08": "done",
     "E00-10": "in-progress",
-    "E08-04": "in-progress"
+    "E08-04": "in-progress",
+    "E03-05": "in-progress",
+    "E03-07": "in-progress"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
@@ -52,7 +54,9 @@
     "E02-01": "API de consentimentos pronta e testada (listar, registrar sem duplicar, revogar; termos e política não se revogam: CONSENT_MANDATORY). Validado no CI com MySQL 8.",
     "E01-08": "API de dispositivos pronta e testada (registrar idempotente, listar, revogar cortando as sessões de login do aparelho; máximo 20 ativos). Validado no CI com MySQL 8.",
     "E00-10": "Faxina pronta e testada (php bin/cleanup.php: limites de taxa 2 dias, idempotência 7 dias, tokens de ação e sessões de login vencidos). Falta agendar na hospedagem (validada no CI com MySQL 8).",
-    "E08-04": "POST /sync/push pronto e testado: lote de até 50 operações idempotentes (hash do conteúdo), resultado por item (aplicada, conflito, rejeitada), instantâneo da sessão com UUIDs do cliente, pausas com horário do dispositivo, conflito entre dispositivos e relógio fora de hora. Migration 003 (cancelar). Falta o CI com MySQL 8."
+    "E08-04": "POST /sync/push pronto e testado: lote de até 50 operações idempotentes (hash do conteúdo), resultado por item (aplicada, conflito, rejeitada), instantâneo da sessão com UUIDs do cliente, pausas com horário do dispositivo, conflito entre dispositivos e relógio fora de hora. Migration 003 (cancelar). Falta o CI com MySQL 8.",
+    "E03-05": "API de cadastro, revisão (com separação de funções) e publicação de exercícios pronta e testada; só admin. Falta o CI com MySQL 8.",
+    "E03-07": "Eventos de auditoria gravados nas ações do catálogo e consulta GET /admin/auditoria (filtro e cursor) prontos. Falta o CI com MySQL 8 e plugar as demais ações administrativas (usuários, papéis, modelos) quando existirem."
   },
   "externas": {
     "revisor": "pending",

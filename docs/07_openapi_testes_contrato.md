@@ -92,6 +92,8 @@ Estes pontos não estavam fechados nos Documentos 05/06 e foram definidos no Ope
 | C-25 | `/sync/push`: falha de uma operação nunca derruba as outras nem o lote (sempre `200` quando o envelope é válido); `rejeitada` não grava nada; operação rejeitada ou em conflito também fica registrada, então reenviar o mesmo `operacao_uuid` devolve o mesmo resultado (nova intenção = novo UUID) | Doc 05 §10.1; API-12 |
 | C-26 | Série: *última-escrita-vence* por `atualizado_cliente_em`; só há `conflito` explícito quando **outro dispositivo** gravou valores **diferentes** e iguais ou mais recentes (o servidor devolve a série em `estado_servidor`); escrita mais antiga sem divergência de valores é aceita sem efeito | Doc 06 D-04, §7.4; API-10 |
 | C-27 | Instantâneo `exercicios` (RG-020): UUIDs do cliente preservados; `tipo_item=prescrito` exige `ficha_exercicio_uuid` da ficha informada e o mesmo exercício; `substituido` exige `exercicio_prescrito_uuid`; `serie_prescrita_uuid` precisa pertencer ao item; UUID repetido ou já usado é `422`; erros por caminho (`exercicios.0.series.1.tipo`) | Doc 06 §7.2 |
+| C-28 | Fluxo do exercício: `rascunho → em_revisao → (aprovado, sem estado próprio: `revisado_por` preenchido) → publicado`; o enum de `exercicios.status` não tem `aprovado`, então a aprovação é o par `revisado_por/revisado_em` com o status ainda `em_revisao`; transição fora de ordem é `409 INVALID_STATE` | Doc 09 §3.2 |
+| C-29 | Separação de funções: o admin que cadastrou o exercício não pode aprová-lo nem rejeitá-lo (`403`); qualquer outro admin pode. Com um só admin, a publicação fica bloqueada até existir o segundo | Doc 09 §3.1 |
 
 ## 5. Estratégia de testes de contrato
 
