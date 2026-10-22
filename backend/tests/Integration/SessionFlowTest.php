@@ -274,9 +274,9 @@ final class SessionFlowTest extends TestCase
         self::assertSame(422, $unknownFicha['status']);
         self::assertArrayHasKey('ficha_uuid', $unknownFicha['body']['error']['details']['fields']);
 
-        $snapshot = $this->call('POST', '/me/sessoes', ['sessao_uuid' => Uuid::v4(), 'iniciada_em' => $this->iso(), 'exercicios' => []], Uuid::v4());
-        self::assertSame(501, $snapshot['status']);
-        self::assertSame('NOT_IMPLEMENTED', $snapshot['body']['error']['code']);
+        $snapshot = $this->call('POST', '/me/sessoes', ['sessao_uuid' => Uuid::v4(), 'iniciada_em' => $this->iso(), 'exercicios' => 'x'], Uuid::v4());
+        self::assertSame(422, $snapshot['status']);
+        self::assertArrayHasKey('exercicios', $snapshot['body']['error']['details']['fields']);
     }
 
     // ---------------------------------------------------------------------------------------- leitura e dono

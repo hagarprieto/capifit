@@ -14,6 +14,7 @@ use CapiFit\Controllers\HealthController;
 use CapiFit\Controllers\ProfileController;
 use CapiFit\Controllers\ProgramController;
 use CapiFit\Controllers\SessionController;
+use CapiFit\Controllers\SyncController;
 use CapiFit\Http\Middleware\AccessLogMiddleware;
 use CapiFit\Http\Middleware\CorsMiddleware;
 use CapiFit\Http\Middleware\ErrorHandlerMiddleware;
@@ -40,6 +41,7 @@ use CapiFit\Services\ProgramService;
 use CapiFit\Services\ProgressService;
 use CapiFit\Services\RateLimiter;
 use CapiFit\Services\SessionService;
+use CapiFit\Services\SyncService;
 use CapiFit\Validation\StructureValidator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -100,6 +102,7 @@ final class Kernel
             ->add('POST', '/me/sessoes/{uuid}/exercicios/{ex_uuid}/substituir', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->replaceExercise($r))
             ->add('POST', '/me/sessoes/{uuid}/pausar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->pause($r))
             ->add('POST', '/me/sessoes/{uuid}/retomar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->resume($r))
+            ->add('POST', '/sync/push', fn (ServerRequestInterface $r): ResponseInterface => $this->syncController()->push($r))
             ->add('GET', '/me/consentimentos', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->listConsents($r))
             ->add('POST', '/me/consentimentos', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->grantConsent($r))
             ->add('POST', '/me/consentimentos/{id}/revogar', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->revokeConsent($r))
@@ -141,11 +144,19 @@ final class Kernel
         return $this->tokens ??= new TokenService($this->config);
     }
 
+    private function sessionService(): SessionService
+    {
+        return new SessionService(new SessionRepository($this->db), new CatalogRepository($this->db));
+    }
+
     private function sessionController(): SessionController
     {
-        $sessions = new SessionService(new SessionRepository($this->db), new CatalogRepository($this->db));
+        return new SessionController($this->sessionService(), new IdempotencyService($this->db), $this->db);
+    }
 
-        return new SessionController($sessions, new IdempotencyService($this->db), $this->db);
+    private function syncController(): SyncController
+    {
+        return new SyncController(new SyncService($this->db, $this->sessionService()));
     }
 
     private function accountDataController(): AccountDataController

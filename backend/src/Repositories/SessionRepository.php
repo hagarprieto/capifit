@@ -94,6 +94,36 @@ final class SessionRepository
         return $this->db->lastInsertId();
     }
 
+    /**
+     * Uuids da prescrição de uma ficha, para validar o instantâneo enviado pelo cliente.
+     *
+     * @return array{items: array<string, array{id: int, exercicio_id: int}>, series: array<string, array{id: int, item_uuid: string}>}
+     */
+    public function prescribedIndex(int $fichaId): array
+    {
+        $items = [];
+        foreach ($this->db->fetchAll('SELECT id, uuid, exercicio_id FROM ficha_exercicios WHERE ficha_id = ?', 'i', $fichaId) as $r) {
+            $items[strtolower((string) $r['uuid'])] = ['id' => (int) $r['id'], 'exercicio_id' => (int) $r['exercicio_id']];
+        }
+        $series = [];
+        $rows = $this->db->fetchAll(
+            'SELECT sp.id, sp.uuid, fe.uuid AS item_uuid FROM series_prescritas sp JOIN ficha_exercicios fe ON fe.id = sp.ficha_exercicio_id WHERE fe.ficha_id = ?',
+            'i',
+            $fichaId,
+        );
+        foreach ($rows as $r) {
+            $series[strtolower((string) $r['uuid'])] = ['id' => (int) $r['id'], 'item_uuid' => strtolower((string) $r['item_uuid'])];
+        }
+
+        return ['items' => $items, 'series' => $series];
+    }
+
+    /** @return array<string, mixed>|null pausa da sessão por uuid */
+    public function findSessionPause(int $sessionId, string $uuid): ?array
+    {
+        return $this->db->fetchOne('SELECT id, uuid, iniciada_em, encerrada_em FROM sessoes_pausas WHERE sessao_id = ? AND uuid = ? FOR UPDATE', 'is', $sessionId, $uuid);
+    }
+
     /** @return list<array<string, mixed>> exercícios prescritos da ficha, com as séries prescritas em `series` */
     public function prescribedItems(int $fichaId): array
     {
@@ -308,7 +338,7 @@ final class SessionRepository
     {
         return $this->db->fetchOne(
             'SELECT ss.id, ss.uuid, ss.sessao_exercicio_id, ss.ordem, ss.tipo, ss.carga_kg, ss.repeticoes, ss.duracao_segundos, ss.rir_real,
-                    ss.status, ss.concluida_em, ss.revision, ss.atualizado_cliente_em, e.modalidade
+                    ss.status, ss.concluida_em, ss.revision, ss.atualizado_cliente_em, ss.dispositivo_id, e.modalidade
                FROM sessoes_series ss
                JOIN sessoes_exercicios se ON se.id = ss.sessao_exercicio_id
                JOIN exercicios e ON e.id = se.exercicio_id
@@ -346,7 +376,7 @@ final class SessionRepository
     {
         $allowed = [
             'carga_kg' => 'd', 'repeticoes' => 'i', 'duracao_segundos' => 'i', 'rir_real' => 'i', 'status' => 's',
-            'concluida_em' => 's', 'atualizado_cliente_em' => 's', 'tipo' => 's',
+            'concluida_em' => 's', 'atualizado_cliente_em' => 's', 'tipo' => 's', 'dispositivo_id' => 'i',
         ];
         $sets = [];
         $types = '';

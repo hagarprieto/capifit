@@ -28,6 +28,8 @@ final class SessionService
     private const SERIES_STATUS = ['pendente', 'realizada', 'ignorada'];
     private const DEFAULT_LIMIT = 20;
     private const MAX_LIMIT = 100;
+    private const MAX_SNAPSHOT_EXERCISES = 60;
+    private const MAX_SNAPSHOT_SERIES = 20;
 
     public function __construct(
         private readonly SessionRepository $sessions,
@@ -65,6 +67,10 @@ final class SessionService
                 $errors->add('titulo_avulso', 'Deve ter entre 1 e 160 caracteres.');
             }
         }
+        $snapshot = $input['exercicios'] ?? null;
+        if ($snapshot !== null && (!is_array($snapshot) || !array_is_list($snapshot))) {
+            $errors->add('exercicios', 'Deve ser uma lista de exercícios.');
+        }
         $fichaUuid = $input['ficha_uuid'] ?? null;
         if ($fichaUuid !== null && !Uuid::isValid($fichaUuid)) {
             $errors->add('ficha_uuid', 'Informe um UUID válido.');
@@ -74,9 +80,6 @@ final class SessionService
         }
         $errors->throwIfAny();
 
-        if (($input['exercicios'] ?? null) !== null) {
-            throw new ApiException(ErrorCode::NotImplemented, 'Envio do instantâneo de exercícios chega com a sincronização offline.');
-        }
         /** @var string $uuid */
         /** @var \DateTimeImmutable $startedAt */
         $uuid = strtolower($uuid);
@@ -105,9 +108,8 @@ final class SessionService
         try {
             if ($ficha !== null) {
                 $sessionId = $this->sessions->insertProgrammed($uuid, $user->id, (int) $ficha['versao_id'], (int) $ficha['id'], Dates::toDb($startedAt));
-                $this->copyPrescription($sessionId, (int) $ficha['id']);
             } else {
-                $this->sessions->insertAvulsa($uuid, $user->id, is_string($title) ? $title : null, Dates::toDb($startedAt));
+                $sessionId = $this->sessions->insertAvulsa($uuid, $user->id, is_string($title) ? $title : null, Dates::toDb($startedAt));
             }
         } catch (\mysqli_sql_exception $e) {
             if ($e->getCode() === 1062 && str_contains($e->getMessage(), 'uq_sessao_em_andamento')) {
@@ -115,12 +117,264 @@ final class SessionService
             }
             throw $e;
         }
+        if ($snapshot !== null) {
+            $this->insertSnapshot($sessionId, $snapshot, $ficha === null ? null : (int) $ficha['id']);
+        } elseif ($ficha !== null) {
+            $this->copyPrescription($sessionId, (int) $ficha['id']);
+        }
         $row = $this->sessions->findOwned($uuid, $user->id);
         if ($row === null) {
             throw new \LogicException('Sessão recém-criada não encontrada.');
         }
 
         return ['status' => 201, 'data' => $this->present($row)];
+    }
+
+    /**
+     * Grava o instantâneo enviado pelo cliente (RG-020): exercícios e séries com os UUIDs gerados offline, validados
+     * contra a prescrição da ficha. Qualquer falha rejeita o instantâneo inteiro (422 com `details.fields` por caminho).
+     *
+     * @param array<mixed> $snapshot
+     */
+    private function insertSnapshot(int $sessionId, array $snapshot, ?int $fichaId): void
+    {
+        $errors = new FieldErrors();
+        if (count($snapshot) > self::MAX_SNAPSHOT_EXERCISES) {
+            $errors->add('exercicios', 'No máximo ' . self::MAX_SNAPSHOT_EXERCISES . ' exercícios.');
+            $errors->throwIfAny();
+        }
+        $index = $fichaId === null ? null : $this->sessions->prescribedIndex($fichaId);
+        $seenUuids = [];
+        $orders = [];
+        $plan = [];
+        foreach ($snapshot as $i => $item) {
+            $p = "exercicios.$i";
+            if (!is_array($item)) {
+                $errors->add($p, 'Deve ser um objeto.');
+                continue;
+            }
+            foreach (array_keys($item) as $key) {
+                if (!in_array($key, ['uuid', 'ficha_exercicio_uuid', 'exercicio_uuid', 'tipo_item', 'ordem', 'exercicio_prescrito_uuid', 'series'], true)) {
+                    $errors->add("$p.$key", 'Campo não permitido.');
+                }
+            }
+            $uuid = $this->snapshotUuid($item, 'uuid', "$p.uuid", $errors, $seenUuids, true);
+            $exercise = null;
+            if (!Uuid::isValid($item['exercicio_uuid'] ?? null)) {
+                $errors->add("$p.exercicio_uuid", 'Informe um UUID válido.');
+            } else {
+                $exercise = $this->sessions->findPublishedExercise(strtolower((string) $item['exercicio_uuid']));
+                if ($exercise === null) {
+                    $errors->add("$p.exercicio_uuid", 'Exercício inexistente ou não publicado.');
+                }
+            }
+            $itemType = $item['tipo_item'] ?? null;
+            if (!is_string($itemType) || !in_array($itemType, ['prescrito', 'adicionado', 'substituido'], true)) {
+                $errors->add("$p.tipo_item", 'Use prescrito, adicionado ou substituido.');
+                $itemType = null;
+            }
+            $order = $item['ordem'] ?? null;
+            if (!is_int($order) || $order < 1 || $order > 500) {
+                $errors->add("$p.ordem", 'Deve ser um inteiro entre 1 e 500.');
+                $order = null;
+            } elseif (isset($orders[$order])) {
+                $errors->add("$p.ordem", 'Já existe um exercício nesta posição.');
+            } else {
+                $orders[$order] = true;
+            }
+
+            $fichaItem = null;
+            $fichaItemUuid = $item['ficha_exercicio_uuid'] ?? null;
+            if ($fichaItemUuid !== null) {
+                $key = Uuid::isValid($fichaItemUuid) ? strtolower((string) $fichaItemUuid) : '';
+                $fichaItem = $index['items'][$key] ?? null;
+                if ($fichaItem === null) {
+                    $errors->add("$p.ficha_exercicio_uuid", 'Não pertence à ficha informada.');
+                }
+            }
+            if ($itemType === 'prescrito') {
+                if ($fichaItemUuid === null) {
+                    $errors->add("$p.ficha_exercicio_uuid", 'Obrigatório para exercício prescrito.');
+                } elseif ($fichaItem !== null && $exercise !== null && (int) $exercise['id'] !== $fichaItem['exercicio_id']) {
+                    $errors->add("$p.exercicio_uuid", 'Diferente do exercício prescrito; use tipo_item substituido.');
+                }
+            } elseif ($itemType === 'adicionado' && $fichaItemUuid !== null) {
+                $errors->add("$p.ficha_exercicio_uuid", 'Exercício adicionado não tem item na ficha.');
+            }
+            $plannedId = null;
+            if ($itemType === 'substituido') {
+                $plannedUuid = $item['exercicio_prescrito_uuid'] ?? null;
+                $planned = Uuid::isValid($plannedUuid) ? $this->sessions->findPublishedExercise(strtolower((string) $plannedUuid)) : null;
+                if ($planned === null) {
+                    $errors->add("$p.exercicio_prescrito_uuid", 'Informe o exercício originalmente previsto (publicado).');
+                } else {
+                    $plannedId = (int) $planned['id'];
+                }
+            } elseif (($item['exercicio_prescrito_uuid'] ?? null) !== null) {
+                $errors->add("$p.exercicio_prescrito_uuid", 'Só se aplica a exercício substituído.');
+            }
+
+            $series = $item['series'] ?? [];
+            $seriesPlan = [];
+            if (!is_array($series) || !array_is_list($series) || count($series) > self::MAX_SNAPSHOT_SERIES) {
+                $errors->add("$p.series", 'Deve ser uma lista com até ' . self::MAX_SNAPSHOT_SERIES . ' séries.');
+                $series = [];
+            }
+            $seriesOrders = [];
+            foreach ($series as $k => $s) {
+                $r = "$p.series.$k";
+                if (!is_array($s)) {
+                    $errors->add($r, 'Deve ser um objeto.');
+                    continue;
+                }
+                foreach (array_keys($s) as $key) {
+                    if (!in_array($key, ['uuid', 'serie_prescrita_uuid', 'ordem', 'tipo'], true)) {
+                        $errors->add("$r.$key", 'Campo não permitido.');
+                    }
+                }
+                $sUuid = $this->snapshotUuid($s, 'uuid', "$r.uuid", $errors, $seenUuids, true);
+                $sOrder = $s['ordem'] ?? null;
+                if (!is_int($sOrder) || $sOrder < 1 || $sOrder > 100) {
+                    $errors->add("$r.ordem", 'Deve ser um inteiro entre 1 e 100.');
+                } elseif (isset($seriesOrders[$sOrder])) {
+                    $errors->add("$r.ordem", 'Já existe uma série nesta posição.');
+                } else {
+                    $seriesOrders[$sOrder] = true;
+                }
+                $sType = $s['tipo'] ?? 'normal';
+                if (!is_string($sType) || !in_array($sType, self::SERIES_TYPES, true)) {
+                    $errors->add("$r.tipo", 'Use aquecimento, normal, preparatoria ou dropset.');
+                }
+                $prescribedSeriesId = null;
+                if (($s['serie_prescrita_uuid'] ?? null) !== null) {
+                    $key = Uuid::isValid($s['serie_prescrita_uuid']) ? strtolower((string) $s['serie_prescrita_uuid']) : '';
+                    $prescribed = $index['series'][$key] ?? null;
+                    if ($prescribed === null || $fichaItemUuid === null || $prescribed['item_uuid'] !== strtolower((string) $fichaItemUuid)) {
+                        $errors->add("$r.serie_prescrita_uuid", 'Não pertence ao exercício prescrito.');
+                    } else {
+                        $prescribedSeriesId = $prescribed['id'];
+                    }
+                }
+                $seriesPlan[] = ['uuid' => $sUuid, 'ordem' => $sOrder, 'tipo' => (string) $sType, 'prescrita_id' => $prescribedSeriesId];
+            }
+            $plan[] = ['uuid' => $uuid, 'exercicio_id' => (int) ($exercise['id'] ?? 0), 'ordem' => (int) $order, 'tipo_item' => (string) $itemType, 'planned' => $plannedId, 'ficha_item_id' => $fichaItem['id'] ?? null, 'series' => $seriesPlan];
+        }
+        $errors->throwIfAny();
+
+        try {
+            foreach ($plan as $item) {
+                $itemId = $this->sessions->insertExercise((string) $item['uuid'], $sessionId, $item['exercicio_id'], $item['ordem'], $item['tipo_item'], $item['planned'], $item['ficha_item_id']);
+                foreach ($item['series'] as $s) {
+                    $this->sessions->insertSeries((string) $s['uuid'], $itemId, (int) $s['ordem'], $s['tipo'], $s['prescrita_id']);
+                }
+            }
+        } catch (\mysqli_sql_exception $e) {
+            if ($e->getCode() === 1062) {
+                throw new ApiException(ErrorCode::ValidationError, null, ['fields' => ['exercicios' => ['Algum UUID informado já foi utilizado.']]], [], $e);
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * @param array<mixed> $data
+     * @param array<string, true> $seen
+     */
+    private function snapshotUuid(array $data, string $key, string $path, FieldErrors $errors, array &$seen, bool $required): ?string
+    {
+        $value = $data[$key] ?? null;
+        if ($value === null && !$required) {
+            return null;
+        }
+        if (!Uuid::isValid($value)) {
+            $errors->add($path, 'Informe um UUID válido.');
+
+            return null;
+        }
+        $value = strtolower((string) $value);
+        if (isset($seen[$value])) {
+            $errors->add($path, 'UUID repetido no instantâneo.');
+        }
+        $seen[$value] = true;
+
+        return $value;
+    }
+
+    /**
+     * Início de pausa com o horário do dispositivo (sincronização). Repetir a mesma pausa devolve a existente.
+     *
+     * @param array<string, mixed> $input
+     * @return array<string, mixed>
+     */
+    public function startPauseAt(AuthenticatedUser $user, string $sessionUuid, string $pauseUuid, array $input): array
+    {
+        $errors = new FieldErrors();
+        $errors->rejectUnknown($input, ['iniciada_em']);
+        $startedAt = Dates::parse($input['iniciada_em'] ?? null);
+        if ($startedAt === null) {
+            $errors->add('iniciada_em', 'Informe a data e hora em ISO 8601 com fuso.');
+        }
+        if (!Uuid::isValid($pauseUuid)) {
+            $errors->add('uuid', 'Informe um UUID válido.');
+        }
+        $errors->throwIfAny();
+
+        $session = $this->openOwned($user, $sessionUuid, true);
+        $sessionId = (int) $session['id'];
+        $existing = $this->sessions->findSessionPause($sessionId, strtolower($pauseUuid));
+        if ($existing !== null) {
+            return $this->presentPause($existing);
+        }
+        $started = Dates::parse(Dates::fromDb($session['iniciada_em']));
+        if (($started !== null && $startedAt < $started) || $startedAt > Dates::nowUtc()->modify('+5 minutes')) {
+            throw new ApiException(ErrorCode::ValidationError, null, ['fields' => ['iniciada_em' => ['Deve ser posterior ao início do treino e não pode estar no futuro.']]]);
+        }
+        if ($this->sessions->openPause($sessionId) !== null) {
+            throw new ApiException(ErrorCode::ValidationError, null, ['fields' => ['sessao' => ['Já existe uma pausa em andamento.']]]);
+        }
+        try {
+            $this->sessions->insertPause(strtolower($pauseUuid), $sessionId, Dates::toDb($startedAt));
+        } catch (\mysqli_sql_exception $e) {
+            if ($e->getCode() === 1062) {
+                throw new ApiException(ErrorCode::ValidationError, null, ['fields' => ['uuid' => ['Este UUID já foi utilizado.']]], [], $e);
+            }
+            throw $e;
+        }
+
+        return $this->presentPause($this->sessions->findSessionPause($sessionId, strtolower($pauseUuid)) ?? []);
+    }
+
+    /**
+     * Fim de pausa com o horário do dispositivo (sincronização). Pausa já encerrada: devolve como está.
+     *
+     * @param array<string, mixed> $input
+     * @return array<string, mixed>
+     */
+    public function endPauseAt(AuthenticatedUser $user, string $sessionUuid, string $pauseUuid, array $input): array
+    {
+        $errors = new FieldErrors();
+        $errors->rejectUnknown($input, ['encerrada_em']);
+        $endedAt = Dates::parse($input['encerrada_em'] ?? null);
+        if ($endedAt === null) {
+            $errors->add('encerrada_em', 'Informe a data e hora em ISO 8601 com fuso.');
+        }
+        $errors->throwIfAny();
+
+        $session = $this->openOwned($user, $sessionUuid, true);
+        $pause = Uuid::isValid($pauseUuid) ? $this->sessions->findSessionPause((int) $session['id'], strtolower($pauseUuid)) : null;
+        if ($pause === null) {
+            throw new ApiException(ErrorCode::ResourceNotFound);
+        }
+        if ($pause['encerrada_em'] !== null) {
+            return $this->presentPause($pause);
+        }
+        $started = Dates::parse(Dates::fromDb($pause['iniciada_em']));
+        if (($started !== null && $endedAt < $started) || $endedAt > Dates::nowUtc()->modify('+5 minutes')) {
+            throw new ApiException(ErrorCode::ValidationError, null, ['fields' => ['encerrada_em' => ['Deve ser posterior ao início da pausa e não pode estar no futuro.']]]);
+        }
+        $this->sessions->closePause((int) $pause['id'], Dates::toDb($endedAt));
+
+        return $this->presentPause($this->sessions->findSessionPause((int) $session['id'], strtolower($pauseUuid)) ?? []);
     }
 
     /** Copia a prescrição para a sessão: o que foi feito fica independente de edições futuras do programa. */
@@ -404,7 +658,7 @@ final class SessionService
      * @param array<string, mixed> $input
      * @return array<string, mixed>
      */
-    public function updateSeries(AuthenticatedUser $user, string $uuid, string $seriesUuid, array $input): array
+    public function updateSeries(AuthenticatedUser $user, string $uuid, string $seriesUuid, array $input, ?int $deviceId = null): array
     {
         $errors = new FieldErrors();
         $errors->rejectUnknown($input, ['carga_kg', 'repeticoes', 'duracao_segundos', 'rir_real', 'status', 'concluida_em', 'atualizado_cliente_em', 'tipo']);
@@ -467,8 +721,17 @@ final class SessionService
         if ($series === null) {
             throw new ApiException(ErrorCode::ResourceNotFound);
         }
+        if ($deviceId !== null && $series['dispositivo_id'] !== null && (int) $series['dispositivo_id'] !== $deviceId
+            && $clientTime !== null && $series['atualizado_cliente_em'] !== null && $clientTime <= (string) $series['atualizado_cliente_em']
+            && $this->diverges($series, $changes)) {
+            // Outro dispositivo gravou valores diferentes e mais recentes: sem sobrescrita silenciosa (Doc 06 §7.4).
+            throw new ApiException(ErrorCode::RevisionConflict, null, ['estado_servidor' => $this->presentSeries($series)]);
+        }
         if ($clientTime !== null && $series['atualizado_cliente_em'] !== null && $clientTime < (string) $series['atualizado_cliente_em']) {
             return $this->presentSeries($series); // escrita mais antiga: o estado mais novo prevalece
+        }
+        if ($deviceId !== null) {
+            $changes['dispositivo_id'] = $deviceId;
         }
 
         $merged = array_merge($series, $changes);
@@ -589,6 +852,26 @@ final class SessionService
     private function alreadyOpen(?string $openUuid, ?\Throwable $previous = null): ApiException
     {
         return new ApiException(ErrorCode::SessionAlreadyOpen, null, $openUuid === null ? [] : ['sessao_uuid' => $openUuid], [], $previous);
+    }
+
+    /**
+     * @param array<string, mixed> $series linha atual
+     * @param array<string, mixed> $changes valores novos (colunas)
+     */
+    private function diverges(array $series, array $changes): bool
+    {
+        foreach (['carga_kg', 'repeticoes', 'duracao_segundos', 'rir_real', 'status', 'tipo'] as $field) {
+            if (!array_key_exists($field, $changes)) {
+                continue;
+            }
+            $current = $series[$field] ?? null;
+            $same = is_float($changes[$field]) ? $current !== null && abs((float) $current - $changes[$field]) < 0.005 : (string) $current === (string) $changes[$field];
+            if (!$same) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
