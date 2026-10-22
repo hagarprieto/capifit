@@ -154,7 +154,7 @@ Os IDs `CT-*` referenciam os critérios `API-*` (Doc 05 §15), `CA-04-*` (Doc 04
 | CT-02 | `forgot` com e-mail existente e inexistente | Mesma resposta e latência similar (sem enumeração) | TEL-004 |
 | CT-03 | Refresh reutilizado após rotação | 401 e toda a família de tokens revogada | Doc 06 D-11 |
 | CT-04 | Registro sem `maior_de_18` ou com `false` | 422 `UNDERAGE_NOT_ALLOWED`; nada gravado | CA-06-13 |
-| CT-05 | Registro com e-mail já cadastrado | Resposta compatível com política anti-enumeração definida na implementação | Doc 05 §4 |
+| CT-05 | Registro com e-mail já cadastrado (também em maiúsculas) | `409 EMAIL_ALREADY_REGISTERED`, sem linhas parciais gravadas; o abuso (enumeração em massa) é contido por limite de taxa (E01-05) | Doc 05 §4 |
 | CT-06 | `PATCH /me` com campo não documentado | 422 | §3.4 |
 | CT-07 | Exclusão sem `senha` / com senha errada | 422 / 401; acesso mantido | RG-021 |
 | CT-08 | Exclusão válida | 201; tokens revogados; próximo request 401 | CA-06-14 |
@@ -246,7 +246,7 @@ Os IDs `CT-*` referenciam os critérios `API-*` (Doc 05 §15), `CA-04-*` (Doc 04
 ## 8. Pendências
 
 1. Tipar o `payload` de `/sync/push` por combinação `entidade` + `tipo` (hoje é objeto livre). Sugestão: `oneOf` com discriminador sintético, mantendo o validador L5 como fonte de verdade enquanto isso.
-2. Definir a política anti-enumeração do cadastro com e-mail já existente (CT-05): resposta idêntica com e-mail de aviso, ou erro explícito.
+2. ~~Política anti-enumeração do cadastro~~ — **decidida (22/10/2026):** erro explícito `409 EMAIL_ALREADY_REGISTERED` (melhor experiência para o usuário), com limite de taxa por IP e por e-mail em `/auth/*` na história E01-05. O login e a recuperação de senha **não** revelam se a conta existe.
 3. Escolher a biblioteca de validação em PHP (L1/L2) e confirmar compatibilidade com OpenAPI 3.1 (`type` com `null`, `const`, `unevaluatedProperties`); se houver lacuna, gerar uma versão 3.0 derivada para os testes.
 4. Fixar o formato de `cursor` (opaco e assinado) e o limite de tamanho de lote em bytes (resposta 413).
 5. Definir cabeçalhos de `Deprecation`/`Sunset` e canal de comunicação com o app.

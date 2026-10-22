@@ -141,6 +141,15 @@ Para listas:
 
 **Decisão de segurança:** access token de curta duração (exemplo: 15 min); refresh opaco aleatório, com hash no servidor, rotação e revogação por dispositivo; armazenar credenciais com Keychain/Keystore no app. Implementar limitação por IP/conta, verificação de senha com `password_hash`/`password_verify` e proteção contra enumeração de e-mail.
 
+**Decisões de implementação da autenticação (E01-01/E01-02, 22/10/2026):**
+
+- **Access token:** JWT HS256 de 15 min (`ACCESS_TOKEN_TTL`); claims `iss`, `sub` (UUID do usuário), `sid` (UUID da sessão), `iat`, `nbf`, `exp`, `jti`. Segredo com **mínimo de 32 bytes** (`JWT_SECRET`); a biblioteca é `firebase/php-jwt` **v7** (a v6 tem o aviso CVE-2025-45769 por não impor tamanho mínimo de chave). Algoritmo fixo: tokens `alg: none` ou assinados com outra chave são rejeitados.
+- **Verificação por requisição:** além do JWT, o servidor confere no banco que a sessão (`sid`) **não foi revogada** e que a conta está `ativo`; papéis vêm do banco, não do token. Logout, suspensão e logout-all valem **imediatamente**, sem esperar o token expirar. Toda falha devolve o mesmo `401 UNAUTHENTICATED`.
+- **Refresh token:** opaco (256 bits, base64url), validade de 30 dias (`REFRESH_TOKEN_TTL`), guardado **somente como SHA-256**. A cada uso há **rotação** (novo token na mesma "família"). Reuso de um token já rotacionado, **depois** da janela de tolerância (`REFRESH_REUSE_GRACE`, 10 s), indica roubo: a família inteira é revogada e o evento é registrado (só o identificador opaco da família). Dentro da janela, a segunda chamada apenas recebe `401` (renovações simultâneas do mesmo cliente não derrubam a sessão); o app deve **serializar** as renovações (uma por vez).
+- **Cadastro:** `409 EMAIL_ALREADY_REGISTERED` para e-mail repetido (comparação sem diferenciar maiúsculas; o e-mail é guardado em minúsculas); `422 UNDERAGE_NOT_ALLOWED` quando `maior_de_18` é `false` (nada é gravado); campos desconhecidos geram `422`. A conta nasce `ativo` com `email_verificado_em` nulo (a verificação por e-mail é a história E01-03). Consentimentos de termos e de privacidade são gravados na mesma transação.
+- **Login:** a verificação de senha (Argon2id) roda mesmo quando o e-mail não existe, para não revelar contas pelo tempo de resposta; a mensagem de falha é a mesma. A senha é re-hasheada se os parâmetros do algoritmo mudarem.
+- **Pendente:** limite de taxa em `/auth/*` (E01-05), recuperação de senha e verificação de e-mail (E01-03).
+
 **Lacuna no DDL 04:** adicionar migrations para `sessoes_autenticacao`, `tokens_acao` (recuperação/verificação), revogações e, se aplicável, `consentimentos_privacidade`. Não tentar gravar refresh tokens no campo `usuarios.senha_hash`.
 
 #### Exemplo de login
