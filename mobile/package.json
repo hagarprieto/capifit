@@ -6,9 +6,11 @@
     "@expo-google-fonts/inter": "^0.4.2",
     "expo": "~58.0.17",
     "expo-constants": "~58.0.13",
+    "expo-crypto": "~58.0.7",
     "expo-font": "~58.0.9",
     "expo-linking": "~58.0.14",
     "expo-router": "~58.0.25",
+    "expo-secure-store": "~58.0.2",
     "expo-splash-screen": "~58.0.11",
     "expo-status-bar": "~58.0.4",
     "expo-system-ui": "~58.0.6",
@@ -40,8 +42,11 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "check": "npm run tokens:check && npm run typecheck && npm run lint && npm run lint:rules && npm test",
-    "lint:rules": "node scripts/check-lint-rules.js"
+    "check": "npm run tokens:check && npm run api:types:check && npm run typecheck && npm run lint && npm run lint:rules && npm test",
+    "lint:rules": "node scripts/check-lint-rules.js",
+    "api:types": "node scripts/generate-api-types.js",
+    "api:types:check": "node scripts/generate-api-types.js --check",
+    "mock:api": "npx --yes @stoplight/prism-cli@5 mock ../docs/07_openapi.yaml --port 4010 --dynamic"
   },
   "private": true,
   "jest": {
