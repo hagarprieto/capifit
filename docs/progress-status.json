@@ -37,7 +37,8 @@
     "E01-07": "in-progress",
     "E07-05": "in-progress",
     "E07-06": "in-progress",
-    "E07-09": "in-progress"
+    "E07-09": "in-progress",
+    "E06-03": "in-progress"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
@@ -77,7 +78,9 @@
     "E04-02": "Parcial: botão, campo de texto, campo numérico, caixa de seleção, aviso, linha de série, diálogo de confirmação e estado vazio prontos e testados. Falta validar em aparelho (a Capi do estado vazio depende do asset da marca).",
     "E07-05": "Executor pronto e testado em Jest (102 testes): um exercício por vez, séries com valores sugeridos que só viram registro ao concluir (D-14), correção de série, + série, navegação entre exercícios, finalizar com confirmação, escolha de exercício e entrada pelo Início. Funciona online; salvar offline vem com a E08. Validado no CI (Jest, tipos, lint). Falta validar em aparelho (teclado numérico, fonte ampliada, leitor de tela, uso com uma mão).",
     "E07-06": "Timer de descanso por instante final pronto e testado em Jest (121 testes): inicia ao concluir série (configurável), pausar, pular, ajuste de 15 s, recálculo ao voltar do segundo plano, háptico uma vez e aviso local agendado e cancelado. Validado no CI (Jest, tipos, lint). Falta validar em aparelho: aviso com a tela bloqueada e o app em segundo plano, permissão de notificação no Android 13+ e no iOS, háptico e leitor de tela.",
-    "E07-09": "Resumo da sessão pronto e testado em Jest (133 testes): confere a conclusão no servidor antes de comemorar, duração, séries, exercícios, volume com a regra explícita (mesma do servidor) e registros expansíveis. Validado no CI (Jest, tipos, lint). Falta validar em aparelho. A Capi comemorando entra quando o asset da marca existir."
+    "E07-09": "Resumo da sessão pronto e testado em Jest (133 testes): confere a conclusão no servidor antes de comemorar, duração, séries, exercícios, volume com a regra explícita (mesma do servidor) e registros expansíveis. Validado no CI (Jest, tipos, lint). Falta validar em aparelho. A Capi comemorando entra quando o asset da marca existir.",
+    "E06-03": "Tela Meus treinos pronta e testada em Jest (150 testes): abas Ativo, Rascunhos e Arquivados com contagem, cartões com origem (ícone, texto e cor), programa em uso com as fichas, estados vazios por aba, criar programa e detalhe somente leitura. Falta o CI e validar em aparelho. Ativar, arquivar e copiar ficam nas E06-08 e E06-09.",
+    "E04-04": "Parcial: OriginBadge e WorkoutCard prontos e testados; faltam SyncStatus, WeekStrip e StatTile."
   },
   "externas": {
     "revisor": "pending",

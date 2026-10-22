@@ -62,6 +62,7 @@ export function HomeScreen({ api }: { api?: WorkoutApi }) {
       ) : (
         <Button label={t('home.iniciarAvulso')} onPress={() => void start()} loading={starting} />
       )}
+      <Button label={t('home.meusTreinos')} variant="secondary" onPress={() => router.push('/programas')} />
       <Button label={t('home.verTema')} variant="secondary" onPress={() => router.push('/tema')} />
       <Button label={t('home.sair')} variant="text" onPress={() => void signOut()} />
     </Screen>
