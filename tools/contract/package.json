@@ -1,0 +1,12 @@
+{
+  "name": "capifit-contract-tools",
+  "private": true,
+  "description": "Validação do contrato OpenAPI do CapiFit (Documento 07)",
+  "scripts": {
+    "validate": "node validate-openapi.js"
+  },
+  "dependencies": {
+    "@redocly/openapi-core": "^1.34.0",
+    "js-yaml": "^4.1.0"
+  }
+}
