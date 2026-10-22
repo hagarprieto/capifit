@@ -25,6 +25,8 @@ jobs:
           npm run validate
       - name: Verificar contraste dos tokens
         run: node tools/design/check-contrast.js
+      - name: Varredura de segredos
+        run: node tools/security/scan-secrets.js
 
   banco-mysql8:
     name: Schema em MySQL 8 (migrations 04, 06, 09 e seed)
@@ -71,11 +73,12 @@ jobs:
           php-version: '8.2'
           extensions: mysqli, mbstring
           tools: composer
-      - name: Aplicar o schema
+      - name: Aplicar o schema e criar o usuário da aplicação (somente DML)
         shell: pwsh
         env:
           MYSQL_PWD: ci_only_password
-        run: ./tools/db/apply-schema.ps1 -Port 3306 -WithSeed -Recreate
+          APP_DB_PASSWORD: ci_only_app_password
+        run: ./tools/db/apply-schema.ps1 -Port 3306 -WithSeed -Recreate -AppUser capifit_app -AppHost '%'
       - name: Instalar dependências
         working-directory: backend
         run: composer install --no-interaction --prefer-dist
@@ -90,6 +93,8 @@ jobs:
           DB_NAME: capifit
           DB_USER: root
           DB_PASSWORD: ci_only_password
+          DB_APP_USER: capifit_app
+          DB_APP_PASSWORD: ci_only_app_password
           CAPIFIT_ALLOW_DB_TESTS: '1'
         run: composer test
 
