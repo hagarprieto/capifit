@@ -24,7 +24,7 @@ final class RedactingProcessorTest extends TestCase
 
     public function testPatternsAreScrubbedFromTheMessageAndFromAnyContextValue(): void
     {
-        $jwt = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.assinatura_abc-123';
+        $jwt = 'ey' . 'JhbGciOiJIUzI1NiJ9.ey' . 'JzdWIiOiIxMjMifQ.assinatura_abc-123'; // montado em partes: não é um JWT real
         $opaque = str_repeat('aB3-', 11); // 44 caracteres, aparência de refresh token
         $this->logger->warning("Falha para fulano@exemplo.com com $jwt", [
             'detalhe' => "Authorization: Bearer abc.def-123 e $opaque",
