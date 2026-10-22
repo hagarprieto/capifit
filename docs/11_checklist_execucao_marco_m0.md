@@ -21,8 +21,8 @@
 
 | Item | Situação | Implicação |
 |---|---|---|
-| PHP | 8.2.12 (XAMPP), `mysqli`, `pdo_mysql`, `mbstring`, `openssl` e `intl` ativos; `argon2id` disponível | Atende o Doc 05 (PHP 8.2+; `password_hash`) |
-| Composer | 2.6.5 | Pode criar o backend |
+| PHP | 8.2.12 no XAMPP — **o `php` do PATH é o 7.4.32 (`C:\tools\php74`); use `C:\xampp\php\php.exe`**, `mysqli`, `pdo_mysql`, `mbstring`, `openssl` e `intl` ativos; `argon2id` disponível | Atende o Doc 05 (PHP 8.2+; `password_hash`) |
+| Composer | 2.6.5, mas o atalho `composer` usa o PHP 7.4 do PATH | Rodar com o PHP 8.2: `C:\xampp\php\php.exe C:\ProgramData\ComposerSetup\bin\composer.phar ...` (ver `backend/README.md`) |
 | Node / npm | 24.19.0 / 11.17.0 | Validadores e app Expo |
 | Git | 2.44 instalado, mas **a pasta ainda não é um repositório** | Fazer E00-01 |
 | Banco | XAMPP traz **MariaDB 10.4.32**; **MySQL 8 não está instalado** | Instalar MySQL 8 em paralelo (D-01), porta 3307 |
@@ -157,6 +157,8 @@ Estrutura do Doc 05 §2.1 (controller → service → repository, `mysqli` com p
 - [ ] `GET /health` (público, sem dados sensíveis, **fora do OpenAPI**) para monitoramento.
 - [ ] `.env.example` com as variáveis (banco, segredo JWT, origens CORS) e **sem valores reais**.
 - [ ] Testes: rota inexistente → 404 JSON no envelope de erro; JSON inválido → 400; resposta de erro nunca contém SQL; `request_id` presente; testes dos 4 cenários de integridade do §5.2 via banco real.
+
+**Andamento (22/10/2026):** esqueleto criado em `backend/` (PSR-7/PSR-15, roteador, middlewares, envelope e erros do contrato, conexão mysqli, logs com redação, `/health`); 30 testes e PHPStan nível 6 passam localmente (integração contra MariaDB temporária); job `api-php` adicionado ao CI. **Falta:** CI verde no GitHub e integração em MySQL 8 real.
 
 **Pronto quando:** `composer test` passa no CI com MySQL 8, `GET /health` responde, e qualquer erro devolve o envelope documentado.
 
