@@ -21,7 +21,8 @@ const PATTERNS = [
 ];
 
 // Valores de exemplo/teste conhecidos e inofensivos (senhas efêmeras do CI e fixtures de teste).
-const ALLOW_VALUES = [/ci_only_(?:app_)?password/, /senha-de-teste/i, /exemplo\.invalid/, /<senha[^>]*>/i, /hunter2/];
+// "segredo-de-teste…" são constantes de fixtures dos testes automatizados (nunca usadas fora deles).
+const ALLOW_VALUES = [/ci_only_/, /senha-de-teste/i, /segredo-de-teste/i, /exemplo\.invalid/, /<senha[^>]*>/i, /hunter2/];
 const SKIP_FILES = [/package-lock\.json$/, /composer\.lock$/, /\.(png|jpg|jpeg|gif|ico|webp|gz|zip|pdf|woff2?)$/i];
 const SKIP_DIRS = ['node_modules', 'vendor', '.git', 'dist', '.expo'];
 
