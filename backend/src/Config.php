@@ -22,6 +22,7 @@ final class Config
         public readonly int $accessTtlSeconds = 900,
         public readonly int $refreshTtlSeconds = 2_592_000,
         public readonly int $refreshReuseGraceSeconds = 10,
+        public readonly string $mediaBaseUrl = '',
     ) {
     }
 
@@ -45,6 +46,7 @@ final class Config
             accessTtlSeconds: max(60, (int) $get('ACCESS_TOKEN_TTL', '900')),
             refreshTtlSeconds: max(3600, (int) $get('REFRESH_TOKEN_TTL', '2592000')),
             refreshReuseGraceSeconds: max(0, (int) $get('REFRESH_REUSE_GRACE', '10')),
+            mediaBaseUrl: $get('MEDIA_BASE_URL'),
         );
     }
 }

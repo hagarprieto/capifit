@@ -15,6 +15,7 @@ final class Connection
     private const RETRYABLE = [1205, 1213]; // lock wait timeout, deadlock
 
     private ?\mysqli $mysqli = null;
+    private int $depth = 0;
 
     public function __construct(private readonly Config $config)
     {
@@ -89,7 +90,7 @@ final class Connection
 
     /**
      * Executa $work em transação. Em deadlock ou espera de lock, reexecuta (até $attempts vezes);
-     * $work deve ser idempotente em relação a efeitos fora do banco.
+     * $work deve ser idempotente em relação a efeitos fora do banco. Chamadas aninhadas reaproveitam a transação externa.
      *
      * @template T
      * @param callable(\mysqli): T $work
@@ -98,14 +99,22 @@ final class Connection
     public function transaction(callable $work, int $attempts = 3): mixed
     {
         $m = $this->mysqli();
+        // Chamada aninhada: participa da transação externa (sem BEGIN/COMMIT próprios, que encerrariam a externa).
+        // Se falhar, a exceção sobe e a transação externa inteira sofre rollback.
+        if ($this->depth > 0) {
+            return $work($m);
+        }
         for ($attempt = 1; ; $attempt++) {
             $m->begin_transaction();
+            $this->depth = 1;
             try {
                 $result = $work($m);
+                $this->depth = 0;
                 $m->commit();
 
                 return $result;
             } catch (\Throwable $e) {
+                $this->depth = 0;
                 try {
                     $m->rollback();
                 } catch (\Throwable) {

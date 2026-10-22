@@ -8,8 +8,10 @@ use CapiFit\Auth\Authenticator;
 use CapiFit\Auth\PasswordHasher;
 use CapiFit\Auth\TokenService;
 use CapiFit\Controllers\AuthController;
+use CapiFit\Controllers\CatalogController;
 use CapiFit\Controllers\HealthController;
 use CapiFit\Controllers\MeController;
+use CapiFit\Controllers\SessionController;
 use CapiFit\Http\Middleware\AccessLogMiddleware;
 use CapiFit\Http\Middleware\CorsMiddleware;
 use CapiFit\Http\Middleware\ErrorHandlerMiddleware;
@@ -19,7 +21,11 @@ use CapiFit\Http\Pipeline;
 use CapiFit\Http\Router;
 use CapiFit\Http\Routes;
 use CapiFit\Infrastructure\Database\Connection;
+use CapiFit\Repositories\CatalogRepository;
+use CapiFit\Repositories\SessionRepository;
 use CapiFit\Services\AuthService;
+use CapiFit\Services\IdempotencyService;
+use CapiFit\Services\SessionService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
@@ -51,7 +57,22 @@ final class Kernel
             ->public('POST', '/auth/refresh', fn (ServerRequestInterface $r): ResponseInterface => $this->authController()->refresh($r))
             ->add('POST', '/auth/logout', fn (ServerRequestInterface $r): ResponseInterface => $this->authController()->logout($r))
             ->add('POST', '/auth/logout-all', fn (ServerRequestInterface $r): ResponseInterface => $this->authController()->logoutAll($r))
-            ->add('GET', '/me', fn (ServerRequestInterface $r): ResponseInterface => (new MeController($this->db))->show($r));
+            ->add('GET', '/me', fn (ServerRequestInterface $r): ResponseInterface => (new MeController($this->db))->show($r))
+            ->add('GET', '/exercicios', fn (ServerRequestInterface $r): ResponseInterface => $this->catalogController()->list($r))
+            ->add('GET', '/exercicios/{uuid}', fn (ServerRequestInterface $r): ResponseInterface => $this->catalogController()->show($r))
+            ->add('GET', '/exercicios/{uuid}/alternativas', fn (ServerRequestInterface $r): ResponseInterface => $this->catalogController()->alternatives($r))
+            ->add('GET', '/exercicios/{uuid}/midias', fn (ServerRequestInterface $r): ResponseInterface => $this->catalogController()->mediaList($r))
+            ->add('GET', '/grupos-musculares', fn (ServerRequestInterface $r): ResponseInterface => $this->catalogController()->muscleGroups($r))
+            ->add('GET', '/equipamentos', fn (ServerRequestInterface $r): ResponseInterface => $this->catalogController()->equipmentList($r))
+            ->add('POST', '/me/sessoes', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->create($r))
+            ->add('GET', '/me/sessoes', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->list($r))
+            ->add('GET', '/me/sessoes/{uuid}', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->show($r))
+            ->add('PATCH', '/me/sessoes/{uuid}', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->update($r))
+            ->add('PATCH', '/me/sessoes/{uuid}/series/{serie_uuid}', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->updateSeries($r))
+            ->add('POST', '/me/sessoes/{uuid}/series', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->addSeries($r))
+            ->add('POST', '/me/sessoes/{uuid}/exercicios', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->addExercise($r))
+            ->add('POST', '/me/sessoes/{uuid}/concluir', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->complete($r))
+            ->add('POST', '/me/sessoes/{uuid}/cancelar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->cancel($r));
 
         return (new Pipeline([
             new RequestIdMiddleware(),
@@ -65,6 +86,18 @@ final class Kernel
     private function tokens(): TokenService
     {
         return $this->tokens ??= new TokenService($this->config);
+    }
+
+    private function sessionController(): SessionController
+    {
+        $sessions = new SessionService(new SessionRepository($this->db), new CatalogRepository($this->db));
+
+        return new SessionController($sessions, new IdempotencyService($this->db), $this->db);
+    }
+
+    private function catalogController(): CatalogController
+    {
+        return new CatalogController(new CatalogRepository($this->db), $this->config);
     }
 
     private function authController(): AuthController
