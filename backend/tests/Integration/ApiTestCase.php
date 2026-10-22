@@ -72,9 +72,10 @@ abstract class ApiTestCase extends TestCase
     /**
      * @param array<string, mixed>|null $body
      * @param array<string, string> $headers
+     * @param array<string, string> $server parâmetros de servidor (ex.: REMOTE_ADDR)
      * @return array{status: int, body: array<string, mixed>, headers: array<string, string>}
      */
-    protected function call(string $method, string $path, ?array $body = null, ?string $key = null, bool $auth = true, ?string $token = null, array $headers = [], ?Kernel $kernel = null): array
+    protected function call(string $method, string $path, ?array $body = null, ?string $key = null, bool $auth = true, ?string $token = null, array $headers = [], ?Kernel $kernel = null, array $server = []): array
     {
         $json = $body === null ? '' : json_encode($body, JSON_THROW_ON_ERROR);
         $all = $headers + ($json === '' ? [] : ['Content-Type' => 'application/json']);
@@ -84,7 +85,7 @@ abstract class ApiTestCase extends TestCase
         if ($key !== null) {
             $all['Idempotency-Key'] = $key;
         }
-        $request = new ServerRequest($method, $path, $all, $json);
+        $request = new ServerRequest($method, $path, $all, $json, '1.1', $server);
         if (str_contains($path, '?')) {
             parse_str((string) parse_url($path, PHP_URL_QUERY), $query);
             $request = $request->withQueryParams($query);

@@ -25,6 +25,7 @@ use CapiFit\Repositories\CatalogRepository;
 use CapiFit\Repositories\SessionRepository;
 use CapiFit\Services\AuthService;
 use CapiFit\Services\IdempotencyService;
+use CapiFit\Services\RateLimiter;
 use CapiFit\Services\SessionService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -107,6 +108,6 @@ final class Kernel
     {
         $this->authService ??= new AuthService($this->db, $this->config, $this->tokens(), new PasswordHasher(), $this->logger);
 
-        return new AuthController($this->authService);
+        return new AuthController($this->authService, new RateLimiter($this->db, $this->config));
     }
 }

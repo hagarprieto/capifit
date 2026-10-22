@@ -7,28 +7,36 @@ namespace CapiFit\Controllers;
 use CapiFit\Auth\AuthenticatedUser;
 use CapiFit\Http\ApiResponse;
 use CapiFit\Services\AuthService;
+use CapiFit\Services\RateLimiter;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /** Rotas /auth/* (contrato: docs/07_openapi.yaml, tag Auth). */
 final class AuthController
 {
-    public function __construct(private readonly AuthService $auth)
+    public function __construct(private readonly AuthService $auth, private readonly RateLimiter $limiter)
     {
     }
 
     public function register(ServerRequestInterface $request): ResponseInterface
     {
+        $this->limiter->enforce($request, 'register');
+
         return ApiResponse::data($request, $this->auth->register($this->body($request)), 201);
     }
 
     public function login(ServerRequestInterface $request): ResponseInterface
     {
-        return ApiResponse::data($request, $this->auth->login($this->body($request)));
+        $body = $this->body($request);
+        $this->limiter->enforce($request, 'login', $this->emailOf($body));
+
+        return ApiResponse::data($request, $this->auth->login($body));
     }
 
     public function refresh(ServerRequestInterface $request): ResponseInterface
     {
+        $this->limiter->enforce($request, 'refresh');
+
         return ApiResponse::data($request, $this->auth->refresh($this->body($request)));
     }
 
@@ -44,6 +52,14 @@ final class AuthController
         $this->auth->logoutAll($this->user($request));
 
         return ApiResponse::noContent();
+    }
+
+    /** @param array<string, mixed> $body */
+    private function emailOf(array $body): ?string
+    {
+        $email = $body['email'] ?? null;
+
+        return is_string($email) && $email !== '' ? mb_strtolower(trim($email)) : null;
     }
 
     /** @return array<string, mixed> */

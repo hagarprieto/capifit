@@ -23,7 +23,7 @@ final class AuthRoutesTest extends TestCase
     protected function setUp(): void
     {
         $this->logs = new TestHandler();
-        $this->kernel = new Kernel(Config::fromArray(['JWT_SECRET' => 'segredo-de-teste-com-mais-de-32-bytes-0123456789']), new Logger('t', [$this->logs]));
+        $this->kernel = new Kernel(Config::fromArray(['JWT_SECRET' => 'segredo-de-teste-com-mais-de-32-bytes-0123456789', 'RATE_LIMIT_ENABLED' => '0']), new Logger('t', [$this->logs]));
     }
 
     /**

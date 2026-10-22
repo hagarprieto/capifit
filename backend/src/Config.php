@@ -23,6 +23,8 @@ final class Config
         public readonly int $refreshTtlSeconds = 2_592_000,
         public readonly int $refreshReuseGraceSeconds = 10,
         public readonly string $mediaBaseUrl = '',
+        public readonly bool $rateLimitEnabled = true,
+        public readonly bool $trustForwardedFor = false,
     ) {
     }
 
@@ -47,6 +49,8 @@ final class Config
             refreshTtlSeconds: max(3600, (int) $get('REFRESH_TOKEN_TTL', '2592000')),
             refreshReuseGraceSeconds: max(0, (int) $get('REFRESH_REUSE_GRACE', '10')),
             mediaBaseUrl: $get('MEDIA_BASE_URL'),
+            rateLimitEnabled: !in_array(strtolower($get('RATE_LIMIT_ENABLED', '1')), ['0', 'false', 'off', 'no'], true),
+            trustForwardedFor: in_array(strtolower($get('TRUST_FORWARDED_FOR', '0')), ['1', 'true', 'on', 'yes'], true),
         );
     }
 }
