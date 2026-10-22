@@ -35,7 +35,8 @@ Esperado no final: `Tabelas: 36 (esperado 36)`, `triggers: 16`, `Exercícios: 54
 O seed entra tudo como **rascunho** (conteúdo provisório, sem revisão profissional), e o app só lista exercícios **publicados**. Só no seu banco local de teste, publique alguns:
 
 ```powershell
-& 'C:\xampp\mysql\bin\mysql.exe' --default-character-set=utf8mb4 -u root capifit -e "UPDATE exercicios SET status='publicado' WHERE nome IN ('Supino reto com barra','Supino reto com halteres','Puxada na frente','Remada baixa na polia','Flexão de braços','Barra fixa assistida','Prancha isométrica');"
+# Por UUID (e não por nome): nomes com acento se perdem na linha de comando do Windows
+& 'C:\xampp\mysql\bin\mysql.exe' --no-defaults -u root capifit -e "UPDATE exercicios SET status='publicado' WHERE nome IN ('Supino reto com barra','Supino reto com halteres','Puxada na frente','Remada baixa na polia','Barra fixa assistida') OR uuid IN ('497c80cb-5599-5658-b36c-9dd0c5c7ea05','eb249861-9a9e-5107-9ca0-e7dce2f64ec8');"
 ```
 
 Isso dá exercícios das quatro modalidades: carga e repetições (supino, puxada, remada), peso corporal (flexão), assistido (barra fixa assistida) e **tempo** (prancha). **Nunca** faça isso em um banco de produção.
@@ -62,6 +63,16 @@ cd C:\xampp\htdocs\capifit\backend
 1. Em `mobile\`, copie `.env.example` para `.env` e ajuste `EXPO_PUBLIC_API_URL=http://192.168.0.15:8080` (emulador Android: `http://10.0.2.2:8080`). Variáveis `EXPO_PUBLIC_*` ficam visíveis dentro do app: nunca coloque segredo ali.
 2. `npm install` (se for a primeira vez) e `npm start`. Escaneie o QR code com o **Expo Go** (Android/iPhone) ou use um **build de desenvolvimento**.
 3. Quando mudar o `.env` do app, reinicie com `npm start -- --clear`.
+
+**Atalho com cabo USB (Android):** com a *Depuração USB* ligada (Configurações → Opções do desenvolvedor) e o aparelho autorizado (`adb devices` lista o aparelho como `device`), o celular enxerga o PC sem depender de Wi-Fi nem de firewall:
+
+```powershell
+$adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
+& $adb reverse tcp:8080 tcp:8080   # a API do PC passa a ser "localhost:8080" no celular
+& $adb reverse tcp:8081 tcp:8081   # o servidor do app (Metro)
+```
+
+Com isso, use `EXPO_PUBLIC_API_URL=http://localhost:8080` no `mobile\.env` e, em `mobile\`, `npm run android` (abre o Expo Go no aparelho conectado). Refaça os dois `adb reverse` sempre que reconectar o cabo.
 
 **Expo Go ou build de desenvolvimento?** O Expo Go basta para quase tudo. Duas exceções:
 - **Link do e-mail de recuperação** (`capifit://…`): no Expo Go o esquema é outro (veja R1). Em build de desenvolvimento o esquema `capifit://` funciona de verdade.
