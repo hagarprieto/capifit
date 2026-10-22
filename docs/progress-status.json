@@ -32,7 +32,7 @@
     "E03-02": "done",
     "E02-02": "done",
     "E02-05": "done",
-    "E00-09": "in-progress",
+    "E00-09": "done",
     "E01-06": "in-progress",
     "E01-07": "in-progress"
   },
@@ -68,9 +68,9 @@
     "E03-02": "Importador idempotente pronto e testado (php bin/import-seed.php): só insere o que falta, nunca sobrescreve conteúdo curado, recusa instruções fora do catálogo e confere nomes e sinônimos (CAT-09) com reversão total. Validado no CI com MySQL 8.",
     "E02-02": "API de pedidos (exportação e exclusão com senha e suspensão imediata) e workflow interno (php bin/process-privacy-requests.php: exportação em JSON privado com link assinado; anonimização da conta) prontos e validados no CI com MySQL 8. Para operar: agendar o workflow, definir o armazenamento dos arquivos e a revisão jurídica da retenção.",
     "E02-05": "Revisão feita (Doc 12 §5.5): nenhum vazamento encontrado no código; filtro de log reforçado (e-mail, JWT, Bearer e token) e testes que varrem os logs de todos os fluxos e as respostas de erro, validados no CI com MySQL 8. Retenção de logs e criptografia em repouso dependem da hospedagem.",
-    "E00-09": "Tipos gerados do OpenAPI (com verificação no CI), cliente de API com erros tipados, renovação única do token e script do servidor mock (Prism) prontos e testados. Falta o CI e rodar o mock com o app no aparelho.",
-    "E01-06": "Telas TEL-002/003/004 (boas-vindas, entrar, cadastrar, recuperar e redefinir senha) e armazenamento seguro de tokens prontos e testados em Jest. Falta o CI e validar em aparelho (teclado, fonte ampliada, leitor de tela).",
-    "E01-07": "Restauração de sessão ao abrir (renova se vencida, entra offline se não há rede, descarta se o servidor recusa) e rotas por estado de sessão prontas e testadas. Falta o CI e validar em aparelho.",
+    "E00-09": "Tipos gerados do OpenAPI (verificados no CI), cliente de API com erros tipados e renovação única do token, e script do servidor mock (Prism). Validado no CI.",
+    "E01-06": "Telas TEL-002/003/004 e armazenamento seguro de tokens prontos e validados no CI (Jest). Falta validar em aparelho: teclado, fonte ampliada e leitor de tela.",
+    "E01-07": "Restauração de sessão ao abrir e rotas por estado de sessão prontas e validadas no CI (Jest). Falta validar em aparelho.",
     "E04-02": "Parcial: botão (primário, secundário, texto), campo de texto, caixa de seleção e aviso prontos e testados; faltam estado vazio e diálogo de confirmação."
   },
   "externas": {
