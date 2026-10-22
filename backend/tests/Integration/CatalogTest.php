@@ -28,7 +28,7 @@ final class CatalogTest extends TestCase
         if (getenv('DB_NAME') === false || getenv('CAPIFIT_ALLOW_DB_TESTS') !== '1') {
             self::markTestSkipped('Defina DB_NAME, DB_* e CAPIFIT_ALLOW_DB_TESTS=1 para rodar contra um banco descartável.');
         }
-        $env = [...getenv(), 'JWT_SECRET' => 'segredo-de-teste-com-mais-de-32-bytes-0123456789', 'MEDIA_BASE_URL' => 'https://cdn.exemplo.invalid/media/', 'MEDIA_SIGNING_SECRET' => 'segredo-de-midia-de-teste-com-mais-de-32-bytes'];
+        $env = [...getenv(), 'JWT_SECRET' => 'segredo-de-teste-com-mais-de-32-bytes-0123456789', 'MEDIA_BASE_URL' => 'https://cdn.exemplo.invalid/media/', 'MEDIA_SIGNING_SECRET' => 'segredo-de-teste-de-midia-com-mais-de-32-bytes'];
         if (getenv('DB_APP_USER') !== false) {
             $env['DB_USER'] = (string) getenv('DB_APP_USER');
             $env['DB_PASSWORD'] = (string) getenv('DB_APP_PASSWORD');

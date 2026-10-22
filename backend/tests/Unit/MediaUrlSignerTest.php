@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 final class MediaUrlSignerTest extends TestCase
 {
-    private const SECRET = 'segredo-de-midia-de-teste-com-mais-de-32-bytes';
+    private const SECRET = 'segredo-de-teste-de-midia-com-mais-de-32-bytes';
 
     private function signer(string $base = 'https://cdn.exemplo.invalid/media/', string $secret = self::SECRET): MediaUrlSigner
     {

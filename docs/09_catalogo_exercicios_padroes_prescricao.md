@@ -35,6 +35,10 @@ Definir **o que existe no catálogo** (taxonomia, ficha do exercício, conjunto 
 
 **Ordem de aplicação:** `04_schema_inicial_mysql8.sql` → `06_migration_001_reconciliacao.sql` → `09_migration_002_catalogo.sql` → `09_seed_catalogo.sql`.
 
+**Importador idempotente (E03-02):** em banco que já está em uso, não reaplique o `09_seed_catalogo.sql` à mão (os INSERTs falhariam). Use `php bin/import-seed.php` (no `backend/`): ele lê o mesmo arquivo, grava cada INSERT como "inserir se ainda não existir" e **nunca sobrescreve** o que já existe (conteúdo revisado e publicado pelo curador fica intacto). Só aceita INSERTs nas tabelas do catálogo, roda numa transação e confere o CAT-09 (nomes e sinônimos do seed sem duplicidade nem ambiguidade); se falhar, nada é gravado. Imprime as linhas novas por tabela (tudo zero = nada a importar). Banco novo continua usando `tools/db/apply-schema.ps1 -WithSeed`.
+
+**Importador idempotente (E03-02):** em banco que já está em uso, não reaplique o `09_seed_catalogo.sql` à mão (os INSERTs falhariam). Use `php bin/import-seed.php` (no `backend/`): ele lê o mesmo arquivo, grava cada INSERT como "inserir se ainda não existir" e **nunca sobrescreve** o que já existe (conteúdo revisado e publicado pelo curador fica intacto). Só aceita INSERTs nas tabelas do catálogo, roda numa transação e confere o CAT-09 (nomes e sinônimos do seed sem duplicidade nem ambiguidade); se falhar, nada é gravado. Imprime as linhas novas por tabela (tudo zero = nada a importar). Banco novo continua usando `tools/db/apply-schema.ps1 -WithSeed`.
+
 **Validação executada:** os quatro scripts foram aplicados em sequência em uma MariaDB 10.4 temporária (sem erros). Verificado: 54 exercícios sem nomes duplicados, todos com grupo primário, nenhum sinônimo ambíguo, JSON dos modelos válido e rejeição de edição/exclusão de modelo aprovado. **Confirmado em MySQL 8.0.46** no CI do GitHub em 22/10/2026 (04 → 06 → 09 → seed, com as contagens esperadas).
 
 ## 3. Governança do catálogo

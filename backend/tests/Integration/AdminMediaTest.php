@@ -11,7 +11,7 @@ use CapiFit\Support\Uuid;
 /** Vínculo, aprovação e entrega de mídia por URL temporária (E03-06; CT-70, CT-71, CT-73). */
 final class AdminMediaTest extends ApiTestCase
 {
-    private const SECRET = 'segredo-de-midia-de-teste-com-mais-de-32-bytes';
+    private const SECRET = 'segredo-de-teste-de-midia-com-mais-de-32-bytes';
     private string $linker = '';
     private string $approver = '';
     private string $run = '';
