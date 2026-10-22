@@ -86,7 +86,6 @@ function fakeApi(over: Partial<ProgramsApi> = {}): ProgramsApi {
 
 async function open(api: ProgramsApi) {
   await render(<Harness api={api} />);
-  await screen.findByText('Editar programa', { selector: undefined } as never).catch(() => undefined);
   await screen.findByText('Tudo salvo');
 }
 
