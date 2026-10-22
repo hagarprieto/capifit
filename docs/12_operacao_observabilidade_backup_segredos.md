@@ -185,6 +185,8 @@ Criado por `apply-schema.ps1 -AppUser capifit_app -AppHost <host>` com a senha e
 4. Ativar Dependabot, secret scanning (se disponível no plano) e 2FA no GitHub.
 5. Escolher o coletor de logs/métricas e implementar os alertas da §3.2.
 6. Decidir a política de retenção dos próprios logs (sugestão: 30 dias de acesso, 90 de erros, sem dados pessoais).
+7. Escolher o provedor de **e-mail transacional** (recuperação de senha e verificação já funcionam e são testadas; sem provedor, `NullMailer` não envia e deixa o aviso `mail.not_sent`). Considerar SPF/DKIM/DMARC no domínio.
+8. Agendar a faxina de `limites_requisicao`, `tokens_acao` e `requisicoes_idempotentes` (E00-10); hoje só há limpeza oportunista dos limites de taxa.
 
 ---
 

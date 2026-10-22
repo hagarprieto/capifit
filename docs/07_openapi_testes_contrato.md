@@ -80,6 +80,10 @@ Estes pontos não estavam fechados nos Documentos 05/06 e foram definidos no Ope
 | C-13 | `Idempotency-Key`: só respostas **2xx** são guardadas; a reserva da chave, a operação e a resposta ficam na mesma transação; requisições simultâneas com a mesma chave esperam a primeira e então repetem a resposta; repetição traz `Idempotent-Replayed: true`; a chave vale por usuário e é amarrada ao método, caminho e corpo | CT-50…CT-52; erros não ficam presos em cache |
 | C-14 | Listagens: `limit` fora de 1–100 ou parâmetro desconhecido → **422**; cursor malformado → **400** com `details.reason = INVALID_CURSOR` | Fecha a ambiguidade de CT-76 |
 | C-15 | `miniatura_url` é sempre `null` e `midias` vem vazia sem `MEDIA_BASE_URL`; URLs temporárias assinadas entram na história E03-06. `POST .../cancelar` aceita `motivo`, mas o schema não tem coluna para guardá-lo | O contrato não promete o que a Fase 1 ainda não entrega |
+| C-16 | `PUT /me/perfil-treinamento` **substitui** o perfil (campo ausente vira `null`); `restricoes` valida o formato que o motor usa (`areas`, `condicoes`, `dor_atual`, `lesao_recente`) e aceita chaves extras; os erros **nunca repetem** o conteúdo enviado (dado de saúde) | Doc 09 §7.4; privacidade |
+| C-17 | `GET /me/exercicios/ultimos-registros` devolve só os exercícios que têm registro, na ordem pedida e sem repetir; `data` é o `encerrada_em` da sessão; sessão cancelada não conta e o histórico sobrevive ao arquivamento do exercício | CT-39 |
+| C-18 | `GET /me/progresso/resumo`: o dia é o do `fuso_horario` do usuário; semanas de segunda a domingo, **incluindo semanas sem treino**; aquecimento, tempo, assistido e carga zero ficam fora do volume; período máximo de 366 dias | CT-40, CT-41; Doc 09 §4.1 |
+| C-19 | Recuperação de senha e verificação de e-mail: `204` sem corpo; token inválido, expirado, usado ou de outro tipo → o mesmo `422` em `details.fields.token`; limites de taxa devolvem `429` com `Retry-After` | CT-02; Doc 05 §4 |
 
 ## 5. Estratégia de testes de contrato
 
