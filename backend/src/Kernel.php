@@ -21,8 +21,12 @@ use CapiFit\Http\Pipeline;
 use CapiFit\Http\Router;
 use CapiFit\Http\Routes;
 use CapiFit\Infrastructure\Database\Connection;
+use CapiFit\Mail\FileMailer;
+use CapiFit\Mail\Mailer;
+use CapiFit\Mail\NullMailer;
 use CapiFit\Repositories\CatalogRepository;
 use CapiFit\Repositories\SessionRepository;
+use CapiFit\Services\AccountTokens;
 use CapiFit\Services\AuthService;
 use CapiFit\Services\IdempotencyService;
 use CapiFit\Services\RateLimiter;
@@ -44,7 +48,7 @@ final class Kernel
     private ?TokenService $tokens = null;
     private ?AuthService $authService = null;
 
-    public function __construct(private readonly Config $config, private readonly LoggerInterface $logger)
+    public function __construct(private readonly Config $config, private readonly LoggerInterface $logger, private ?Mailer $mailer = null)
     {
         $this->db = new Connection($config);
     }
@@ -56,6 +60,9 @@ final class Kernel
             ->public('POST', '/auth/register', fn (ServerRequestInterface $r): ResponseInterface => $this->authController()->register($r))
             ->public('POST', '/auth/login', fn (ServerRequestInterface $r): ResponseInterface => $this->authController()->login($r))
             ->public('POST', '/auth/refresh', fn (ServerRequestInterface $r): ResponseInterface => $this->authController()->refresh($r))
+            ->public('POST', '/auth/password/forgot', fn (ServerRequestInterface $r): ResponseInterface => $this->authController()->forgotPassword($r))
+            ->public('POST', '/auth/password/reset', fn (ServerRequestInterface $r): ResponseInterface => $this->authController()->resetPassword($r))
+            ->public('POST', '/auth/email/verify', fn (ServerRequestInterface $r): ResponseInterface => $this->authController()->verifyEmail($r))
             ->add('POST', '/auth/logout', fn (ServerRequestInterface $r): ResponseInterface => $this->authController()->logout($r))
             ->add('POST', '/auth/logout-all', fn (ServerRequestInterface $r): ResponseInterface => $this->authController()->logoutAll($r))
             ->add('GET', '/me', fn (ServerRequestInterface $r): ResponseInterface => (new MeController($this->db))->show($r))
@@ -87,6 +94,14 @@ final class Kernel
         ], new Router($routes, fn (): Authenticator => new Authenticator($this->tokens(), $this->db))))->handle($request);
     }
 
+    /** Sem provedor de e-mail configurado: em desenvolvimento local grava arquivos; fora dele não envia (e avisa no log). */
+    private function mailer(): Mailer
+    {
+        return $this->mailer ??= $this->config->env === 'local'
+            ? new FileMailer(dirname(__DIR__) . '/storage/mail')
+            : new NullMailer($this->logger);
+    }
+
     private function tokens(): TokenService
     {
         return $this->tokens ??= new TokenService($this->config);
@@ -106,7 +121,7 @@ final class Kernel
 
     private function authController(): AuthController
     {
-        $this->authService ??= new AuthService($this->db, $this->config, $this->tokens(), new PasswordHasher(), $this->logger);
+        $this->authService ??= new AuthService($this->db, $this->config, $this->tokens(), new PasswordHasher(), $this->logger, new AccountTokens($this->db, $this->tokens()), $this->mailer());
 
         return new AuthController($this->authService, new RateLimiter($this->db, $this->config));
     }

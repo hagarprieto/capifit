@@ -11,6 +11,8 @@ use CapiFit\Config;
 use CapiFit\Http\ApiException;
 use CapiFit\Http\ErrorCode;
 use CapiFit\Infrastructure\Database\Connection;
+use CapiFit\Mail\AccountMails;
+use CapiFit\Mail\Mailer;
 use CapiFit\Support\Uuid;
 use CapiFit\Validation\FieldErrors;
 use Psr\Log\LoggerInterface;
@@ -33,6 +35,8 @@ final class AuthService
         private readonly TokenService $tokens,
         private readonly PasswordHasher $hasher,
         private readonly LoggerInterface $logger,
+        private readonly AccountTokens $accountTokens,
+        private readonly Mailer $mailer,
     ) {
     }
 
@@ -74,7 +78,7 @@ final class AuthService
         $hash = $this->hasher->hash($senha);
 
         try {
-            return $this->db->transaction(function () use ($uuid, $nome, $email, $hash, $versaoTermos, $versaoPrivacidade, $device): array {
+            $tokens = $this->db->transaction(function () use ($uuid, $nome, $email, $hash, $versaoTermos, $versaoPrivacidade, $device): array {
                 $this->db->execute(
                     "INSERT INTO usuarios(uuid, nome, email, senha_hash, estado, maioridade_declarada_em) VALUES (?, ?, ?, ?, 'ativo', NOW(6))",
                     'ssss',
@@ -90,6 +94,9 @@ final class AuthService
 
                 return $this->openSession($userId, $uuid, $nome, ['aluno'], Uuid::v4(), $device);
             });
+            $this->sendVerification($uuid, $nome, $email);
+
+            return $tokens;
         } catch (\mysqli_sql_exception $e) {
             if ($e->getCode() === 1062 && str_contains($e->getMessage(), 'uq_usuarios_email')) {
                 throw new ApiException(ErrorCode::EmailAlreadyRegistered, null, [], [], $e);
@@ -182,6 +189,124 @@ final class AuthService
             $this->logger->warning('Reuso de refresh token: família revogada', ['event' => 'auth.refresh_reuse', 'family' => $outcome['family']]);
         }
         throw new ApiException(ErrorCode::Unauthenticated, 'Sessão expirada. Entre novamente.');
+    }
+
+    /**
+     * Pede a redefinição de senha. A resposta é SEMPRE a mesma, exista a conta ou não (sem enumeração de contas).
+     *
+     * @param array<string, mixed> $input
+     */
+    public function requestPasswordReset(array $input): void
+    {
+        $errors = new FieldErrors();
+        $errors->rejectUnknown($input, ['email']);
+        $email = $this->validEmail($input, $errors);
+        $errors->throwIfAny();
+
+        $user = $this->db->fetchOne('SELECT id, nome, estado FROM usuarios WHERE email = ?', 's', $email);
+        if ($user === null || $user['estado'] !== 'ativo') {
+            return;
+        }
+        $token = $this->db->transaction(fn (): string => $this->accountTokens->issue((int) $user['id'], AccountTokens::PASSWORD_RESET, 3600));
+        [$subject, $body] = AccountMails::passwordReset((string) $user['nome'], $this->config->passwordResetUrl, $token);
+        $this->deliver((string) $email, $subject, $body);
+    }
+
+    /**
+     * Troca a senha com o token recebido por e-mail (uso único). Revoga TODAS as sessões da conta.
+     * Uma senha inválida não gasta o token (a transação desfaz o consumo).
+     *
+     * @param array<string, mixed> $input
+     */
+    public function resetPassword(array $input): void
+    {
+        $errors = new FieldErrors();
+        $errors->rejectUnknown($input, ['token', 'nova_senha']);
+        $token = $errors->requireString($input, 'token', 20, 200);
+        $newPassword = $errors->requireString($input, 'nova_senha', 10, 200);
+        $errors->throwIfAny();
+        /** @var string $token @var string $newPassword */
+
+        $hash = $this->hasher->hash($newPassword);
+        $done = $this->db->transaction(function () use ($token, $newPassword, $hash): bool {
+            $userId = $this->accountTokens->consume($token, AccountTokens::PASSWORD_RESET);
+            if ($userId === null) {
+                return false;
+            }
+            $user = $this->db->fetchOne('SELECT email, estado FROM usuarios WHERE id = ?', 'i', $userId);
+            if ($user === null || $user['estado'] !== 'ativo') {
+                return false;
+            }
+            if (strcasecmp($newPassword, (string) $user['email']) === 0) {
+                throw new ApiException(ErrorCode::ValidationError, null, ['fields' => ['nova_senha' => ['A senha não pode ser igual ao e-mail.']]]);
+            }
+            // Receber o link no e-mail comprova a posse do endereço.
+            $this->db->execute('UPDATE usuarios SET senha_hash = ?, email_verificado_em = COALESCE(email_verificado_em, NOW(6)) WHERE id = ?', 'si', $hash, $userId);
+            $this->db->execute('UPDATE sessoes_autenticacao SET revogado_em = NOW(6) WHERE usuario_id = ? AND revogado_em IS NULL', 'i', $userId);
+
+            return true;
+        });
+        if (!$done) {
+            throw $this->invalidToken();
+        }
+    }
+
+    /**
+     * Confirma o e-mail com o token recebido (uso único).
+     *
+     * @param array<string, mixed> $input
+     */
+    public function verifyEmail(array $input): void
+    {
+        $errors = new FieldErrors();
+        $errors->rejectUnknown($input, ['token']);
+        $token = $errors->requireString($input, 'token', 20, 200);
+        $errors->throwIfAny();
+        /** @var string $token */
+
+        $done = $this->db->transaction(function () use ($token): bool {
+            $userId = $this->accountTokens->consume($token, AccountTokens::EMAIL_VERIFICATION);
+            if ($userId === null) {
+                return false;
+            }
+            $this->db->execute('UPDATE usuarios SET email_verificado_em = COALESCE(email_verificado_em, NOW(6)) WHERE id = ?', 'i', $userId);
+
+            return true;
+        });
+        if (!$done) {
+            throw $this->invalidToken();
+        }
+    }
+
+    private function invalidToken(): ApiException
+    {
+        return new ApiException(ErrorCode::ValidationError, null, ['fields' => ['token' => ['Link inválido ou expirado. Solicite um novo.']]]);
+    }
+
+    /** Envia a verificação de e-mail depois do cadastro. Falha de envio não derruba o cadastro. */
+    private function sendVerification(string $userUuid, string $name, string $email): void
+    {
+        try {
+            $user = $this->db->fetchOne('SELECT id FROM usuarios WHERE uuid = ?', 's', $userUuid);
+            if ($user === null) {
+                return;
+            }
+            $token = $this->db->transaction(fn (): string => $this->accountTokens->issue((int) $user['id'], AccountTokens::EMAIL_VERIFICATION, 86400));
+            [$subject, $body] = AccountMails::emailVerification($name, $this->config->emailVerifyUrl, $token);
+            $this->deliver($email, $subject, $body);
+        } catch (\Throwable $e) {
+            $this->logger->warning('Falha ao preparar a verificação de e-mail', ['event' => 'mail.failed', 'exception' => $e::class]);
+        }
+    }
+
+    /** Entrega o e-mail sem deixar uma falha do provedor vazar para o cliente nem para o log (sem destinatário ou corpo). */
+    private function deliver(string $to, string $subject, string $body): void
+    {
+        try {
+            $this->mailer->send($to, $subject, $body);
+        } catch (\Throwable $e) {
+            $this->logger->warning('Falha ao enviar e-mail', ['event' => 'mail.failed', 'exception' => $e::class]);
+        }
     }
 
     public function logout(AuthenticatedUser $user): void

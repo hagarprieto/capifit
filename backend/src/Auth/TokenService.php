@@ -66,15 +66,25 @@ final class TokenService
         return ['sub' => $sub, 'sid' => $sid];
     }
 
-    /** Token de renovação: 256 bits aleatórios, em base64url (sem preenchimento). */
-    public function newRefreshToken(): string
+    /** Token opaco de uso único ou de renovação: 256 bits aleatórios, em base64url (sem preenchimento). */
+    public function newOpaqueToken(): string
     {
         return rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
     }
 
-    /** Só o hash do refresh token é guardado no banco. */
-    public function hashRefreshToken(string $token): string
+    /** Só o hash de um token opaco é guardado no banco. */
+    public function hashOpaqueToken(string $token): string
     {
         return hash('sha256', $token);
+    }
+
+    public function newRefreshToken(): string
+    {
+        return $this->newOpaqueToken();
+    }
+
+    public function hashRefreshToken(string $token): string
+    {
+        return $this->hashOpaqueToken($token);
     }
 }

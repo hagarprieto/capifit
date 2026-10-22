@@ -7,7 +7,9 @@ namespace CapiFit\Tests\Integration;
 use CapiFit\Config;
 use CapiFit\Kernel;
 use CapiFit\Support\Text;
+use CapiFit\Mail\Mailer;
 use CapiFit\Support\Uuid;
+use CapiFit\Tests\Support\CapturingMailer;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger;
 use Nyholm\Psr7\ServerRequest;
@@ -23,6 +25,7 @@ abstract class ApiTestCase extends TestCase
 {
     protected Kernel $kernel;
     protected TestHandler $logs;
+    protected CapturingMailer $mailer;
     protected string $token = '';
     protected string $userUuid = '';
     protected string $userEmail = '';
@@ -33,6 +36,7 @@ abstract class ApiTestCase extends TestCase
             self::markTestSkipped('Defina DB_NAME, DB_* e CAPIFIT_ALLOW_DB_TESTS=1 para rodar contra um banco descartável.');
         }
         $this->logs = new TestHandler();
+        $this->mailer = new CapturingMailer();
         $this->kernel = $this->makeKernel();
         [$this->token, $this->userUuid, $this->userEmail] = $this->newUser();
     }
@@ -45,7 +49,7 @@ abstract class ApiTestCase extends TestCase
     }
 
     /** @param array<string, string> $extraEnv */
-    protected function makeKernel(array $extraEnv = []): Kernel
+    protected function makeKernel(array $extraEnv = [], ?Mailer $mailer = null): Kernel
     {
         $env = [...getenv(), 'JWT_SECRET' => 'segredo-de-teste-com-mais-de-32-bytes-0123456789', 'RATE_LIMIT_ENABLED' => '0', ...$extraEnv];
         if (getenv('DB_APP_USER') !== false) {
@@ -53,7 +57,7 @@ abstract class ApiTestCase extends TestCase
             $env['DB_PASSWORD'] = (string) getenv('DB_APP_PASSWORD');
         }
 
-        return new Kernel(Config::fromArray($env), new Logger('t', [$this->logs ?? new TestHandler()]));
+        return new Kernel(Config::fromArray($env), new Logger('t', [$this->logs ?? new TestHandler()]), $mailer ?? $this->mailer ?? new CapturingMailer());
     }
 
     /** @return array{string, string, string, string} token de acesso, uuid, e-mail e refresh token */

@@ -25,6 +25,8 @@ final class Config
         public readonly string $mediaBaseUrl = '',
         public readonly bool $rateLimitEnabled = true,
         public readonly bool $trustForwardedFor = false,
+        public readonly string $passwordResetUrl = 'capifit://redefinir-senha',
+        public readonly string $emailVerifyUrl = 'capifit://verificar-email',
     ) {
     }
 
@@ -51,6 +53,8 @@ final class Config
             mediaBaseUrl: $get('MEDIA_BASE_URL'),
             rateLimitEnabled: !in_array(strtolower($get('RATE_LIMIT_ENABLED', '1')), ['0', 'false', 'off', 'no'], true),
             trustForwardedFor: in_array(strtolower($get('TRUST_FORWARDED_FOR', '0')), ['1', 'true', 'on', 'yes'], true),
+            passwordResetUrl: $get('PASSWORD_RESET_URL', 'capifit://redefinir-senha'),
+            emailVerifyUrl: $get('EMAIL_VERIFY_URL', 'capifit://verificar-email'),
         );
     }
 }

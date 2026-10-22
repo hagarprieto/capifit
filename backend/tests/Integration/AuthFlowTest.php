@@ -219,7 +219,8 @@ final class AuthFlowTest extends TestCase
         self::assertSame(401, $stolen['status']);
         self::assertSame(401, $this->call('POST', '/auth/refresh', ['refresh_token' => $newRefresh])['status'], 'o token novo também foi revogado');
         self::assertSame(401, $this->call('GET', '/me', null, $newAccess)['status'], 'o access token da família também deixa de valer');
-        self::assertTrue($this->logs->hasWarningRecords(), 'o reuso é registrado');
+        $events = array_map(static fn ($r) => $r->context['event'] ?? null, $this->logs->getRecords());
+        self::assertContains('auth.refresh_reuse', $events, 'o reuso é registrado');
         self::assertStringNotContainsString($u['refresh'], json_encode(array_map(static fn ($x) => $x->context, $this->logs->getRecords()), JSON_THROW_ON_ERROR));
     }
 

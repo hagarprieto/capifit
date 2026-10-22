@@ -40,6 +40,31 @@ final class AuthController
         return ApiResponse::data($request, $this->auth->refresh($this->body($request)));
     }
 
+    public function forgotPassword(ServerRequestInterface $request): ResponseInterface
+    {
+        $body = $this->body($request);
+        $this->limiter->enforce($request, 'forgot', $this->emailOf($body));
+        $this->auth->requestPasswordReset($body);
+
+        return ApiResponse::noContent();
+    }
+
+    public function resetPassword(ServerRequestInterface $request): ResponseInterface
+    {
+        $this->limiter->enforce($request, 'reset');
+        $this->auth->resetPassword($this->body($request));
+
+        return ApiResponse::noContent();
+    }
+
+    public function verifyEmail(ServerRequestInterface $request): ResponseInterface
+    {
+        $this->limiter->enforce($request, 'verify');
+        $this->auth->verifyEmail($this->body($request));
+
+        return ApiResponse::noContent();
+    }
+
     public function logout(ServerRequestInterface $request): ResponseInterface
     {
         $this->auth->logout($this->user($request));
