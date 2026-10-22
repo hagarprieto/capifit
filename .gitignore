@@ -1,0 +1,23 @@
+# Dependências e artefatos de build
+node_modules/
+vendor/
+dist/
+build/
+.expo/
+*.log
+
+# Segredos e configuração local — nunca versionar
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dados locais e mídia pesada (usar storage; Doc 08 §14.2)
+backend/storage/
+design/exercises/media/
+design/capi/animations/
+
+# Sistema
+.DS_Store
+Thumbs.db
