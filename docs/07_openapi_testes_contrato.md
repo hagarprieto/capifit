@@ -96,6 +96,8 @@ Estes pontos não estavam fechados nos Documentos 05/06 e foram definidos no Ope
 | C-29 | Separação de funções: o admin que cadastrou o exercício não pode aprová-lo nem rejeitá-lo (`403`); qualquer outro admin pode. Com um só admin, a publicação fica bloqueada até existir o segundo | Doc 09 §3.1 |
 | C-30 | Mídia: nasce `em_revisao` (o vínculo já é o envio para revisão); só `aprovado` por admin diferente de quem vinculou aparece em `Midia.url`; aprovar fora de `em_revisao` é `409 INVALID_STATE`; não há rota de rejeição na Fase 1 (mídia errada é substituída por nova versão) | Doc 08 §11.3 |
 | C-31 | `Midia.url` é temporária e assinada (HMAC-SHA256, validade padrão 10 min); `Midia.status` continua sempre `aprovado` | CT-70, CT-71 |
+| C-32 | `POST /me/solicitacoes`: `senha` só vale (e é obrigatória) na exclusão, com `422` em `senha` se estiver errada; pedido ativo do mesmo tipo devolve o existente (sempre `201`); a exclusão suspende a conta e revoga as sessões antes da anonimização | RG-021; CA-04-18 |
+| C-33 | `Solicitacao.download_url` só aparece em exportação `concluida` e é temporária e assinada; sem base e segredo de exportação configurados, o pedido conclui mas o link é `null` (falha fechada) | Doc 12 |
 
 ## 5. Estratégia de testes de contrato
 

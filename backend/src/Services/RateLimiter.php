@@ -34,6 +34,7 @@ final class RateLimiter
         'forgot' => ['ip' => [10, 3600], 'email' => [3, 3600]],
         'reset' => ['ip' => [10, 3600]],
         'verify' => ['ip' => [20, 3600]],
+        'titular' => ['ip' => [20, 3600], 'email' => [5, 3600]],
     ];
 
     public function __construct(private readonly Connection $db, private readonly Config $config)

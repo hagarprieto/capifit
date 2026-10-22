@@ -11,6 +11,7 @@ use CapiFit\Controllers\AccountDataController;
 use CapiFit\Controllers\AdminController;
 use CapiFit\Controllers\AuthController;
 use CapiFit\Controllers\CatalogController;
+use CapiFit\Controllers\DataSubjectController;
 use CapiFit\Controllers\HealthController;
 use CapiFit\Controllers\ProfileController;
 use CapiFit\Controllers\ProgramController;
@@ -38,6 +39,7 @@ use CapiFit\Services\AdminMediaService;
 use CapiFit\Services\AuditService;
 use CapiFit\Services\AuthService;
 use CapiFit\Services\ConsentService;
+use CapiFit\Services\DataSubjectService;
 use CapiFit\Services\DeviceService;
 use CapiFit\Services\IdempotencyService;
 use CapiFit\Services\ProfileService;
@@ -115,6 +117,9 @@ final class Kernel
             ->add('POST', '/admin/exercicios/{uuid}/midias', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->linkMedia($r))
             ->add('POST', '/admin/midias/{id}/aprovar', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->approveMedia($r))
             ->add('GET', '/admin/auditoria', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->audit($r))
+            ->add('GET', '/me/solicitacoes', fn (ServerRequestInterface $r): ResponseInterface => $this->dataSubjectController()->list($r))
+            ->add('POST', '/me/solicitacoes', fn (ServerRequestInterface $r): ResponseInterface => $this->dataSubjectController()->create($r))
+            ->add('GET', '/me/solicitacoes/{uuid}', fn (ServerRequestInterface $r): ResponseInterface => $this->dataSubjectController()->show($r))
             ->add('GET', '/me/consentimentos', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->listConsents($r))
             ->add('POST', '/me/consentimentos', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->grantConsent($r))
             ->add('POST', '/me/consentimentos/{id}/revogar', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->revokeConsent($r))
@@ -176,6 +181,13 @@ final class Kernel
         $audit = new AuditService($this->db);
 
         return new AdminController(new AdminExerciseService($this->db, new CatalogRepository($this->db), $audit), new AdminMediaService($this->db, $audit), $audit, $this->db);
+    }
+
+    private function dataSubjectController(): DataSubjectController
+    {
+        $service = new DataSubjectService($this->db, $this->config, new PasswordHasher(), new AuditService($this->db));
+
+        return new DataSubjectController($service, new RateLimiter($this->db, $this->config), $this->db);
     }
 
     private function accountDataController(): AccountDataController

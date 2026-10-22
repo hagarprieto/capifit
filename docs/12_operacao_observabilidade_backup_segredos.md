@@ -186,8 +186,9 @@ Criado por `apply-schema.ps1 -AppUser capifit_app -AppHost <host>` com a senha e
 5. Escolher o coletor de logs/métricas e implementar os alertas da §3.2.
 6. Decidir a política de retenção dos próprios logs (sugestão: 30 dias de acesso, 90 de erros, sem dados pessoais).
 7. Escolher o storage/CDN das mídias e implantar a **função de borda** que confere `exp` e `sig` (algoritmo no Doc 05 §10); gerar `MEDIA_SIGNING_SECRET` (32+ bytes) e guardá-lo como os demais segredos.
-8. Escolher o provedor de **e-mail transacional** (recuperação de senha e verificação já funcionam e são testadas; sem provedor, `NullMailer` não envia e deixa o aviso `mail.not_sent`). Considerar SPF/DKIM/DMARC no domínio.
-9. Agendar **uma vez por dia** `php bin/cleanup.php` no cron/agendador da hospedagem (E00-10). O comando já existe e é testado: remove janelas de limite de taxa com mais de 2 dias, chaves de idempotência com mais de 7, tokens de ação e sessões de login vencidos há mais de 7 e 30 dias, e imprime só contagens. Falta definir onde agendar.
+8. Agendar `php bin/process-privacy-requests.php` (a cada ~15 minutos) para gerar exportações e anonimizar contas; definir onde ficam os arquivos de exportação (`EXPORT_DIR` privado ou storage), a função de borda que confere a assinatura e o **prazo de guarda** dos arquivos (sugestão: apagar após 7 dias; a faxina de arquivos ainda não existe). Revisar com o jurídico a política de retenção da anonimização (Doc 05 §10).
+9. Escolher o provedor de **e-mail transacional** (recuperação de senha e verificação já funcionam e são testadas; sem provedor, `NullMailer` não envia e deixa o aviso `mail.not_sent`). Considerar SPF/DKIM/DMARC no domínio.
+10. Agendar **uma vez por dia** `php bin/cleanup.php` no cron/agendador da hospedagem (E00-10). O comando já existe e é testado: remove janelas de limite de taxa com mais de 2 dias, chaves de idempotência com mais de 7, tokens de ação e sessões de login vencidos há mais de 7 e 30 dias, e imprime só contagens. Falta definir onde agendar.
 
 ---
 
