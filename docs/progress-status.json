@@ -10,7 +10,10 @@
     "E00-07": "in-progress",
     "E01-01": "in-progress",
     "E01-02": "in-progress",
-    "E01-04": "in-progress"
+    "E01-04": "in-progress",
+    "E03-01": "in-progress",
+    "E07-01": "in-progress",
+    "E07-02": "in-progress"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
@@ -22,7 +25,10 @@
     "E00-07": "Backup/restauração com SHA-256 e conferência de contagens (simulado local OK), varredura de segredos no CI e política de rotação. Falta o simulado em staging com MySQL 8, retenção/RPO/RTO e criptografia dos backups.",
     "E01-01": "POST /auth/register pronto (validação por campo, 18+, consentimentos, 409 para e-mail repetido); testes passam localmente em MariaDB. Falta rodar no CI com MySQL 8.",
     "E01-02": "Login, refresh com rotação e detecção de reuso, logout e logout-all prontos, com revogação imediata; 90 testes passam localmente. Falta rodar no CI com MySQL 8.",
-    "E01-04": "Só GET /me está pronto; faltam PATCH /me e o perfil de treinamento."
+    "E01-04": "Só GET /me está pronto; faltam PATCH /me e o perfil de treinamento.",
+    "E03-01": "Catálogo somente leitura pronto (busca sem acento e por sinônimo, filtros, paginação por cursor, só publicado/aprovado); testes passam localmente em MariaDB. Falta o CI com MySQL 8.",
+    "E07-01": "Sessão avulsa pronta (criar com Idempotency-Key, consultar, histórico paginado, observação, séries, concluir com duração sem pausas, cancelar); 143 testes passam localmente. Falta o CI com MySQL 8.",
+    "E07-02": "Só \"adicionar exercício à sessão\" está pronto; faltam substituir exercício, pausar e retomar."
   },
   "externas": {
     "revisor": "pending",

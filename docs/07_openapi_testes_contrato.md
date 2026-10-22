@@ -76,6 +76,10 @@ Estes pontos não estavam fechados nos Documentos 05/06 e foram definidos no Ope
 | C-09 | `POST /admin/exercicios/{uuid}/midias` recebe `storage_key` (objeto já carregado), nunca binário ou URL livre | Doc 05 §6 e item 6 do §17 (upload controlado) |
 | C-10 | `POST /auth/register` exige `aceita_termos: true` e `maior_de_18: true` (constantes no schema) | D-09; rejeição por schema, depois reforçada por `UNDERAGE_NOT_ALLOWED` |
 | C-11 | Rotas `/me/prescricoes/*` e de vínculo aparecem com `x-fase: 3` mesmo existindo desde a Fase 1 no schema | O backend pode implementá-las cedo, mas só são consumidas na Fase 3 |
+| C-12 | Criação repetível devolve **200** (com o recurso existente) em vez de 201: `POST /me/sessoes` (mesma `sessao_uuid`), `POST .../exercicios` e `POST .../series` (mesmo `uuid` do cliente) | Efeito único sem exigir chave de idempotência em toda criação offline (RG-020) |
+| C-13 | `Idempotency-Key`: só respostas **2xx** são guardadas; a reserva da chave, a operação e a resposta ficam na mesma transação; requisições simultâneas com a mesma chave esperam a primeira e então repetem a resposta; repetição traz `Idempotent-Replayed: true`; a chave vale por usuário e é amarrada ao método, caminho e corpo | CT-50…CT-52; erros não ficam presos em cache |
+| C-14 | Listagens: `limit` fora de 1–100 ou parâmetro desconhecido → **422**; cursor malformado → **400** com `details.reason = INVALID_CURSOR` | Fecha a ambiguidade de CT-76 |
+| C-15 | `miniatura_url` é sempre `null` e `midias` vem vazia sem `MEDIA_BASE_URL`; URLs temporárias assinadas entram na história E03-06. `POST .../cancelar` aceita `motivo`, mas o schema não tem coluna para guardá-lo | O contrato não promete o que a Fase 1 ainda não entrega |
 
 ## 5. Estratégia de testes de contrato
 
@@ -223,7 +227,7 @@ Os IDs `CT-*` referenciam os critérios `API-*` (Doc 05 §15), `CA-04-*` (Doc 04
 | CT-73 | Rejeitar revisão sem justificativa | 422 | §5.4 |
 | CT-74 | Aluno chama `/admin/*` | 403 | API-18 |
 | CT-75 | Admin lista usuários | Sem e-mail completo além do necessário; evento em auditoria | API-18 |
-| CT-76 | Paginação `limit=101` / cursor inválido | `limit` limitado ou 422 / 400 | API-17 |
+| CT-76 | Paginação `limit=101` / cursor inválido | 422 `VALIDATION_ERROR` / 400 `INVALID_JSON` (`reason: INVALID_CURSOR`) | API-17 |
 
 ### 6.6 Privacidade
 

@@ -2441,7 +2441,10 @@ paths:
         - Sessoes
       operationId: sessoesCreate
       summary: Iniciar sessão (programada ou avulsa)
-      description: 409 `SESSION_ALREADY_OPEN` traz `details.sessao_uuid` para retomada.
+      description: >-
+        409 `SESSION_ALREADY_OPEN` traz `details.sessao_uuid` para retomada. Se a `sessao_uuid` já existir para o
+        usuário, devolve **200** com a sessão existente (criação repetível). `Idempotency-Key` repetida devolve a
+        resposta original e o cabeçalho `Idempotent-Replayed: true`.
       x-papeis:
         - aluno
       x-fase: '1'
@@ -2454,6 +2457,19 @@ paths:
             schema:
               $ref: '#/components/schemas/SessaoCriarRequest'
       responses:
+        '200':
+          description: Recurso já existente (repetição da criação).
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Sessao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
         '201':
           description: Sucesso.
           content:
@@ -2696,6 +2712,19 @@ paths:
             schema:
               $ref: '#/components/schemas/SerieCriarRequest'
       responses:
+        '200':
+          description: Recurso já existente (repetição da criação).
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SessaoSerie'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
         '201':
           description: Sucesso.
           content:
@@ -2721,6 +2750,7 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '429':
           $ref: '#/components/responses/RateLimited'
+      description: Se o `uuid` informado já existir na sessão, devolve **200** com a série existente (criação repetível).
   /me/sessoes/{uuid}/exercicios:
     post:
       tags:
@@ -2744,6 +2774,19 @@ paths:
             schema:
               $ref: '#/components/schemas/ExercicioSessaoRequest'
       responses:
+        '200':
+          description: Recurso já existente (repetição da criação).
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SessaoExercicio'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
         '201':
           description: Sucesso.
           content:
@@ -2769,6 +2812,7 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '429':
           $ref: '#/components/responses/RateLimited'
+      description: Se o `uuid` informado já existir na sessão, devolve **200** com o item existente (criação repetível).
   /me/sessoes/{uuid}/exercicios/{ex_uuid}/substituir:
     post:
       tags:
