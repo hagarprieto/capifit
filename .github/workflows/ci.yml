@@ -48,3 +48,47 @@ jobs:
         env:
           MYSQL_PWD: ci_only_password
         run: ./tools/db/apply-schema.ps1 -Port 3306 -WithSeed -Recreate
+
+  api-php:
+    name: API PHP (PHPUnit e PHPStan com MySQL 8)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_only_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci_only_password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mysqli, mbstring
+          tools: composer
+      - name: Aplicar o schema
+        shell: pwsh
+        env:
+          MYSQL_PWD: ci_only_password
+        run: ./tools/db/apply-schema.ps1 -Port 3306 -WithSeed -Recreate
+      - name: Instalar dependências
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist
+      - name: PHPStan
+        working-directory: backend
+        run: composer analyse
+      - name: PHPUnit (unitários e integração)
+        working-directory: backend
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: capifit
+          DB_USER: root
+          DB_PASSWORD: ci_only_password
+          CAPIFIT_ALLOW_DB_TESTS: '1'
+        run: composer test
