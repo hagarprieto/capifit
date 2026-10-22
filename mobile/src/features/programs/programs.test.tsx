@@ -59,6 +59,8 @@ function fakeApi(over: Partial<ProgramsApi> = {}): ProgramsApi {
     get: jest.fn().mockResolvedValue(program('p-1')),
     version: jest.fn().mockResolvedValue(version(2)),
     create: jest.fn().mockResolvedValue(program('p-novo', { status: 'rascunho', versao_atual: null })),
+    activate: jest.fn().mockResolvedValue({ programa_id: 'p-1', versao_numero: 2, ativado_em: '2026-10-22T12:00:00.000Z' }),
+    archive: jest.fn().mockResolvedValue(program('p-1', { status: 'arquivado' })),
     ...over,
   } as ProgramsApi;
 }
@@ -269,5 +271,114 @@ describe('ProgramDetailScreen', () => {
     expect(await screen.findByText('Não foi possível carregar este programa. Verifique a conexão e tente de novo.')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Voltar' }));
     expect(mockRouter.back).toHaveBeenCalled();
+  });
+});
+
+describe('ativar, trocar e arquivar (E06-08)', () => {
+  const current: ActiveProgram = { programa: program('atual', { titulo: 'Programa atual' }), versao: version(1), ativado_em: '2026-10-01T12:00:00.000Z' };
+
+  it('sem programa em uso, ativa a versão vigente direto e confirma o resultado', async () => {
+    const api = fakeApi();
+    await show(<ProgramDetailScreen api={api} />);
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'Ativar este programa' }));
+
+    await waitFor(() => expect(api.activate).toHaveBeenCalledWith('p-1', 2));
+    expect(await screen.findByText('Programa ativado. Ele agora é o programa em uso.')).toBeTruthy();
+    expect(api.get).toHaveBeenCalledTimes(2); // recarregou o detalhe
+  });
+
+  it('com outro programa em uso, pergunta antes de trocar e diz que o atual continua guardado', async () => {
+    const api = fakeApi({ active: jest.fn().mockResolvedValue(current) });
+    await show(<ProgramDetailScreen api={api} />);
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'Trocar para este programa' }));
+    expect(screen.getByText(/Hoje você usa "Programa atual"/)).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(api.activate).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Trocar para este programa' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Trocar' }));
+
+    await waitFor(() => expect(api.activate).toHaveBeenCalledWith('p-1', 2));
+  });
+
+  it('o programa que já está em uso mostra o aviso e não oferece ativar de novo', async () => {
+    const api = fakeApi({ active: jest.fn().mockResolvedValue({ ...current, programa: program('p-1') }) });
+    await show(<ProgramDetailScreen api={api} />);
+
+    expect(await screen.findByText('Este é o programa em uso.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Ativar este programa' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Trocar para este programa' })).toBeNull();
+  });
+
+  it('rascunho não ativa: orienta a publicar uma versão', async () => {
+    const api = fakeApi({ get: jest.fn().mockResolvedValue(program('p-1', { status: 'rascunho', versao_atual: null, versao_rascunho: 1 })), version: jest.fn().mockResolvedValue(version(1, 'rascunho')) });
+    await show(<ProgramDetailScreen api={api} />);
+
+    expect(await screen.findByText('Para ativar, publique uma versão no editor.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Ativar este programa' })).toBeNull();
+  });
+
+  it('arquivar pede confirmação, explica que o histórico fica, e volta para a lista', async () => {
+    const api = fakeApi();
+    await show(<ProgramDetailScreen api={api} />);
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'Arquivar programa' }));
+    expect(screen.getByText(/Os treinos já feitos continuam no histórico/)).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(api.archive).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Arquivar programa' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Arquivar' }));
+
+    await waitFor(() => expect(api.archive).toHaveBeenCalledWith('p-1'));
+    await waitFor(() => expect(mockRouter.replace).toHaveBeenCalledWith('/programas'));
+  });
+
+  it('arquivar o programa em uso avisa que ficará sem programa ativo', async () => {
+    const api = fakeApi({ active: jest.fn().mockResolvedValue({ ...current, programa: program('p-1') }) });
+    await show(<ProgramDetailScreen api={api} />);
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'Arquivar programa' }));
+
+    expect(screen.getByText(/ao arquivar, você fica sem programa ativo/)).toBeTruthy();
+  });
+
+  it('programa arquivado não tem ações, só o aviso', async () => {
+    const api = fakeApi({ get: jest.fn().mockResolvedValue(program('p-1', { status: 'arquivado' })) });
+    await show(<ProgramDetailScreen api={api} />);
+
+    expect(await screen.findByText('Programa arquivado: fica guardado com o histórico, sem ações.')).toBeTruthy();
+    for (const name of ['Ativar este programa', 'Editar programa', 'Arquivar programa']) {
+      expect(screen.queryByRole('button', { name })).toBeNull();
+    }
+  });
+
+  it('programa do coach pode ser ativado, mas não editado', async () => {
+    const api = fakeApi({ get: jest.fn().mockResolvedValue(program('p-1', { origem: 'coach', autor: { id: 'c', nome: 'Carla', papeis: ['coach'] } })) });
+    await show(<ProgramDetailScreen api={api} />);
+
+    expect(await screen.findByRole('button', { name: 'Ativar este programa' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Editar programa' })).toBeNull();
+  });
+
+  it('falha ao ativar mostra o motivo (rede ou genérico) sem fechar a tela', async () => {
+    const network = fakeApi({ activate: jest.fn().mockRejectedValue(new ApiError({ status: 0, code: 'NETWORK_ERROR', message: '' })) });
+    await show(<ProgramDetailScreen api={network} />);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Ativar este programa' }));
+    expect(await screen.findByText('Sem conexão. Verifique a internet e tente de novo.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Ativar este programa' })).toBeTruthy();
+  });
+
+  it('falha ao arquivar avisa e permanece no detalhe', async () => {
+    const api = fakeApi({ archive: jest.fn().mockRejectedValue(new ApiError({ status: 500, code: 'INTERNAL_ERROR', message: '' })) });
+    await show(<ProgramDetailScreen api={api} />);
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'Arquivar programa' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Arquivar' }));
+
+    expect(await screen.findByText('Não foi possível concluir agora. Tente de novo.')).toBeTruthy();
+    expect(mockRouter.replace).not.toHaveBeenCalled();
   });
 });

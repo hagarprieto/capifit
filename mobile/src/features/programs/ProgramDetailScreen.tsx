@@ -1,21 +1,28 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
+import { isApiError } from '@/api/errors';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/design-system/Button';
+import { ConfirmDialog } from '@/design-system/ConfirmDialog';
 import { Notice } from '@/design-system/Notice';
 import { OriginBadge } from '@/design-system/OriginBadge';
 import { Screen } from '@/design-system/Screen';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
-import { t } from '@/i18n';
+import { t, type MessageKey } from '@/i18n';
 
-import { createProgramsApi, type Program, type ProgramVersion, type ProgramsApi } from './programsApi';
+import { createProgramsApi, type ActiveProgram, type Program, type ProgramVersion, type ProgramsApi } from './programsApi';
 
-type Load = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; program: Program; version: ProgramVersion | null };
+type Load = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; program: Program; version: ProgramVersion | null; active: ActiveProgram | null };
+type Dialog = 'activate' | 'archive' | null;
 
-/** Detalhe do programa (versão vigente ou, se ainda não publicado, o rascunho). "Editar" abre o editor, exceto para programa do coach (só leitura) ou arquivado. */
+/**
+ * Detalhe do programa (versão vigente ou, se ainda não publicado, o rascunho) com as ações do ciclo de vida:
+ * editar, ativar (ou trocar o programa em uso) e arquivar (FL-07). Ativar e arquivar nunca mexem em treinos já feitos
+ * (AC-07). Programa do coach não se edita; arquivado não tem ações.
+ */
 export function ProgramDetailScreen({ api }: { api?: ProgramsApi }) {
   const router = useRouter();
   const { theme } = useTheme();
@@ -24,16 +31,19 @@ export function ProgramDetailScreen({ api }: { api?: ProgramsApi }) {
   const { uuid } = useLocalSearchParams<{ uuid: string }>();
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [attempt, setAttempt] = useState(0);
+  const [dialog, setDialog] = useState<Dialog>(null);
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState<{ kind: 'success' | 'error'; message: MessageKey } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const program = await programsApi.get(String(uuid));
+        const [program, active] = await Promise.all([programsApi.get(String(uuid)), programsApi.active()]);
         const number = program.versao_atual ?? program.versao_rascunho ?? null;
         const version = number === null ? null : await programsApi.version(program.id, number);
         if (!cancelled) {
-          setLoad({ kind: 'ready', program, version });
+          setLoad({ kind: 'ready', program, version, active });
         }
       } catch {
         if (!cancelled) {
@@ -45,6 +55,8 @@ export function ProgramDetailScreen({ api }: { api?: ProgramsApi }) {
       cancelled = true;
     };
   }, [programsApi, uuid, attempt]);
+
+  const refresh = useCallback(() => setAttempt((n) => n + 1), []);
 
   if (load.kind === 'loading') {
     return (
@@ -59,14 +71,54 @@ export function ProgramDetailScreen({ api }: { api?: ProgramsApi }) {
     return (
       <Screen>
         <Notice kind="error" message={t('programas.erroDetalhe')} />
-        <Button label={t('treino.tentarDeNovo')} onPress={() => { setLoad({ kind: 'loading' }); setAttempt((n) => n + 1); }} />
+        <Button label={t('treino.tentarDeNovo')} onPress={() => { setLoad({ kind: 'loading' }); refresh(); }} />
         <Button label={t('programas.voltar')} variant="text" onPress={() => router.back()} />
       </Screen>
     );
   }
 
-  const { program, version } = load;
+  const { program, version, active } = load;
   const fichas = version?.fichas ?? [];
+  const isActive = active?.programa.id === program.id;
+  const otherActive = active && !isActive ? active.programa : null;
+  const canEdit = program.origem !== 'coach' && program.status !== 'arquivado';
+  const canActivate = program.status === 'publicado' && program.versao_atual != null && !isActive;
+  const canArchive = program.status !== 'arquivado';
+
+  async function run(action: () => Promise<void>, success: MessageKey | null, after?: () => void) {
+    setBusy(true);
+    setFeedback(null);
+    try {
+      await action();
+      setDialog(null);
+      if (success) {
+        setFeedback({ kind: 'success', message: success });
+      }
+      after?.();
+    } catch (error) {
+      setDialog(null);
+      setFeedback({ kind: 'error', message: isApiError(error) && error.isNetwork ? 'auth.erro.rede' : 'programas.erroAcao' });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const activate = () =>
+    run(
+      async () => {
+        await programsApi.activate(program.id, program.versao_atual as number);
+      },
+      'programas.ativadoOk',
+      refresh,
+    );
+  const archive = () =>
+    run(
+      async () => {
+        await programsApi.archive(program.id);
+      },
+      null,
+      () => router.replace('/programas'),
+    );
 
   return (
     <Screen>
@@ -78,6 +130,10 @@ export function ProgramDetailScreen({ api }: { api?: ProgramsApi }) {
       <Text variant="bodySmall" color="secondary">
         {version ? t('programas.versaoEstado', { numero: version.numero, estado: t(version.estado === 'rascunho' ? 'programas.estadoRascunho' : 'programas.estadoPublicada') }) : ''}
       </Text>
+
+      {isActive ? <Notice kind="success" message={t('programas.emUsoAviso')} /> : null}
+      {program.status === 'arquivado' ? <Notice kind="info" message={t('programas.arquivadoAviso')} /> : null}
+      {feedback ? <Notice kind={feedback.kind === 'success' ? 'success' : 'error'} message={t(feedback.message)} /> : null}
 
       {fichas.length === 0 ? (
         <Text color="secondary">{t('programas.semFichas')}</Text>
@@ -96,10 +152,35 @@ export function ProgramDetailScreen({ api }: { api?: ProgramsApi }) {
         </View>
       )}
 
-      {program.origem !== 'coach' && program.status !== 'arquivado' ? (
-        <Button label={t('programas.editar')} onPress={() => router.push({ pathname: '/programas/[uuid]/editar', params: { uuid: program.id } })} />
+      {canActivate ? <Button label={otherActive ? t('programas.trocarPara') : t('programas.ativar')} onPress={() => (otherActive ? setDialog('activate') : void activate())} loading={busy && dialog === null} /> : null}
+      {program.status === 'rascunho' ? (
+        <Text variant="bodySmall" color="secondary">
+          {t('programas.publiqueParaAtivar')}
+        </Text>
       ) : null}
-      <Button label={t('programas.voltar')} variant="secondary" onPress={() => router.back()} />
+      {canEdit ? <Button label={t('programas.editar')} variant={canActivate ? 'secondary' : 'primary'} onPress={() => router.push({ pathname: '/programas/[uuid]/editar', params: { uuid: program.id } })} /> : null}
+      {canArchive ? <Button label={t('programas.arquivar')} variant="secondary" onPress={() => setDialog('archive')} /> : null}
+      <Button label={t('programas.voltar')} variant="text" onPress={() => router.back()} />
+
+      <ConfirmDialog
+        visible={dialog === 'activate'}
+        title={t('programas.trocarTitulo')}
+        message={t('programas.trocarTexto', { atual: otherActive?.titulo ?? '' })}
+        confirmLabel={t('programas.trocarConfirma')}
+        loading={busy}
+        onCancel={() => setDialog(null)}
+        onConfirm={() => void activate()}
+      />
+      <ConfirmDialog
+        visible={dialog === 'archive'}
+        destructive
+        title={t('programas.arquivarTitulo')}
+        message={t(isActive ? 'programas.arquivarTextoAtivo' : 'programas.arquivarTexto')}
+        confirmLabel={t('programas.arquivarConfirma')}
+        loading={busy}
+        onCancel={() => setDialog(null)}
+        onConfirm={() => void archive()}
+      />
     </Screen>
   );
 }

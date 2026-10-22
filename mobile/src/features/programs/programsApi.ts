@@ -67,6 +67,16 @@ export function createProgramsApi(api: ApiClient) {
       return (await api.put<ProgramVersion>(`/programas/${programUuid}/versoes/${versionNumber}/estrutura`, { expected_revision: expectedRevision, fichas })).data;
     },
 
+    /** Torna uma versão PUBLICADA o programa em uso (troca o que estava ativo). Não altera treinos já feitos. */
+    async activate(programUuid: string, versionNumber: number): Promise<Schemas['ProgramaAtivo']> {
+      return (await api.post<Schemas['ProgramaAtivo']>(`/programas/${programUuid}/ativar`, { versao_numero: versionNumber })).data;
+    },
+
+    /** Arquiva (sem apagar histórico); se estava em uso, deixa de ser o ativo. Não há desarquivar. */
+    async archive(programUuid: string): Promise<Program> {
+      return (await api.post<Program>(`/programas/${programUuid}/arquivar`)).data;
+    },
+
     async publish(programUuid: string, versionNumber: number): Promise<ProgramVersion> {
       return (await api.post<ProgramVersion>(`/programas/${programUuid}/versoes/${versionNumber}/publicar`, undefined, { idempotencyKey: true })).data;
     },
