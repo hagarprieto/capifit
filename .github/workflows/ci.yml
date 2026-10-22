@@ -1,0 +1,50 @@
+# CapiFit | CI inicial (marco M0, história E00-05). Ainda NÃO executado no GitHub: validar no primeiro push.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  contrato-e-design:
+    name: Contrato OpenAPI e contraste dos tokens
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validar OpenAPI (L0)
+        working-directory: tools/contract
+        run: |
+          npm install --no-audit --no-fund
+          npm run validate
+      - name: Verificar contraste dos tokens
+        run: node tools/design/check-contrast.js
+
+  banco-mysql8:
+    name: Schema em MySQL 8 (migrations 04, 06, 09 e seed)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_only_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci_only_password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar e conferir o schema
+        shell: pwsh
+        env:
+          MYSQL_PWD: ci_only_password
+        run: ./tools/db/apply-schema.ps1 -Port 3306 -WithSeed -Recreate
