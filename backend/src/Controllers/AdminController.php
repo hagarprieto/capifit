@@ -8,6 +8,7 @@ use CapiFit\Auth\AuthenticatedUser;
 use CapiFit\Http\ApiResponse;
 use CapiFit\Infrastructure\Database\Connection;
 use CapiFit\Services\AdminExerciseService;
+use CapiFit\Services\AdminMediaService;
 use CapiFit\Services\AuditService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -17,6 +18,7 @@ final class AdminController
 {
     public function __construct(
         private readonly AdminExerciseService $exercises,
+        private readonly AdminMediaService $media,
         private readonly AuditService $audit,
         private readonly Connection $db,
     ) {
@@ -55,6 +57,22 @@ final class AdminController
         $user = $this->user($request);
 
         return ApiResponse::data($request, $this->db->transaction(fn (): array => $this->exercises->publish($user, $this->param($request))));
+    }
+
+    public function linkMedia(ServerRequestInterface $request): ResponseInterface
+    {
+        $user = $this->user($request);
+
+        return ApiResponse::data($request, $this->db->transaction(fn (): array => $this->media->link($user, $this->param($request), $this->body($request))), 201);
+    }
+
+    public function approveMedia(ServerRequestInterface $request): ResponseInterface
+    {
+        $user = $this->user($request);
+        $params = $request->getAttribute('route_params');
+        $id = is_array($params) && is_string($params['id'] ?? null) ? $params['id'] : '';
+
+        return ApiResponse::data($request, $this->db->transaction(fn (): array => $this->media->approve($user, $id)));
     }
 
     public function audit(ServerRequestInterface $request): ResponseInterface

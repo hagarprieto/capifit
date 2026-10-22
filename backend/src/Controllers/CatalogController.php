@@ -11,6 +11,7 @@ use CapiFit\Http\ErrorCode;
 use CapiFit\Presenters\ExercisePresenter;
 use CapiFit\Repositories\CatalogRepository;
 use CapiFit\Support\Cursor;
+use CapiFit\Support\MediaUrlSigner;
 use CapiFit\Support\Text;
 use CapiFit\Support\Uuid;
 use CapiFit\Validation\FieldErrors;
@@ -106,20 +107,21 @@ final class CatalogController
     /** @return list<array<string, string>> */
     private function mediaFor(int $exerciseId): array
     {
-        // Sem MEDIA_BASE_URL não há como montar URLs: omite as mídias em vez de devolver caminhos internos.
-        // (URLs temporárias assinadas entram na história E03-06.)
-        if ($this->config->mediaBaseUrl === '') {
+        // Sem base e segredo configurados não há como montar URLs seguras: omite as mídias em vez de devolver caminhos
+        // internos ou públicos. As URLs são temporárias e assinadas (E03-06).
+        $signer = new MediaUrlSigner($this->config->mediaBaseUrl, $this->config->mediaSigningSecret, $this->config->mediaUrlTtlSeconds);
+        if (!$signer->enabled()) {
             return [];
         }
-        $base = rtrim($this->config->mediaBaseUrl, '/');
+        $media = [];
+        foreach ($this->catalog->approvedMedia($exerciseId) as $m) {
+            $url = $signer->sign((string) $m['url_storage']);
+            if ($url !== null) {
+                $media[] = ['id' => (string) $m['id'], 'tipo' => (string) $m['tipo'], 'versao' => (string) $m['versao'], 'status' => 'aprovado', 'url' => $url];
+            }
+        }
 
-        return array_map(static fn (array $m): array => [
-            'id' => (string) $m['id'],
-            'tipo' => (string) $m['tipo'],
-            'versao' => (string) $m['versao'],
-            'status' => 'aprovado',
-            'url' => $base . '/' . ltrim((string) $m['url_storage'], '/'),
-        ], $this->catalog->approvedMedia($exerciseId));
+        return $media;
     }
 
     public function muscleGroups(ServerRequestInterface $request): ResponseInterface

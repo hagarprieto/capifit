@@ -34,6 +34,7 @@ use CapiFit\Repositories\SessionRepository;
 use CapiFit\Repositories\StructureRepository;
 use CapiFit\Services\AccountTokens;
 use CapiFit\Services\AdminExerciseService;
+use CapiFit\Services\AdminMediaService;
 use CapiFit\Services\AuditService;
 use CapiFit\Services\AuthService;
 use CapiFit\Services\ConsentService;
@@ -111,6 +112,8 @@ final class Kernel
             ->add('POST', '/admin/exercicios/{uuid}/enviar-revisao', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->submitExercise($r))
             ->add('POST', '/admin/exercicios/{uuid}/revisar', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->reviewExercise($r))
             ->add('POST', '/admin/exercicios/{uuid}/publicar', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->publishExercise($r))
+            ->add('POST', '/admin/exercicios/{uuid}/midias', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->linkMedia($r))
+            ->add('POST', '/admin/midias/{id}/aprovar', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->approveMedia($r))
             ->add('GET', '/admin/auditoria', fn (ServerRequestInterface $r): ResponseInterface => $this->adminController()->audit($r))
             ->add('GET', '/me/consentimentos', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->listConsents($r))
             ->add('POST', '/me/consentimentos', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->grantConsent($r))
@@ -172,7 +175,7 @@ final class Kernel
     {
         $audit = new AuditService($this->db);
 
-        return new AdminController(new AdminExerciseService($this->db, new CatalogRepository($this->db), $audit), $audit, $this->db);
+        return new AdminController(new AdminExerciseService($this->db, new CatalogRepository($this->db), $audit), new AdminMediaService($this->db, $audit), $audit, $this->db);
     }
 
     private function accountDataController(): AccountDataController

@@ -94,6 +94,8 @@ Estes pontos não estavam fechados nos Documentos 05/06 e foram definidos no Ope
 | C-27 | Instantâneo `exercicios` (RG-020): UUIDs do cliente preservados; `tipo_item=prescrito` exige `ficha_exercicio_uuid` da ficha informada e o mesmo exercício; `substituido` exige `exercicio_prescrito_uuid`; `serie_prescrita_uuid` precisa pertencer ao item; UUID repetido ou já usado é `422`; erros por caminho (`exercicios.0.series.1.tipo`) | Doc 06 §7.2 |
 | C-28 | Fluxo do exercício: `rascunho → em_revisao → (aprovado, sem estado próprio: `revisado_por` preenchido) → publicado`; o enum de `exercicios.status` não tem `aprovado`, então a aprovação é o par `revisado_por/revisado_em` com o status ainda `em_revisao`; transição fora de ordem é `409 INVALID_STATE` | Doc 09 §3.2 |
 | C-29 | Separação de funções: o admin que cadastrou o exercício não pode aprová-lo nem rejeitá-lo (`403`); qualquer outro admin pode. Com um só admin, a publicação fica bloqueada até existir o segundo | Doc 09 §3.1 |
+| C-30 | Mídia: nasce `em_revisao` (o vínculo já é o envio para revisão); só `aprovado` por admin diferente de quem vinculou aparece em `Midia.url`; aprovar fora de `em_revisao` é `409 INVALID_STATE`; não há rota de rejeição na Fase 1 (mídia errada é substituída por nova versão) | Doc 08 §11.3 |
+| C-31 | `Midia.url` é temporária e assinada (HMAC-SHA256, validade padrão 10 min); `Midia.status` continua sempre `aprovado` | CT-70, CT-71 |
 
 ## 5. Estratégia de testes de contrato
 

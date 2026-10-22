@@ -185,7 +185,8 @@ Criado por `apply-schema.ps1 -AppUser capifit_app -AppHost <host>` com a senha e
 4. Ativar Dependabot, secret scanning (se disponível no plano) e 2FA no GitHub.
 5. Escolher o coletor de logs/métricas e implementar os alertas da §3.2.
 6. Decidir a política de retenção dos próprios logs (sugestão: 30 dias de acesso, 90 de erros, sem dados pessoais).
-7. Escolher o provedor de **e-mail transacional** (recuperação de senha e verificação já funcionam e são testadas; sem provedor, `NullMailer` não envia e deixa o aviso `mail.not_sent`). Considerar SPF/DKIM/DMARC no domínio.
+7. Escolher o storage/CDN das mídias e implantar a **função de borda** que confere `exp` e `sig` (algoritmo no Doc 05 §10); gerar `MEDIA_SIGNING_SECRET` (32+ bytes) e guardá-lo como os demais segredos.
+8. Escolher o provedor de **e-mail transacional** (recuperação de senha e verificação já funcionam e são testadas; sem provedor, `NullMailer` não envia e deixa o aviso `mail.not_sent`). Considerar SPF/DKIM/DMARC no domínio.
 8. Agendar **uma vez por dia** `php bin/cleanup.php` no cron/agendador da hospedagem (E00-10). O comando já existe e é testado: remove janelas de limite de taxa com mais de 2 dias, chaves de idempotência com mais de 7, tokens de ação e sessões de login vencidos há mais de 7 e 30 dias, e imprime só contagens. Falta definir onde agendar.
 
 ---

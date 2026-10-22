@@ -28,7 +28,7 @@ final class CatalogTest extends TestCase
         if (getenv('DB_NAME') === false || getenv('CAPIFIT_ALLOW_DB_TESTS') !== '1') {
             self::markTestSkipped('Defina DB_NAME, DB_* e CAPIFIT_ALLOW_DB_TESTS=1 para rodar contra um banco descartável.');
         }
-        $env = [...getenv(), 'JWT_SECRET' => 'segredo-de-teste-com-mais-de-32-bytes-0123456789', 'MEDIA_BASE_URL' => 'https://cdn.exemplo.invalid/media/'];
+        $env = [...getenv(), 'JWT_SECRET' => 'segredo-de-teste-com-mais-de-32-bytes-0123456789', 'MEDIA_BASE_URL' => 'https://cdn.exemplo.invalid/media/', 'MEDIA_SIGNING_SECRET' => 'segredo-de-midia-de-teste-com-mais-de-32-bytes'];
         if (getenv('DB_APP_USER') !== false) {
             $env['DB_USER'] = (string) getenv('DB_APP_USER');
             $env['DB_PASSWORD'] = (string) getenv('DB_APP_PASSWORD');
@@ -267,7 +267,8 @@ final class CatalogTest extends TestCase
         self::assertSame('Polia', $data['equipamento']['nome']);
         self::assertSame(['primario', 'secundario'], array_column($data['musculos'], 'papel'));
         self::assertCount(1, $data['midias'], 'só a mídia aprovada');
-        self::assertSame('https://cdn.exemplo.invalid/media/ex/aprovado.mp4', $data['midias'][0]['url']);
+        self::assertStringStartsWith('https://cdn.exemplo.invalid/media/ex/aprovado.mp4?exp=', $data['midias'][0]['url']);
+        self::assertStringContainsString('&sig=', $data['midias'][0]['url']);
         self::assertSame('aprovado', $data['midias'][0]['status']);
 
         $media = $this->call('GET', '/exercicios/' . $ex['uuid'] . '/midias');

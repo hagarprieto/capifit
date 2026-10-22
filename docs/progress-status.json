@@ -27,7 +27,8 @@
     "E00-10": "in-progress",
     "E08-04": "done",
     "E03-05": "done",
-    "E03-07": "done"
+    "E03-07": "done",
+    "E03-06": "in-progress"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
@@ -56,7 +57,8 @@
     "E00-10": "Faxina pronta e testada (php bin/cleanup.php: limites de taxa 2 dias, idempotência 7 dias, tokens de ação e sessões de login vencidos). Falta agendar na hospedagem (validada no CI com MySQL 8).",
     "E08-04": "POST /sync/push pronto e testado: lote de até 50 operações idempotentes (hash do conteúdo), resultado por item (aplicada, conflito, rejeitada), instantâneo da sessão com UUIDs do cliente, pausas com horário do dispositivo, conflito entre dispositivos e relógio fora de hora. Migration 003 (cancelar). Validado no CI com MySQL 8.",
     "E03-05": "API de cadastro, revisão (com separação de funções) e publicação de exercícios pronta e testada; só admin. Validado no CI com MySQL 8.",
-    "E03-07": "Eventos de auditoria gravados nas ações do catálogo e consulta GET /admin/auditoria (filtro e cursor) prontos. Validado no CI com MySQL 8. Falta plugar as demais ações administrativas (usuários, papéis, modelos) quando existirem."
+    "E03-07": "Eventos de auditoria gravados nas ações do catálogo e consulta GET /admin/auditoria (filtro e cursor) prontos. Validado no CI com MySQL 8. Falta plugar as demais ações administrativas (usuários, papéis, modelos) quando existirem.",
+    "E03-06": "Vínculo por chave de storage, aprovação por outro admin e URLs temporárias assinadas (HMAC) prontos e testados. Falta o CI com MySQL 8 e o storage/CDN com a função de borda que confere a assinatura (depende da hospedagem)."
   },
   "externas": {
     "revisor": "pending",
