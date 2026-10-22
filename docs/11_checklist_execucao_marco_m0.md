@@ -193,6 +193,8 @@ Já preparado: `.github/workflows/ci.yml` com dois jobs — **contrato e design*
 - [ ] Tela de verificação (a tela inicial do M0) que mostra o tema claro/escuro e a fonte aumentada a 200%, para validar tokens no aparelho.
 - [ ] Rodar em um Android de entrada e em um iPhone (ou simulador) e **registrar** o tempo de abertura (linha de base para o Doc 10 §7.6).
 
+**Andamento (22/10/2026):** `mobile/` criado com Expo SDK 58 e Expo Router (rotas em `src/app/`); tema claro/escuro gerado dos tokens, fonte Inter, catálogo `pt-BR`, lint que reprova hex e texto fixo, tela de verificação do tema; 17 testes, TypeScript, lint e `expo-doctor` passam e o bundle Android compila; job `app-mobile` no CI. **Falta:** abrir em Android e iOS reais e registrar o tempo de abertura; `CI` verde no GitHub. Detalhes e pendências em `mobile/README.md`.
+
 **Pronto quando:** o app abre nos dois sistemas, alterna os temas, o lint reprova um hex literal e o CI executa o lint/TypeScript do app.
 
 ## 10. Bloco H — Trilhas longas que começam no M0
