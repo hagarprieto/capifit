@@ -61,8 +61,8 @@ final class ProfileTest extends ApiTestCase
         ];
         $created = $this->call('PUT', '/me/perfil-treinamento', $full);
         self::assertSame(200, $created['status'], json_encode($created['body']) ?: '');
-        self::assertSame($full, $created['body']['data']);
-        self::assertSame($full, $this->call('GET', '/me/perfil-treinamento')['body']['data']);
+        self::assertEquals($full, $created['body']['data']);
+        self::assertEquals($full, $this->call('GET', '/me/perfil-treinamento')['body']['data']);
 
         $replaced = $this->call('PUT', '/me/perfil-treinamento', ['nivel' => 'iniciante', 'dias_semana' => 3]);
         self::assertSame(

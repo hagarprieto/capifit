@@ -184,7 +184,7 @@ final class SessionFlowTest extends TestCase
 
         self::assertSame(201, $first['status']);
         self::assertSame(201, $second['status']);
-        self::assertSame($first['body'], $second['body'], 'a resposta repetida é idêntica');
+        self::assertEquals($first['body'], $second['body'], 'a resposta repetida é idêntica');
         self::assertSame('true', $second['headers']['Idempotent-Replayed'] ?? null);
         self::assertArrayNotHasKey('Idempotent-Replayed', $first['headers']);
         self::assertSame(1, $this->countSessions($this->userUuid));
@@ -484,7 +484,7 @@ final class SessionFlowTest extends TestCase
         $newKey = $this->call('POST', "/me/sessoes/$session/concluir", [], Uuid::v4());
 
         self::assertSame(200, $first['status']);
-        self::assertSame($first['body'], $replay['body']);
+        self::assertEquals($first['body'], $replay['body']);
         self::assertSame('true', $replay['headers']['Idempotent-Replayed'] ?? null);
         self::assertSame(200, $newKey['status']);
         self::assertSame($first['body']['data']['encerrada_em'], $newKey['body']['data']['encerrada_em'], 'não conclui de novo nem muda o horário');

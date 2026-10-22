@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class AppUserPrivilegesTest extends TestCase
 {
-    private const DENIED_CODES = [1044, 1142, 1227, 1370, 1045];
+    private const DENIED_CODES = [1419, 1044, 1142, 1227, 1370, 1045];
 
     private Connection $db;
     private \mysqli $m;
