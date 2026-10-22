@@ -15,7 +15,7 @@ import { createProgramsApi, type Program, type ProgramVersion, type ProgramsApi 
 
 type Load = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; program: Program; version: ProgramVersion | null };
 
-/** Detalhe somente leitura do programa (versão vigente ou, se ainda não publicado, o rascunho). A edição é a E06-04. */
+/** Detalhe do programa (versão vigente ou, se ainda não publicado, o rascunho). "Editar" abre o editor, exceto para programa do coach (só leitura) ou arquivado. */
 export function ProgramDetailScreen({ api }: { api?: ProgramsApi }) {
   const router = useRouter();
   const { theme } = useTheme();
@@ -96,6 +96,9 @@ export function ProgramDetailScreen({ api }: { api?: ProgramsApi }) {
         </View>
       )}
 
+      {program.origem !== 'coach' && program.status !== 'arquivado' ? (
+        <Button label={t('programas.editar')} onPress={() => router.push({ pathname: '/programas/[uuid]/editar', params: { uuid: program.id } })} />
+      ) : null}
       <Button label={t('programas.voltar')} variant="secondary" onPress={() => router.back()} />
     </Screen>
   );

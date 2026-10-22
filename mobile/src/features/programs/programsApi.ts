@@ -4,11 +4,12 @@ import { isApiError } from '@/api/errors';
 export type Program = Schemas['Programa'];
 export type ProgramVersion = Schemas['Versao'];
 export type ActiveProgram = { programa: Program; versao: ProgramVersion; ativado_em: string };
+export type StructureBody = Schemas['EstruturaRequest']['fichas'];
 
 const PAGE_LIMIT = 100;
 const MAX_PAGES = 5;
 
-/** Chamadas de programas do app (listar, ativo, detalhe, criar). Escrita leva chave de idempotência (reenvio seguro). */
+/** Chamadas de programas do app (listar, ativo, detalhe, criar, editar). Escrita leva chave de idempotência quando cabe. */
 export function createProgramsApi(api: ApiClient) {
   return {
     /** Todos os programas visíveis ao aluno (páginas de 100, até 500). */
@@ -42,7 +43,6 @@ export function createProgramsApi(api: ApiClient) {
       return (await api.get<Program>(`/programas/${programUuid}`)).data;
     },
 
-    /** Versão para ler: a vigente (publicada) ou, na falta dela, a de rascunho. */
     async version(programUuid: string, number: number): Promise<ProgramVersion> {
       return (await api.get<ProgramVersion>(`/programas/${programUuid}/versoes/${number}`)).data;
     },
@@ -50,6 +50,25 @@ export function createProgramsApi(api: ApiClient) {
     async create(title: string, objective?: string, idempotencyKey?: string): Promise<Program> {
       const body = objective && objective.trim() !== '' ? { titulo: title.trim(), objetivo: objective.trim() } : { titulo: title.trim() };
       return (await api.post<Program>('/me/programas', body, { idempotencyKey: idempotencyKey ?? true })).data;
+    },
+
+    /** Renomeia e/ou muda o objetivo (campo vazio limpa o objetivo). */
+    async rename(programUuid: string, fields: { titulo?: string; objetivo?: string }): Promise<Program> {
+      return (await api.patch<Program>(`/programas/${programUuid}`, fields)).data;
+    },
+
+    /** Abre uma versão em rascunho copiando a vigente (409 se já existir um rascunho). */
+    async createVersion(programUuid: string): Promise<ProgramVersion> {
+      return (await api.post<ProgramVersion>(`/programas/${programUuid}/versoes`, undefined, { idempotencyKey: true })).data;
+    },
+
+    /** Substitui toda a estrutura da versão em rascunho; `expectedRevision` evita sobrescrever edição de outro lugar. */
+    async saveStructure(programUuid: string, versionNumber: number, expectedRevision: number, fichas: StructureBody): Promise<ProgramVersion> {
+      return (await api.put<ProgramVersion>(`/programas/${programUuid}/versoes/${versionNumber}/estrutura`, { expected_revision: expectedRevision, fichas })).data;
+    },
+
+    async publish(programUuid: string, versionNumber: number): Promise<ProgramVersion> {
+      return (await api.post<ProgramVersion>(`/programas/${programUuid}/versoes/${versionNumber}/publicar`, undefined, { idempotencyKey: true })).data;
     },
   };
 }

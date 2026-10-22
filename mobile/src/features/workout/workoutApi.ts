@@ -2,18 +2,22 @@ import type { ApiClient, Schemas } from '@/api/client';
 import { isApiError } from '@/api/errors';
 import { newUuid } from '@/lib/uuid';
 
+import { createExercisesApi } from '../exercises/exercisesApi';
+
 import type { SeriesValues } from './input';
 
 export type Session = Schemas['Sessao'];
 export type SessionItem = Schemas['SessaoExercicio'];
 export type SessionSeries = Schemas['SessaoSerie'];
 export type LastRecord = Schemas['UltimoRegistro'];
-export type ExerciseSummary = Schemas['ExercicioResumo'];
+export type { ExerciseSummary } from '../exercises/exercisesApi';
 
 const nowIso = () => new Date().toISOString();
 
 /** Chamadas do executor de treino. Escritas levam UUID do cliente (reenvio seguro) e série leva o horário do aparelho. */
 export function createWorkoutApi(api: ApiClient) {
+  const exercises = createExercisesApi(api);
+
   return {
     /** UUID da sessão em andamento, se houver. */
     async openSession(): Promise<string | null> {
@@ -73,10 +77,7 @@ export function createWorkoutApi(api: ApiClient) {
       await api.post(`/me/sessoes/${sessionUuid}/concluir`, { encerrada_em: nowIso() }, { idempotencyKey: true });
     },
 
-    async searchExercises(query: string): Promise<ExerciseSummary[]> {
-      const result = await api.get<ExerciseSummary[]>('/exercicios', { query: { q: query.trim() === '' ? undefined : query.trim(), limit: 30 } });
-      return result.data;
-    },
+    searchExercises: exercises.search,
   };
 }
 

@@ -6,7 +6,7 @@ import { t } from '@/i18n';
 import { Text } from './Text';
 import { useTheme } from './ThemeProvider';
 
-type Props = Pick<TextInputProps, 'keyboardType' | 'autoCapitalize' | 'autoComplete' | 'textContentType' | 'returnKeyType' | 'onSubmitEditing' | 'maxLength' | 'editable'> & {
+type Props = Pick<TextInputProps, 'keyboardType' | 'autoCapitalize' | 'autoComplete' | 'textContentType' | 'returnKeyType' | 'onSubmitEditing' | 'maxLength' | 'editable' | 'multiline'> & {
   label: string;
   value: string;
   onChangeText: (value: string) => void;
