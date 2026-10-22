@@ -2,17 +2,21 @@
   "atualizado_em": "22/10/2026",
   "stories": {
     "E00-01": "done",
-    "E00-03": "in-progress",
+    "E00-03": "done",
     "E00-05": "done",
     "E00-04": "done",
-    "E00-08": "in-progress"
+    "E00-08": "in-progress",
+    "E00-06": "in-progress",
+    "E00-07": "in-progress"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
-    "E00-03": "Script tools/db/apply-schema.ps1 validado em MySQL 8.0.46 no CI (04 → 06 → 09 → seed, 36 tabelas, 16 triggers). Falta testar que o usuário capifit_app (só DML) não altera o schema.",
+    "E00-03": "Schema validado em MySQL 8.0.46 no CI e usuário capifit_app (só DML) comprovado sem acesso a DDL por teste automatizado (AppUserPrivilegesTest).",
     "E00-05": "CI com 4 jobs (contrato/contraste, schema, API PHP, app Expo) verde na branch chore/fundacoes-m0 em 22/10/2026. Proteção da main não se aplica (trabalho solo).",
     "E00-04": "Esqueleto em backend/ com 30 testes e PHPStan nível 6; CI verde no GitHub com MySQL 8.0.46 (incluindo 7 testes de integração do schema).",
-    "E00-08": "Esqueleto em mobile/ (Expo SDK 58, Router, tema por tokens claro/escuro, i18n pt-BR, lint de hex e texto fixo): 17 testes, tsc, lint e expo-doctor passam e o bundle Android compila. Falta abrir em aparelho Android/iOS e registrar tempo de abertura."
+    "E00-08": "Esqueleto em mobile/ (Expo SDK 58, Router, tema por tokens claro/escuro, i18n pt-BR, lint de hex e texto fixo): 17 testes, tsc, lint e expo-doctor passam e o bundle Android compila. Falta abrir em aparelho Android/iOS e registrar tempo de abertura.",
+    "E00-06": "Log de acesso sem dados pessoais, redação de campos sensíveis e resumo de métricas por rota prontos e testados (Doc 12). Falta ativar alertas: dependem da hospedagem.",
+    "E00-07": "Backup/restauração com SHA-256 e conferência de contagens (simulado local OK), varredura de segredos no CI e política de rotação. Falta o simulado em staging com MySQL 8, retenção/RPO/RTO e criptografia dos backups."
   },
   "externas": {
     "revisor": "pending",

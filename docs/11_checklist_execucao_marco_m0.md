@@ -181,6 +181,8 @@ Já preparado: `.github/workflows/ci.yml` com dois jobs — **contrato e design*
 - [ ] **Segredos** em variáveis de ambiente/gerenciador; `.env` ignorado pelo Git (já em `.gitignore`); rotação documentada.
 - [ ] **Backup** do banco (dump agendado) e do storage; **teste de restauração** em ambiente separado, com a restauração cronometrada e registrada.
 
+**Andamento (22/10/2026):** detalhes e verificações no **Documento 12**. Feito: log de acesso por requisição sem dados pessoais, redação de campos sensíveis, resumo de métricas por rota, backup e restauração com SHA-256 e conferência de contagens (simulado local OK), varredura de segredos no CI e política de rotação. **Falta:** alertas (dependem da hospedagem), simulado de restauração em staging com MySQL 8, retenção/RPO/RTO e criptografia dos backups.
+
 **Pronto quando:** um erro provocado de propósito aparece no log com `request_id` e sem dado sensível, e uma restauração de backup foi feita e conferida.
 
 ## 9. Bloco G — E00-08 · Esqueleto do app Expo (5 pts)
