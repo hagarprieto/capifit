@@ -21,3 +21,7 @@ design/capi/animations/
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Cache de testes
+.phpunit.cache/
+.phpstan.cache/
