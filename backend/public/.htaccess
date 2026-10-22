@@ -1,0 +1,5 @@
+# Encaminha tudo para o front controller. O host virtual deve apontar SOMENTE para esta pasta (public/).
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]
+RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

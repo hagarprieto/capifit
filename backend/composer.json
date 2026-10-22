@@ -1,0 +1,41 @@
+{
+    "name": "capifit/backend",
+    "description": "API REST do CapiFit (Documento 05; contrato em docs/07_openapi.yaml)",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-mysqli": "*",
+        "monolog/monolog": "^3.5",
+        "nikic/fast-route": "^1.3",
+        "nyholm/psr7": "^1.8",
+        "nyholm/psr7-server": "^1.1",
+        "psr/http-server-middleware": "^1.0",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.11",
+        "phpunit/phpunit": "^11.0",
+        "symfony/yaml": "^7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "CapiFit\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "CapiFit\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --memory-limit=512M"
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    }
+}
