@@ -1,10 +1,10 @@
 # CapiFit | CI inicial (marco M0, história E00-05). Ainda NÃO executado no GitHub: validar no primeiro push.
 name: ci
 
+# Trabalho solo: roda em todo push (qualquer branch) e sob demanda. Se houver PRs de outras pessoas, acrescente pull_request.
 on:
-  pull_request:
   push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
