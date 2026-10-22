@@ -18,6 +18,18 @@ export const ptBR = {
   'themeCheck.versaoTokens': 'Tokens v{versao}',
 
   'a11y.selecionarTema': 'Usar tema {tema}',
+
+  'campo.erro': 'Erro: {mensagem}',
+  'campo.mostrar': 'Mostrar',
+  'campo.ocultar': 'Ocultar',
+  'campo.mostrarSenha': 'Mostrar senha',
+  'campo.ocultarSenha': 'Ocultar senha',
+  'campo.marcado': 'OK',
+
+  'aviso.erro': 'Algo deu errado',
+  'aviso.atencao': 'Atenção',
+  'aviso.info': 'Informação',
+  'aviso.sucesso': 'Tudo certo',
 } as const;
 
 export type MessageKey = keyof typeof ptBR;
