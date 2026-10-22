@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Progresso CapiFit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light dark;
+
+    --bg: #f6f8fa;
+    --surface: #ffffff;
+    --surface-2: #eef1f5;
+    --border: #d0d7de;
+    --text: #0d1117;
+    --text-muted: #4a5565;
+
+    --accent: #2e6414;          /* texto/ícones verdes no tema claro */
+    --accent-fill: #94f047;     /* preenchimento da barra */
+    --accent-fill-2: #447a20;
+    --shadow: 0 1px 2px rgba(13, 17, 23, 0.06), 0 2px 8px rgba(13, 17, 23, 0.07);
+
+    --done-bg: #ddf3e4;    --done-fg: #17653a;    --done-dot: #1f9d55;
+    --progress-bg: #fff1cc; --progress-fg: #8a5a00; --progress-dot: #d18a00;
+    --todo-bg: #eef1f5;    --todo-fg: #4a5565;    --todo-dot: #8793a3;
+    --pending-bg: #e1edff;  --pending-fg: #1f5fbf;  --pending-dot: #3b82f6;
+
+    --font-body: "Inter", system-ui, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1117; --surface: #171d26; --surface-2: #222b36; --border: #35404d;
+      --text: #f6f8fa; --text-muted: #b5beca;
+      --accent: #94f047; --accent-fill: #94f047; --accent-fill-2: #447a20;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 3px 10px rgba(0, 0, 0, 0.4);
+      --done-bg: #12301f;    --done-fg: #8ce5b0;    --done-dot: #34d399;
+      --progress-bg: #3a2e0c; --progress-fg: #ffd166; --progress-dot: #f0b429;
+      --todo-bg: #222b36;    --todo-fg: #b5beca;    --todo-dot: #6b7889;
+      --pending-bg: #11263f;  --pending-fg: #7cb7ff;  --pending-dot: #4f9dff;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0d1117; --surface: #171d26; --surface-2: #222b36; --border: #35404d;
+    --text: #f6f8fa; --text-muted: #b5beca;
+    --accent: #94f047; --accent-fill: #94f047; --accent-fill-2: #447a20;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 3px 10px rgba(0, 0, 0, 0.4);
+    --done-bg: #12301f;    --done-fg: #8ce5b0;    --done-dot: #34d399;
+    --progress-bg: #3a2e0c; --progress-fg: #ffd166; --progress-dot: #f0b429;
+    --todo-bg: #222b36;    --todo-fg: #b5beca;    --todo-dot: #6b7889;
+    --pending-bg: #11263f;  --pending-fg: #7cb7ff;  --pending-dot: #4f9dff;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  .page { max-width: 920px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  header.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .mark { width: 40px; height: 40px; border-radius: 12px; background: #0d1117; border: 2px solid #94f047; color: #94f047;
+          display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem; letter-spacing: -0.02em; }
+  .brand-text h1 { margin: 0; font-size: 1.2rem; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+  .brand-text p { margin: 2px 0 0; font-size: 0.8rem; color: var(--text-muted); }
+
+  #theme-toggle { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+                  border-radius: 8px; padding: 8px 13px; font: 500 0.8rem var(--font-body); cursor: pointer; box-shadow: var(--shadow); }
+  #theme-toggle:hover { border-color: var(--accent); }
+  #theme-toggle:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #theme-toggle .icon-dark { display: none; }
+  :root[data-theme="dark"] #theme-toggle .icon-light { display: none; }
+  :root[data-theme="dark"] #theme-toggle .icon-dark { display: block; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) #theme-toggle .icon-light { display: none; }
+    :root:not([data-theme="light"]) #theme-toggle .icon-dark { display: block; }
+  }
+
+  .summary { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; box-shadow: var(--shadow); margin-bottom: 32px; }
+  .summary-top { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .summary-top .label { font-size: 0.82rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .figure { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 1.5rem; font-weight: 600; color: var(--accent); }
+  .figure span { font-size: 0.95rem; font-weight: 500; color: var(--text-muted); }
+
+  .bar-track { height: 12px; border-radius: 999px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--border); }
+  .bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent-fill-2), var(--accent-fill)); transition: width 0.4s ease; }
+  .bar-track.sm { height: 8px; }
+
+  .phases-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+  .phase-mini .row { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; gap: 6px; }
+  .phase-mini .row b { color: var(--text); font-weight: 600; }
+  .phase-mini .row .n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  .legend { display: flex; gap: 20px; margin-top: 18px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  h2.section { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin: 36px 4px 12px; font-weight: 700; }
+  h2.section:first-of-type { margin-top: 0; }
+  .phase-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 28px 4px 12px; }
+  .phase-title h2 { margin: 0; font-size: 1.05rem; font-weight: 700; }
+  .phase-title .fig { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+  .marcos { display: flex; flex-direction: column; gap: 10px; }
+  .marco { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+  .marco-head { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 14px; padding: 14px 16px; }
+  .marco-num { width: 36px; height: 32px; border-radius: 8px; background: var(--surface-2); color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+               font-family: var(--font-mono); font-weight: 600; font-size: 0.82rem; }
+  .marco[data-status="done"] .marco-num { background: var(--done-bg); color: var(--done-fg); }
+  .marco[data-status="in-progress"] .marco-num { background: var(--progress-bg); color: var(--progress-fg); }
+  .marco-info h3 { margin: 0 0 3px; font-size: 0.95rem; font-weight: 600; }
+  .marco-info p { margin: 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.45; max-width: 62ch; }
+  .marco-prog { margin-top: 8px; display: flex; align-items: center; gap: 10px; }
+  .marco-prog .bar-track { flex: 1; max-width: 260px; }
+  .marco-prog .t { font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+  .pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+  [data-status="done"] > .pill, .pill[data-s="done"] { background: var(--done-bg); color: var(--done-fg); }
+  [data-status="done"] > .pill .dot, .pill[data-s="done"] .dot { background: var(--done-dot); }
+  .pill[data-s="in-progress"] { background: var(--progress-bg); color: var(--progress-fg); }
+  .pill[data-s="in-progress"] .dot { background: var(--progress-dot); }
+  .pill[data-s="not-started"] { background: var(--todo-bg); color: var(--todo-fg); }
+  .pill[data-s="not-started"] .dot { background: var(--todo-dot); }
+  .pill[data-s="pending"] { background: var(--pending-bg); color: var(--pending-fg); }
+  .pill[data-s="pending"] .dot { background: var(--pending-dot); }
+
+  details.stories { border-top: 1px solid var(--border); }
+  details.stories summary { cursor: pointer; padding: 10px 16px; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); list-style: none; display: flex; align-items: center; gap: 8px; }
+  details.stories summary::-webkit-details-marker { display: none; }
+  details.stories summary::before { content: "▸"; display: inline-block; transition: transform 0.15s; }
+  details.stories[open] summary::before { transform: rotate(90deg); }
+  ul.story-list { list-style: none; margin: 0; padding: 0 16px 14px; display: flex; flex-direction: column; gap: 4px; }
+  ul.story-list li { display: grid; grid-template-columns: 62px 1fr auto; gap: 10px; align-items: baseline; font-size: 0.82rem; padding: 6px 0; border-top: 1px dashed var(--border); }
+  ul.story-list li:first-child { border-top: 0; }
+  .sid { font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-muted); }
+  .stitle .nota { display: block; color: var(--text-muted); font-size: 0.76rem; margin-top: 2px; }
+  .smeta { display: flex; gap: 8px; align-items: center; }
+  .smeta .pts { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); }
+  .chip { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .chip[data-s="done"] { background: var(--done-bg); color: var(--done-fg); }
+  .chip[data-s="in-progress"] { background: var(--progress-bg); color: var(--progress-fg); }
+  .chip[data-s="not-started"] { background: var(--todo-bg); color: var(--todo-fg); }
+  .chip[data-s="pending"] { background: var(--pending-bg); color: var(--pending-fg); }
+
+  .milestone { display: flex; align-items: center; gap: 12px; margin: 14px 4px 4px; color: var(--text-muted); }
+  .milestone::before, .milestone::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .milestone-label { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+
+  .list-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 4px 16px; }
+  .list-card .item { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--border); }
+  .list-card .item:first-child { border-top: 0; }
+  .item h4 { margin: 0 0 2px; font-size: 0.88rem; font-weight: 600; }
+  .item p { margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; }
+
+  footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--text-muted); line-height: 1.65; }
+  footer code { font-family: var(--font-mono); background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-size: 0.85em; }
+
+  @media (max-width: 620px) {
+    .phases-mini { grid-template-columns: 1fr; }
+    .marco-head { grid-template-columns: 40px 1fr; }
+    .marco-head .pill { grid-column: 1 / -1; justify-self: start; }
+    ul.story-list li { grid-template-columns: 56px 1fr; }
+    .smeta { grid-column: 2; }
+    .list-card .item { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { .bar-fill, details.stories summary::before { transition: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">CF</div>
+      <div class="brand-text">
+        <h1>Progresso de Desenvolvimento</h1>
+        <p>CapiFit — acompanhamento por marco e fase</p>
+      </div>
+    </div>
+    <button id="theme-toggle" type="button" aria-label="Alternar tema">
+      <svg class="icon-light" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <svg class="icon-dark" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      Tema
+    </button>
+  </header>
+
+  <section class="summary" aria-label="Resumo geral">
+    <div class="summary-top">
+      <span class="label">Progresso geral (pontos)</span>
+      <span class="figure" id="summary-figure">–</span>
+    </div>
+    <div class="bar-track" role="progressbar" aria-label="Progresso geral" aria-valuemin="0" aria-valuemax="100" id="bar-track">
+      <div class="bar-fill" id="bar-fill" style="width: 0%"></div>
+    </div>
+    <div class="phases-mini" id="phases-mini"></div>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-dot" style="background: var(--done-dot)"></span>Concluído</span>
+      <span class="legend-item"><span class="legend-dot" style="background: var(--progress-dot)"></span>Em andamento</span>
+      <span class="legend-item"><span class="legend-dot" style="background: var(--pending-dot)"></span>Pendente (externo)</span>
+      <span class="legend-item"><span class="legend-dot" style="background: var(--todo-dot)"></span>Não iniciado</span>
+    </div>
+  </section>
+
+  <div id="roadmap"></div>
+
+  <h2 class="section">Dependências externas (Documento 11, bloco A)</h2>
+  <div class="list-card" id="externas"></div>
+
+  <h2 class="section">Especificação concluída (Documentos 01–11)</h2>
+  <div class="list-card" id="planejamento"></div>
+
+  <footer>
+    <p>
+      Fonte dos dados: <code>docs/10_backlog.csv</code> (histórias) e <code>docs/progress-status.json</code> (estado).
+      Para atualizar: altere o estado no JSON e rode <code>node tools/progress/build-progress.js</code>.
+      Esta página é estática e funciona aberta direto do disco. Marcos, fases e critérios de saída: <code>docs/10_backlog_roadmap_plano_testes.md</code>.
+    </p>
+    <p id="updated-at"></p>
+  </footer>
+
+</div>
+
+<script>
+  // Dados gerados por tools/progress/build-progress.js — não editar à mão aqui.
+  const DATA = {"geradoEm":"22/10/2026, 12:02","atualizadoEm":"22/10/2026","fases":[{"n":1,"nome":"Fase 1 — Núcleo individual"},{"n":2,"nome":"Fase 2 — Sugestões e conforto"},{"n":3,"nome":"Fase 3 — Coach ponta a ponta"}],"marcos":[{"id":"M0","fase":1,"titulo":"Fundações","objetivo":"Fundações e dependências externas iniciadas."},{"id":"M1","fase":1,"titulo":"Fatia vertical","objetivo":"Login → catálogo → treino avulso online com série registrada."},{"id":"M2","fase":1,"titulo":"Núcleo online","objetivo":"Programas manuais, executor, resumo e histórico funcionando online."},{"id":"M3","fase":1,"titulo":"Offline e sincronização","objetivo":"Registro offline, recuperação de sessão e sync idempotente completos."},{"id":"M4","fase":1,"titulo":"Beta fechado","objetivo":"Acessibilidade, segurança e privacidade auditadas; mídia da onda 1 aprovada."},{"id":"M5","fase":1,"titulo":"Lançamento da Fase 1","objetivo":"Lojas aprovadas, runbook e métricas ativos.","milestoneAfter":"Fase 1 concluída — lançamento"},{"id":"M6","fase":2,"titulo":"Sugestões por regras","objetivo":"Motor rules-1.0 com modelos aprovados e assistente no app."},{"id":"M7","fase":2,"titulo":"Conforto e evolução avançada","objetivo":"Evolução por exercício, sync incremental, exercício personalizado e notificações.","milestoneAfter":"Fase 2 concluída"},{"id":"M8","fase":3,"titulo":"Coach: API, app e portal","objetivo":"Verificação, vínculo, prescrição, aceite, portal e revogação."},{"id":"M9","fase":3,"titulo":"Piloto com coaches","objetivo":"Piloto fechado com coaches verificados e acompanhamento mínimo.","milestoneAfter":"Fase 3 concluída"}],"stories":[{"id":"E00-01","titulo":"Repositório, convenções de branch/commit e modelo de PR","marco":"M0","fase":1,"pts":2,"papel":"DevOps","status":"done","nota":"Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo)."},{"id":"E00-02","titulo":"Ambientes local, CI e staging com MySQL 8 e PHP 8.2 (contêiner)","marco":"M0","fase":1,"pts":5,"papel":"DevOps","status":"not-started"},{"id":"E00-03","titulo":"Runner de migrations (04 → 06 → 09) e banco de teste descartável","marco":"M0","fase":1,"pts":3,"papel":"API","status":"in-progress","nota":"Script tools/db/apply-schema.ps1 testado em MariaDB 10.4; falta rodar em MySQL 8 real."},{"id":"E00-04","titulo":"Esqueleto da API: front controller, router, middlewares, envelope e erros","marco":"M0","fase":1,"pts":8,"papel":"API","status":"not-started"},{"id":"E00-05","titulo":"Pipeline de CI: lint, testes, validate-openapi (L0), check-contrast, diff de contrato (L6)","marco":"M0","fase":1,"pts":5,"papel":"DevOps","status":"in-progress","nota":"CI criado (.github/workflows/ci.yml); falta confirmar a primeira execução na aba Actions do GitHub."},{"id":"E00-06","titulo":"Observabilidade: logs estruturados sem PII, métricas por endpoint, alertas","marco":"M0","fase":1,"pts":5,"papel":"DevOps","status":"not-started"},{"id":"E00-07","titulo":"Segredos, backups e teste de restauração","marco":"M0","fase":1,"pts":3,"papel":"DevOps","status":"not-started"},{"id":"E00-08","titulo":"Esqueleto do app Expo: rotas, tema por tokens, i18n pt-BR, lint de hex literal","marco":"M0","fase":1,"pts":5,"papel":"App","status":"not-started"},{"id":"E00-09","titulo":"Tipos TypeScript gerados do OpenAPI e servidor mock (L7)","marco":"M1","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E00-10","titulo":"Jobs de limpeza: idempotência, rate limit, tokens expirados","marco":"M3","fase":1,"pts":2,"papel":"API","status":"not-started"},{"id":"E01-01","titulo":"API: registro com consentimentos e declaração de 18+","marco":"M1","fase":1,"pts":5,"papel":"API","status":"not-started"},{"id":"E01-02","titulo":"API: login, refresh com rotação e detecção de reuso, logout","marco":"M1","fase":1,"pts":8,"papel":"API","status":"not-started"},{"id":"E01-03","titulo":"API: recuperação de senha e verificação de e-mail","marco":"M2","fase":1,"pts":5,"papel":"API","status":"not-started"},{"id":"E01-04","titulo":"API: /me e perfil de treinamento","marco":"M1","fase":1,"pts":3,"papel":"API","status":"not-started"},{"id":"E01-05","titulo":"Rate limit e anti-enumeração nas rotas de autenticação","marco":"M2","fase":1,"pts":3,"papel":"API","status":"not-started"},{"id":"E01-06","titulo":"App: TEL-002/003/004 e armazenamento seguro de tokens","marco":"M1","fase":1,"pts":8,"papel":"App","status":"not-started"},{"id":"E01-07","titulo":"App: TEL-001 inicialização e restauração de sessão","marco":"M1","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E01-08","titulo":"API: dispositivos (registrar, listar, revogar)","marco":"M3","fase":1,"pts":2,"papel":"API","status":"not-started"},{"id":"E02-01","titulo":"API: consentimentos (listar, registrar, revogar)","marco":"M2","fase":1,"pts":3,"papel":"API","status":"not-started"},{"id":"E02-02","titulo":"API e workflow interno: solicitações de exportação e exclusão","marco":"M4","fase":1,"pts":8,"papel":"API","status":"not-started"},{"id":"E02-03","titulo":"App: TEL-042 privacidade, exportação e exclusão com reautenticação","marco":"M4","fase":1,"pts":5,"papel":"App","status":"not-started"},{"id":"E02-04","titulo":"Termos de uso e política de privacidade versionados; política de retenção","marco":"M3","fase":1,"pts":3,"papel":"Jurídico","status":"not-started"},{"id":"E02-05","titulo":"Revisão do fluxo de dados e dos logs (sem PII/restrições)","marco":"M4","fase":1,"pts":3,"papel":"API","status":"not-started"},{"id":"E02-06","titulo":"Declarações das lojas (privacy labels e data safety)","marco":"M4","fase":1,"pts":2,"papel":"Jurídico","status":"not-started"},{"id":"E03-01","titulo":"API: leitura do catálogo (busca por nome e sinônimo, grupos, equipamentos, alternativas, mídias)","marco":"M1","fase":1,"pts":8,"papel":"API","status":"not-started"},{"id":"E03-02","titulo":"Aplicar seed do catálogo piloto com importador idempotente","marco":"M1","fase":1,"pts":3,"papel":"API","status":"not-started"},{"id":"E03-03","titulo":"Painel admin: login e controle de acesso por papel","marco":"M2","fase":1,"pts":5,"papel":"Web","status":"not-started"},{"id":"E03-04","titulo":"Painel admin: exercícios, taxonomia, cuidados, sinônimos e alternativas","marco":"M2","fase":1,"pts":8,"papel":"Web","status":"not-started"},{"id":"E03-05","titulo":"Fluxo de revisão e publicação de exercícios","marco":"M2","fase":1,"pts":5,"papel":"API","status":"not-started"},{"id":"E03-06","titulo":"Mídias: vínculo por chave de storage, aprovação e URLs temporárias","marco":"M3","fase":1,"pts":8,"papel":"API","status":"not-started"},{"id":"E03-07","titulo":"Auditoria: eventos e consulta","marco":"M3","fase":1,"pts":3,"papel":"API","status":"not-started"},{"id":"E03-08","titulo":"Usuários e papéis (menor privilégio)","marco":"M3","fase":1,"pts":3,"papel":"Web","status":"not-started"},{"id":"E03-09","titulo":"Dashboard operacional do admin","marco":"M4","fase":1,"pts":2,"papel":"Web","status":"not-started"},{"id":"E03-10","titulo":"Redigir instruções, cuidados e alternativas dos 20 exercícios da onda 1","marco":"M2","fase":1,"pts":8,"papel":"Conteúdo","status":"not-started"},{"id":"E03-11","titulo":"Revisão técnica por profissional habilitado do conteúdo da onda 1","marco":"M3","fase":1,"pts":8,"papel":"Conteúdo","status":"not-started"},{"id":"E04-01","titulo":"Tema claro/escuro por tokens, fonte Inter e tipografia escalável","marco":"M1","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E04-02","titulo":"Componentes base: botões, campos, estado vazio, diálogo, aviso","marco":"M1","fase":1,"pts":8,"papel":"App","status":"not-started"},{"id":"E04-03","titulo":"BottomTabs e AppShell com retorno ao treino em andamento","marco":"M1","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E04-04","titulo":"OriginBadge, SyncStatus, WorkoutCard, WeekStrip e StatTile","marco":"M2","fase":1,"pts":5,"papel":"App","status":"not-started"},{"id":"E04-05","titulo":"Preferências de acessibilidade e da Capi (ocultar, reduzir animação, sons)","marco":"M3","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E04-06","titulo":"Biblioteca de estados padrão: carregando, vazio, erro, offline, sem permissão","marco":"M2","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E04-07","titulo":"Protótipo navegável e teste de usabilidade rodada 1","marco":"M1","fase":1,"pts":5,"papel":"Design","status":"not-started"},{"id":"E05-01","titulo":"App: TEL-005/006 perfil e preferências","marco":"M2","fase":1,"pts":5,"papel":"App","status":"not-started"},{"id":"E05-02","titulo":"App: TEL-007 escolha da origem (coach e sugestão indicados como \"em breve\")","marco":"M2","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E05-03","titulo":"App: TEL-010 Início com estados (sem programa, ativo, sessão aberta, offline)","marco":"M2","fase":1,"pts":8,"papel":"App","status":"not-started"},{"id":"E05-04","titulo":"App: retomada de onboarding interrompido","marco":"M3","fase":1,"pts":2,"papel":"App","status":"not-started"},{"id":"E06-01","titulo":"API: programas, versões, estrutura, publicar, ativar, arquivar, copiar, programa ativo","marco":"M2","fase":1,"pts":13,"papel":"API","status":"not-started"},{"id":"E06-02","titulo":"API: concorrência por revisão e testes de conflito","marco":"M2","fase":1,"pts":3,"papel":"API","status":"not-started"},{"id":"E06-03","titulo":"App: TEL-020 Meus treinos","marco":"M2","fase":1,"pts":5,"papel":"App","status":"not-started"},{"id":"E06-04","titulo":"App: TEL-021/022 editor de programa e ficha","marco":"M2","fase":1,"pts":8,"papel":"App","status":"not-started"},{"id":"E06-05","titulo":"App: TEL-023 configurar exercício e séries","marco":"M2","fase":1,"pts":5,"papel":"App","status":"not-started"},{"id":"E06-06","titulo":"App: TEL-024/025 biblioteca e detalhe com fallback textual","marco":"M2","fase":1,"pts":8,"papel":"App","status":"not-started"},{"id":"E06-07","titulo":"App: rascunho local e aviso de alterações não salvas","marco":"M3","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E06-08","titulo":"App: ativação, troca de programa e arquivamento","marco":"M2","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E06-09","titulo":"App: cópia de programa","marco":"M3","fase":1,"pts":2,"papel":"App","status":"not-started"},{"id":"E07-01","titulo":"API: sessões avulsas (criar, consultar, observação, séries, concluir, cancelar) com sessão única em andamento","marco":"M1","fase":1,"pts":8,"papel":"API","status":"not-started"},{"id":"E07-02","titulo":"API: adicionar e substituir exercício; pausar e retomar","marco":"M2","fase":1,"pts":5,"papel":"API","status":"not-started"},{"id":"E07-12","titulo":"API: sessões programadas a partir de ficha publicada (versão e ficha coerentes)","marco":"M2","fase":1,"pts":5,"papel":"API","status":"not-started"},{"id":"E07-03","titulo":"API: último registro por exercício (unitário e em lote)","marco":"M2","fase":1,"pts":3,"papel":"API","status":"not-started"},{"id":"E07-04","titulo":"App: TEL-011 detalhe da ficha e iniciar/continuar","marco":"M2","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E07-05","titulo":"App: TEL-012 executor com pré-preenchimento, concluir série e navegação","marco":"M1","fase":1,"pts":13,"papel":"App","status":"not-started"},{"id":"E07-06","titulo":"App: TEL-013 timer de descanso por instante final e notificação local","marco":"M2","fase":1,"pts":5,"papel":"App","status":"not-started"},{"id":"E07-07","titulo":"App: treino avulso e adição/substituição de exercício","marco":"M2","fase":1,"pts":5,"papel":"App","status":"not-started"},{"id":"E07-08","titulo":"App: pausar, retomar, abandono e finalização parcial","marco":"M2","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E07-09","titulo":"App: TEL-014 resumo da sessão","marco":"M2","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E07-10","titulo":"App: rótulos de carga por convenção e unilaterais","marco":"M2","fase":1,"pts":2,"papel":"App","status":"not-started"},{"id":"E07-11","titulo":"App: recuperação da sessão após fechamento inesperado","marco":"M3","fase":1,"pts":5,"papel":"App","status":"not-started"},{"id":"E08-01","titulo":"App: SQLite local — esquema, repositórios e migração","marco":"M3","fase":1,"pts":8,"papel":"App","status":"not-started"},{"id":"E08-02","titulo":"App: cache do treino do dia (programa, exercícios, últimos registros)","marco":"M3","fase":1,"pts":5,"papel":"App","status":"not-started"},{"id":"E08-03","titulo":"App: fila de operações, sequência do cliente e UUIDs gerados no app","marco":"M3","fase":1,"pts":5,"papel":"App","status":"not-started"},{"id":"E08-04","titulo":"API: /sync/push com snapshot, payload_hash e resultados por item","marco":"M3","fase":1,"pts":13,"papel":"API","status":"not-started"},{"id":"E08-05","titulo":"App: resolução de conflitos (TEL-050) e regras de última-escrita","marco":"M3","fase":1,"pts":8,"papel":"App","status":"not-started"},{"id":"E08-06","titulo":"App: reconciliação por snapshot após o envio","marco":"M3","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E08-07","titulo":"App: SyncStatus global e avisos de modo offline","marco":"M3","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E08-08","titulo":"Testes de caos de rede: duplicidade, perda e reordenação (L5)","marco":"M3","fase":1,"pts":8,"papel":"QA","status":"not-started"},{"id":"E08-09","titulo":"App: logout e troca de conta com dados pendentes","marco":"M3","fase":1,"pts":3,"papel":"App","status":"not-started"},{"id":"E09-01","titulo":"API: histórico de sessões e detalhe","marco":"M2","fase":1,"pts":3,"papel":"API","status":"not-started"},{"id":"E09-02","titulo":"API: resumo de progresso com fuso horário do usuário","marco":"M2","fase":1,"pts":5,"papel":"API","status":"not-started"},{"id":"E09-03","titulo":"App: TEL-030/031 evolução e histórico","marco":"M2","fase":1,"pts":8,"papel":"App","status":"not-started"},{"id":"E09-04","titulo":"App: estados vazios e explicação do cálculo de volume","marco":"M3","fase":1,"pts":2,"papel":"App","status":"not-started"},{"id":"E10-01","titulo":"Character Bible v1: model sheet, paleta e expressões","marco":"M0","fase":1,"pts":8,"papel":"Design","status":"not-started"},{"id":"E10-02","titulo":"Rig 3D com limites articulares e rig técnico","marco":"M2","fase":1,"pts":13,"papel":"Design","status":"not-started"},{"id":"E10-03","titulo":"Kit de UI da Capi: poses do MVP em WebP","marco":"M2","fase":1,"pts":5,"papel":"Design","status":"not-started"},{"id":"E10-04","titulo":"Mídias da onda 1 — lote 1 (5 exercícios)","marco":"M3","fase":1,"pts":8,"papel":"Design","status":"not-started"},{"id":"E10-05","titulo":"Mídias da onda 1 — lote 2 (5 exercícios)","marco":"M3","fase":1,"pts":8,"papel":"Design","status":"not-started"},{"id":"E10-06","titulo":"Mídias da onda 1 — lote 3 (5 exercícios)","marco":"M4","fase":1,"pts":8,"papel":"Design","status":"not-started"},{"id":"E10-07","titulo":"Mídias da onda 1 — lote 4 (5 exercícios)","marco":"M4","fase":1,"pts":8,"papel":"Design","status":"not-started"},{"id":"E10-08","titulo":"Mídia complementar (vídeo humano/esquema) onde exigida","marco":"M4","fase":1,"pts":8,"papel":"Design","status":"not-started"},{"id":"E10-09","titulo":"App: ExerciseDemoPlayer com cache, legendas e fallback","marco":"M3","fase":1,"pts":8,"papel":"App","status":"not-started"},{"id":"E10-10","titulo":"Revisão técnica das mídias da onda 1","marco":"M4","fase":1,"pts":8,"papel":"Conteúdo","status":"not-started"},{"id":"E11-01","titulo":"Suíte E2E mobile dos fluxos críticos","marco":"M4","fase":1,"pts":8,"papel":"QA","status":"not-started"},{"id":"E11-02","titulo":"Auditoria de acessibilidade (leitor de tela, 200% de fonte, contraste)","marco":"M4","fase":1,"pts":5,"papel":"QA","status":"not-started"},{"id":"E11-03","titulo":"Segurança: ASVS nível 1, SAST, dependências e pentest externo","marco":"M4","fase":1,"pts":8,"papel":"QA","status":"not-started"},{"id":"E11-04","titulo":"Desempenho: orçamento no aparelho de entrada","marco":"M4","fase":1,"pts":5,"papel":"QA","status":"not-started"},{"id":"E11-05","titulo":"Teste de usabilidade rodada 2 (7 roteiros)","marco":"M4","fase":1,"pts":5,"papel":"Design","status":"not-started"},{"id":"E11-06","titulo":"Beta fechado: distribuição, coleta, triagem e correções","marco":"M4","fase":1,"pts":8,"papel":"QA","status":"not-started"},{"id":"E11-07","titulo":"Publicação nas lojas: materiais, textos e revisão","marco":"M5","fase":1,"pts":5,"papel":"App","status":"not-started"},{"id":"E11-08","titulo":"Runbook de incidentes, suporte e resposta a pedidos LGPD","marco":"M5","fase":1,"pts":3,"papel":"DevOps","status":"not-started"},{"id":"E11-09","titulo":"Painel de métricas de produto (eventos do Doc 03 §14)","marco":"M5","fase":1,"pts":5,"papel":"API","status":"not-started"},{"id":"E12-01","titulo":"Modelos de sugestão: edição, aprovação e imutabilidade no admin","marco":"M6","fase":2,"pts":5,"papel":"Web","status":"not-started"},{"id":"E12-02","titulo":"Revisão profissional dos 6 modelos e da triagem de segurança","marco":"M6","fase":2,"pts":8,"papel":"Conteúdo","status":"not-started"},{"id":"E12-03","titulo":"Motor rules-1.0: triagem, seleção, rotação, tempo e registro","marco":"M6","fase":2,"pts":13,"papel":"API","status":"not-started"},{"id":"E12-04","titulo":"Testes do motor: reprodutibilidade, bloqueio, restrições e tempo","marco":"M6","fase":2,"pts":5,"papel":"QA","status":"not-started"},{"id":"E12-05","titulo":"API de sugestões (criar, listar, detalhar, aceitar, descartar)","marco":"M6","fase":2,"pts":5,"papel":"API","status":"not-started"},{"id":"E12-06","titulo":"App: TEL-026/027 assistente e revisão da sugestão","marco":"M6","fase":2,"pts":8,"papel":"App","status":"not-started"},{"id":"E12-07","titulo":"Textos de justificativa e avisos da sugestão","marco":"M6","fase":2,"pts":3,"papel":"Conteúdo","status":"not-started"},{"id":"E12-08","titulo":"Catálogo onda 2 (34 exercícios): textos e revisão técnica","marco":"M6","fase":2,"pts":13,"papel":"Conteúdo","status":"not-started"},{"id":"E12-09","titulo":"Mídias da onda 2 — lote A (12 exercícios)","marco":"M6","fase":2,"pts":8,"papel":"Design","status":"not-started"},{"id":"E12-10","titulo":"Mídias da onda 2 — lote B (11 exercícios)","marco":"M7","fase":2,"pts":8,"papel":"Design","status":"not-started"},{"id":"E12-11","titulo":"Mídias da onda 2 — lote C (11 exercícios)","marco":"M7","fase":2,"pts":8,"papel":"Design","status":"not-started"},{"id":"E13-01","titulo":"Evolução por exercício (API e TEL-032)","marco":"M7","fase":2,"pts":8,"papel":"App","status":"not-started"},{"id":"E13-02","titulo":"Conquistas pessoais sem competição (microcopy revisado)","marco":"M7","fase":2,"pts":5,"papel":"App","status":"not-started"},{"id":"E13-03","titulo":"Sync incremental (change_log, tombstones, cursor)","marco":"M7","fase":2,"pts":13,"papel":"API","status":"not-started"},{"id":"E13-04","titulo":"Exercício personalizado: modelo de dados, moderação e interface","marco":"M7","fase":2,"pts":13,"papel":"API","status":"not-started"},{"id":"E13-05","titulo":"Notificações opt-in e central de avisos","marco":"M7","fase":2,"pts":5,"papel":"App","status":"not-started"},{"id":"E13-06","titulo":"Recordes pessoais","marco":"M7","fase":2,"pts":5,"papel":"App","status":"not-started"},{"id":"E13-07","titulo":"Capi animada de celebração","marco":"M7","fase":2,"pts":3,"papel":"Design","status":"not-started"},{"id":"E14-01","titulo":"Profissionais: solicitação e verificação (API e admin)","marco":"M8","fase":3,"pts":8,"papel":"API","status":"not-started"},{"id":"E14-02","titulo":"Convites, vínculos, escopo e consentimento (API)","marco":"M8","fase":3,"pts":8,"papel":"API","status":"not-started"},{"id":"E14-03","titulo":"Prescrição do coach: publicar com aceite, aceitar, recusar, retirar (API)","marco":"M8","fase":3,"pts":8,"papel":"API","status":"not-started"},{"id":"E14-04","titulo":"Autorização de dados do coach com matriz L3","marco":"M8","fase":3,"pts":5,"papel":"API","status":"not-started"},{"id":"E14-05","titulo":"App: TEL-028/041 prescrições recebidas, vínculo e escopo","marco":"M8","fase":3,"pts":8,"papel":"App","status":"not-started"},{"id":"E14-06","titulo":"Portal do coach: login, alunos e convites","marco":"M8","fase":3,"pts":8,"papel":"Web","status":"not-started"},{"id":"E14-07","titulo":"Portal do coach: editor de prescrição e publicação","marco":"M8","fase":3,"pts":13,"papel":"Web","status":"not-started"},{"id":"E14-08","titulo":"Portal do coach: acompanhamento mínimo do aluno","marco":"M9","fase":3,"pts":8,"papel":"Web","status":"not-started"},{"id":"E14-09","titulo":"Revogação: retirar aceites e negar sync atrasado do coach","marco":"M8","fase":3,"pts":5,"papel":"API","status":"not-started"},{"id":"E14-10","titulo":"Piloto fechado com coaches (sinalizador de ambiente auditado)","marco":"M9","fase":3,"pts":5,"papel":"DevOps","status":"not-started"},{"id":"E14-11","titulo":"Revisão jurídica e regulatória da prescrição por terceiros","marco":"M8","fase":3,"pts":5,"papel":"Jurídico","status":"not-started"}],"externas":[{"titulo":"Revisor técnico","detalhe":"Profissional de Educação Física habilitado para aprovar instruções, cuidados, alternativas, mídia e modelos. Bloqueia o M2 em diante.","status":"pending"},{"titulo":"Responsável pela Capi","detalhe":"Model sheet, rig e vídeos (Doc 08); definir fornecedor e cessão de direitos.","status":"pending"},{"titulo":"Responsável jurídico e LGPD","detalhe":"Termos, política de privacidade, retenção e parecer sobre prescrição por terceiros (Fase 3).","status":"pending"},{"titulo":"Pesquisa de marca","detalhe":"CapiFit no INPI, domínio e nomes nas lojas.","status":"pending"},{"titulo":"Contas Apple e Google","detalhe":"Necessárias para o beta no M4; podem exigir verificação de identidade.","status":"pending"},{"titulo":"Hospedagem e storage","detalhe":"Provedor de API/banco e de objetos para o staging do M1.","status":"not-started"},{"titulo":"Equipe e capacidade","detalhe":"Disponibilidade por papel, para converter pontos em calendário (Doc 10 §5.2).","status":"pending"},{"titulo":"Ferramenta de gestão","detalhe":"Importar docs/10_backlog.csv (opcional: esta página já acompanha o backlog).","status":"not-started"}],"planejamento":[{"titulo":"01 — Visão geral e especificação funcional","arquivo":"docs/01_visao_geral_especificacao_funcional.md"},{"titulo":"02 — Personas, jornadas e fluxos de navegação","arquivo":"docs/02_personas_jornadas_fluxos_navegacao.md"},{"titulo":"03 — Arquitetura de informação, telas e componentes","arquivo":"docs/03_arquitetura_informacao_telas_componentes.md"},{"titulo":"04 — Modelagem de dados e regras de domínio (+ SQL)","arquivo":"docs/04_modelagem_dados_regras_dominio.md"},{"titulo":"05 — Arquitetura e contratos da API REST","arquivo":"docs/05_arquitetura_contratos_api_rest.md"},{"titulo":"06 — Reconciliação, decisões e Migration 001","arquivo":"docs/06_reconciliacao_decisoes_migration_endpoints.md"},{"titulo":"07 — OpenAPI 3.1 e testes de contrato","arquivo":"docs/07_openapi_testes_contrato.md"},{"titulo":"08 — Design system e Character Bible da Capi","arquivo":"docs/08_design_system_character_bible_capi.md"},{"titulo":"09 — Catálogo de exercícios e padrões de prescrição","arquivo":"docs/09_catalogo_exercicios_padroes_prescricao.md"},{"titulo":"10 — Backlog, roadmap e plano de testes","arquivo":"docs/10_backlog_roadmap_plano_testes.md"},{"titulo":"11 — Checklist de execução do marco M0","arquivo":"docs/11_checklist_execucao_marco_m0.md"}]};
+
+  const STATUS_LABEL = { "done": "Concluído", "in-progress": "Em andamento", "not-started": "Não iniciado", "pending": "Pendente (externo)" };
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const pts = (list) => list.reduce((a, s) => a + s.pts, 0);
+  const flagIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>';
+
+  function marcoStatus(list) {
+    if (list.length && list.every((s) => s.status === "done")) return "done";
+    if (list.some((s) => s.status === "done" || s.status === "in-progress")) return "in-progress";
+    return "not-started";
+  }
+
+  function render() {
+    const stories = DATA.stories;
+    const total = pts(stories);
+    const doneP = pts(stories.filter((s) => s.status === "done"));
+    const inProg = stories.filter((s) => s.status === "in-progress").length;
+    const doneN = stories.filter((s) => s.status === "done").length;
+    const pct = total ? Math.round((doneP / total) * 100) : 0;
+
+    document.getElementById("bar-fill").style.width = pct + "%";
+    document.getElementById("bar-track").setAttribute("aria-valuenow", pct);
+    document.getElementById("summary-figure").innerHTML =
+      `${doneP} de ${total} pts <span>(${doneP>0&&pct===0?"<1":pct}% · ${doneN} de ${stories.length} histórias${inProg ? ` · ${inProg} em andamento` : ""})</span>`;
+
+    document.getElementById("phases-mini").innerHTML = DATA.fases.map((f) => {
+      const l = stories.filter((s) => s.fase === f.n);
+      const d = pts(l.filter((s) => s.status === "done"));
+      const p = pts(l);
+      const pc = p ? Math.round((d / p) * 100) : 0;
+      return `<div class="phase-mini"><div class="row"><b>${esc(f.nome)}</b><span class="n">${d}/${p} pts</span></div>
+        <div class="bar-track sm"><div class="bar-fill" style="width:${pc}%"></div></div></div>`;
+    }).join("");
+
+    const root = document.getElementById("roadmap");
+    root.innerHTML = "";
+    for (const f of DATA.fases) {
+      const marcos = DATA.marcos.filter((m) => m.fase === f.n);
+      const fl = stories.filter((s) => s.fase === f.n);
+      const wrap = document.createElement("section");
+      wrap.innerHTML = `<div class="phase-title"><h2>${esc(f.nome)}</h2><span class="fig">${pts(fl.filter((s) => s.status === "done"))}/${pts(fl)} pts · ${fl.length} histórias</span></div>`;
+      const list = document.createElement("div");
+      list.className = "marcos";
+      for (const m of marcos) {
+        const ml = stories.filter((s) => s.marco === m.id);
+        const st = marcoStatus(ml);
+        const d = pts(ml.filter((s) => s.status === "done"));
+        const p = pts(ml);
+        const pc = p ? Math.round((d / p) * 100) : 0;
+        const el = document.createElement("div");
+        el.className = "marco";
+        el.dataset.status = st;
+        el.innerHTML = `
+          <div class="marco-head" data-status="${st}">
+            <div class="marco-num">${esc(m.id)}</div>
+            <div class="marco-info">
+              <h3>${esc(m.titulo)}</h3>
+              <p>${esc(m.objetivo)}</p>
+              <div class="marco-prog"><div class="bar-track sm"><div class="bar-fill" style="width:${pc}%"></div></div><span class="t">${d}/${p} pts · ${ml.filter((s) => s.status === "done").length}/${ml.length}</span></div>
+            </div>
+            <span class="pill" data-s="${st}"><span class="dot"></span>${STATUS_LABEL[st]}</span>
+          </div>
+          <details class="stories">
+            <summary>${ml.length} histórias</summary>
+            <ul class="story-list">${ml.map((s) => `
+              <li>
+                <span class="sid">${esc(s.id)}</span>
+                <span class="stitle">${esc(s.titulo)}${s.nota ? `<span class="nota">${esc(s.nota)}</span>` : ""}</span>
+                <span class="smeta"><span class="pts">${s.pts} pt · ${esc(s.papel)}</span><span class="chip" data-s="${s.status}">${STATUS_LABEL[s.status]}</span></span>
+              </li>`).join("")}
+            </ul>
+          </details>`;
+        list.appendChild(el);
+        if (m.milestoneAfter) {
+          const ms = document.createElement("div");
+          ms.className = "milestone";
+          ms.innerHTML = `<span class="milestone-label">${flagIcon}${esc(m.milestoneAfter)}</span>`;
+          list.appendChild(ms);
+        }
+      }
+      wrap.appendChild(list);
+      root.appendChild(wrap);
+    }
+
+    document.getElementById("externas").innerHTML = DATA.externas.map((e) => `
+      <div class="item"><div><h4>${esc(e.titulo)}</h4><p>${esc(e.detalhe)}</p></div>
+      <span class="pill" data-s="${e.status}"><span class="dot"></span>${STATUS_LABEL[e.status]}</span></div>`).join("");
+
+    document.getElementById("planejamento").innerHTML = DATA.planejamento.map((e) => `
+      <div class="item"><div><h4>${esc(e.titulo)}</h4><p><code>${esc(e.arquivo)}</code></p></div>
+      <span class="pill" data-s="done"><span class="dot"></span>Concluído</span></div>`).join("");
+
+    document.getElementById("updated-at").textContent =
+      `Estado informado em ${DATA.atualizadoEm} · página gerada em ${DATA.geradoEm}.`;
+  }
+
+  render();
+
+  // Tema: segue o sistema; a alternância manual é salva quando o navegador permitir.
+  const root = document.documentElement;
+  const STORAGE_KEY = "capifit-progress-theme";
+  function readStoredTheme() { try { return localStorage.getItem(STORAGE_KEY); } catch { return null; } }
+  function writeStoredTheme(v) { try { localStorage.setItem(STORAGE_KEY, v); } catch { /* sandbox: ignorar */ } }
+  const saved = readStoredTheme();
+  if (saved) root.setAttribute("data-theme", saved);
+  document.getElementById("theme-toggle").addEventListener("click", () => {
+    const current = root.getAttribute("data-theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const next = current === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    writeStoredTheme(next);
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "atualizado_em": "22/10/2026",
+  "stories": {
+    "E00-01": "done",
+    "E00-03": "in-progress",
+    "E00-05": "in-progress"
+  },
+  "notas": {
+    "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
+    "E00-03": "Script tools/db/apply-schema.ps1 testado em MariaDB 10.4; falta rodar em MySQL 8 real.",
+    "E00-05": "CI criado (.github/workflows/ci.yml); falta confirmar a primeira execução na aba Actions do GitHub."
+  },
+  "externas": {
+    "revisor": "pending",
+    "capi": "pending",
+    "juridico": "pending",
+    "marca": "pending",
+    "contas_lojas": "pending",
+    "hospedagem": "not-started",
+    "equipe": "pending",
+    "gestao": "not-started"
+  }
+}
