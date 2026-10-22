@@ -1,0 +1,121 @@
+{
+  "$description": "CapiFit | Documento 08 | Design tokens v0.2 (substitui os valores do Doc 03 §7.1). Fonte para o tema do app (React Native) e para as variáveis do painel web.",
+  "version": "0.2.0",
+  "color": {
+    "dark": {
+      "bg.primary": "#0D1117",
+      "bg.surface": "#171D26",
+      "bg.elevated": "#222B36",
+      "brand.primary": "#94F047",
+      "brand.onPrimary": "#0D1117",
+      "brand.dark": "#447A20",
+      "text.primary": "#F6F8FA",
+      "text.secondary": "#B5BECA",
+      "text.disabled": "#7C8795",
+      "feedback.error": "#FF7777",
+      "feedback.warning": "#FFD166",
+      "feedback.success": "#8CE5B0",
+      "feedback.info": "#7CB7FF",
+      "border.subtle": "#35404D",
+      "border.strong": "#6B7889",
+      "focus.ring": "#FFFFFF",
+      "origin.usuario": "#8CE5B0",
+      "origin.coach": "#7CB7FF",
+      "origin.app": "#C4A6FF"
+    },
+    "light": {
+      "bg.primary": "#F6F8FA",
+      "bg.surface": "#FFFFFF",
+      "bg.elevated": "#EEF1F5",
+      "brand.primary": "#94F047",
+      "brand.onPrimary": "#0D1117",
+      "brand.text": "#2E6414",
+      "brand.dark": "#447A20",
+      "text.primary": "#0D1117",
+      "text.secondary": "#4A5565",
+      "text.disabled": "#6F7A89",
+      "feedback.error": "#B42318",
+      "feedback.warning": "#8A5A00",
+      "feedback.success": "#17653A",
+      "feedback.info": "#1F5FBF",
+      "border.subtle": "#D0D7DE",
+      "border.strong": "#6B7889",
+      "focus.ring": "#0D1117",
+      "origin.usuario": "#17653A",
+      "origin.coach": "#1F5FBF",
+      "origin.app": "#6B3FD0"
+    }
+  },
+  "contrastPairs": [
+    { "fg": "text.primary", "bg": "bg.primary", "min": 4.5 },
+    { "fg": "text.primary", "bg": "bg.surface", "min": 4.5 },
+    { "fg": "text.primary", "bg": "bg.elevated", "min": 4.5 },
+    { "fg": "text.secondary", "bg": "bg.primary", "min": 4.5 },
+    { "fg": "text.secondary", "bg": "bg.surface", "min": 4.5 },
+    { "fg": "text.secondary", "bg": "bg.elevated", "min": 4.5 },
+    { "fg": "brand.onPrimary", "bg": "brand.primary", "min": 4.5 },
+    { "fg": "feedback.error", "bg": "bg.surface", "min": 4.5 },
+    { "fg": "feedback.warning", "bg": "bg.surface", "min": 4.5 },
+    { "fg": "feedback.success", "bg": "bg.surface", "min": 4.5 },
+    { "fg": "feedback.info", "bg": "bg.surface", "min": 4.5 },
+    { "fg": "feedback.error", "bg": "bg.elevated", "min": 4.5 },
+    { "fg": "origin.usuario", "bg": "bg.surface", "min": 4.5 },
+    { "fg": "origin.coach", "bg": "bg.surface", "min": 4.5 },
+    { "fg": "origin.app", "bg": "bg.surface", "min": 4.5 },
+    { "fg": "origin.coach", "bg": "bg.elevated", "min": 4.5 },
+    { "fg": "origin.app", "bg": "bg.elevated", "min": 4.5 },
+    { "fg": "border.strong", "bg": "bg.primary", "min": 3 },
+    { "fg": "border.strong", "bg": "bg.surface", "min": 3 },
+    { "fg": "focus.ring", "bg": "bg.primary", "min": 3 },
+    { "fg": "focus.ring", "bg": "bg.surface", "min": 3 }
+  ],
+  "contrastPairsByTheme": {
+    "dark": [
+      { "fg": "brand.primary", "bg": "bg.primary", "min": 3 },
+      { "fg": "brand.primary", "bg": "bg.surface", "min": 3 }
+    ],
+    "light": [
+      { "fg": "brand.text", "bg": "bg.surface", "min": 4.5 },
+      { "fg": "brand.text", "bg": "bg.primary", "min": 4.5 },
+      { "fg": "brand.dark", "bg": "bg.surface", "min": 3 }
+    ]
+  },
+  "typography": {
+    "family": "Inter",
+    "fallback": "system-ui",
+    "features": ["tnum"],
+    "scale": {
+      "caption": { "size": 12, "line": 16, "weight": 500 },
+      "bodySmall": { "size": 14, "line": 20, "weight": 400 },
+      "body": { "size": 16, "line": 24, "weight": 400 },
+      "bodyStrong": { "size": 16, "line": 24, "weight": 600 },
+      "title": { "size": 20, "line": 28, "weight": 600 },
+      "headline": { "size": 24, "line": 32, "weight": 700 },
+      "display": { "size": 32, "line": 40, "weight": 700 },
+      "numeric": { "size": 24, "line": 32, "weight": 700 }
+    },
+    "maxFontScale": 2
+  },
+  "space": [4, 8, 12, 16, 24, 32],
+  "radius": { "sm": 8, "md": 12, "lg": 16, "xl": 24, "pill": 999 },
+  "size": {
+    "touchMin.ios": 44,
+    "touchMin.android": 48,
+    "touchPreferred": 56,
+    "setRow.height": 64,
+    "setField.width": 80,
+    "icon": [20, 24, 32],
+    "avatar.capi": [32, 40, 56],
+    "tabBar.height": 64
+  },
+  "motion": {
+    "duration": { "instant": 0, "fast": 120, "base": 200, "slow": 320 },
+    "easing": { "standard": "cubic-bezier(0.2, 0, 0, 1)", "exit": "cubic-bezier(0.4, 0, 1, 1)" },
+    "reducedMotion": "duration=0 para transições não essenciais; Capi vira imagem estática"
+  },
+  "elevation": {
+    "dark": { "surface": "sem sombra; diferença por cor de fundo", "elevated": "bg.elevated + border.subtle" },
+    "light": { "surface": "border.subtle", "elevated": "sombra 0 2 8 rgba(13,17,23,0.08)" }
+  },
+  "breakpoints.web": { "sm": 576, "md": 768, "lg": 992, "xl": 1200 }
+}

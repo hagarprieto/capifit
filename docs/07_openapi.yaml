@@ -1,0 +1,6055 @@
+# CapiFit | Documento 07 | OpenAPI 3.1 (gerado e validado; fonte de verdade do contrato REST v1)
+openapi: 3.1.0
+info:
+  title: CapiFit API
+  version: 1.0.0
+  license:
+    name: Proprietária — uso interno do projeto
+    identifier: LicenseRef-Proprietary
+  summary: Contrato REST v1 do CapiFit
+  description: >-
+    Derivado dos Documentos 05 e 06. Extensões: `x-papeis` (papéis autorizados; `publico` = sem autenticação) e `x-fase`
+    (fase de entrega 1–3). Toda resposta de sucesso usa o envelope `{data, meta}` (listas: `{data, pagination, meta}`).
+    IDs públicos são UUID; exceção documentada: taxonomias de catálogo, mídias, sugestões, convites e consentimentos
+    usam ids string opacos porque não são sincronizáveis.
+servers:
+  - url: https://api.exemplo.invalid/v1
+    description: Placeholder — não é um serviço real
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+    description: Cadastro, login e tokens
+  - name: Conta
+    description: Perfil, perfil de treino e dispositivos
+  - name: Privacidade
+    description: Consentimentos e direitos do titular
+  - name: Catalogo
+    description: Exercícios, grupos e equipamentos
+  - name: Programas
+    description: Programas, versões, ativação e cópias
+  - name: Sessoes
+    description: Execução de treino e séries
+  - name: Progresso
+    description: Último registro e resumo de evolução
+  - name: Sync
+    description: Sincronização offline idempotente
+  - name: Coach
+    description: Vínculos, prescrição e aceite (Fase 3)
+  - name: Sugestoes
+    description: Motor de sugestão por regras (Fase 2)
+  - name: Admin
+    description: Catálogo, revisão, papéis e auditoria
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      operationId: authRegister
+      summary: Criar conta de aluno
+      x-papeis:
+        - publico
+      x-fase: '1'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TokenResponse'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      operationId: authLogin
+      summary: Login
+      x-papeis:
+        - publico
+      x-fase: '1'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TokenResponse'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      operationId: authRefresh
+      summary: Renovar tokens (rotação; reuso revoga a família)
+      x-papeis:
+        - publico
+      x-fase: '1'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TokenResponse'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      operationId: authLogout
+      summary: Revogar sessão atual
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      responses:
+        '204':
+          description: Sem conteúdo.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /auth/logout-all:
+    post:
+      tags:
+        - Auth
+      operationId: authLogoutAll
+      summary: Revogar todas as sessões
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      responses:
+        '204':
+          description: Sem conteúdo.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /auth/password/forgot:
+    post:
+      tags:
+        - Auth
+      operationId: authForgot
+      summary: Iniciar recuperação (resposta idêntica exista ou não a conta)
+      x-papeis:
+        - publico
+      x-fase: '1'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotRequest'
+      responses:
+        '204':
+          description: Sem conteúdo.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /auth/password/reset:
+    post:
+      tags:
+        - Auth
+      operationId: authReset
+      summary: Redefinir senha com token de uso único
+      x-papeis:
+        - publico
+      x-fase: '1'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetRequest'
+      responses:
+        '204':
+          description: Sem conteúdo.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /auth/email/verify:
+    post:
+      tags:
+        - Auth
+      operationId: authVerifyEmail
+      summary: Confirmar e-mail
+      x-papeis:
+        - publico
+      x-fase: '1'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequest'
+      responses:
+        '204':
+          description: Sem conteúdo.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me:
+    get:
+      tags:
+        - Conta
+      operationId: meGet
+      summary: Perfil mínimo e papéis
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    patch:
+      tags:
+        - Conta
+      operationId: mePatch
+      summary: Alterar dados não sensíveis
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioPatch'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/perfil-treinamento:
+    get:
+      tags:
+        - Conta
+      operationId: perfilGet
+      summary: Perfil de treino
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PerfilTreinamento'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    put:
+      tags:
+        - Conta
+      operationId: perfilPut
+      summary: Criar/substituir perfil de treino
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerfilTreinamento'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PerfilTreinamento'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/dispositivos:
+    get:
+      tags:
+        - Conta
+      operationId: dispositivosList
+      summary: Listar dispositivos de sincronização
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Dispositivo'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      tags:
+        - Conta
+      operationId: dispositivosCreate
+      summary: Registrar dispositivo (idempotente por UUID)
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DispositivoRequest'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Dispositivo'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/dispositivos/{uuid}:
+    delete:
+      tags:
+        - Conta
+      operationId: dispositivosDelete
+      summary: Revogar dispositivo
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Sem conteúdo.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/consentimentos:
+    get:
+      tags:
+        - Privacidade
+      operationId: consentList
+      summary: Listar consentimentos
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Consentimento'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      tags:
+        - Privacidade
+      operationId: consentCreate
+      summary: Registrar consentimento
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentimentoRequest'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Consentimento'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/consentimentos/{id}/revogar:
+    post:
+      tags:
+        - Privacidade
+      operationId: consentRevoke
+      summary: Revogar consentimento
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Consentimento'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/solicitacoes:
+    get:
+      tags:
+        - Privacidade
+      operationId: solicList
+      summary: Listar solicitações do titular
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Solicitacao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      tags:
+        - Privacidade
+      operationId: solicCreate
+      summary: Solicitar exportação ou exclusão de conta
+      description: Exclusão exige `senha`; suspende acesso imediatamente (RG-021).
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitacaoRequest'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Solicitacao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/solicitacoes/{uuid}:
+    get:
+      tags:
+        - Privacidade
+      operationId: solicGet
+      summary: Acompanhar solicitação
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Solicitacao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /exercicios:
+    get:
+      tags:
+        - Catalogo
+      operationId: exerciciosList
+      summary: Buscar exercícios publicados
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+        - name: grupo_id
+          in: query
+          schema:
+            type: string
+        - name: equipamento_id
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - pagination
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExercicioResumo'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /exercicios/{uuid}:
+    get:
+      tags:
+        - Catalogo
+      operationId: exerciciosGet
+      summary: Detalhe com mídia aprovada
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Exercicio'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /exercicios/{uuid}/alternativas:
+    get:
+      tags:
+        - Catalogo
+      operationId: exerciciosAlt
+      summary: Alternativas publicadas
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExercicioResumo'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /exercicios/{uuid}/midias:
+    get:
+      tags:
+        - Catalogo
+      operationId: exerciciosMidias
+      summary: Mídias aprovadas
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Midia'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /grupos-musculares:
+    get:
+      tags:
+        - Catalogo
+      operationId: gruposList
+      summary: Grupos musculares
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ItemTaxonomia'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /equipamentos:
+    get:
+      tags:
+        - Catalogo
+      operationId: equipList
+      summary: Equipamentos
+      x-papeis:
+        - aluno
+        - coach
+        - admin
+      x-fase: '1'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ItemTaxonomia'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/programas:
+    get:
+      tags:
+        - Programas
+      operationId: programasList
+      summary: Listar programas do aluno (rascunhos de coach nunca aparecem)
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: origem
+          in: query
+          schema:
+            $ref: '#/components/schemas/Origem'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - rascunho
+              - publicado
+              - arquivado
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - pagination
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Programa'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      tags:
+        - Programas
+      operationId: programasCreate
+      summary: Criar programa manual
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramaCriar'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Programa'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/programa-ativo:
+    get:
+      tags:
+        - Programas
+      operationId: programaAtivoGet
+      summary: Programa e versão ativos
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ProgramaAtivoDetalhe'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /programas/{uuid}:
+    get:
+      tags:
+        - Programas
+      operationId: programasGet
+      summary: Ler programa autorizado
+      x-papeis:
+        - aluno
+        - coach
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Programa'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    patch:
+      tags:
+        - Programas
+      operationId: programasPatch
+      summary: Editar metadados de rascunho
+      x-papeis:
+        - aluno
+        - coach
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramaPatch'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Programa'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /programas/{uuid}/versoes:
+    post:
+      tags:
+        - Programas
+      operationId: versoesCreate
+      summary: Criar versão rascunho copiando a publicada
+      x-papeis:
+        - aluno
+        - coach
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Versao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /programas/{uuid}/versoes/{numero}:
+    get:
+      tags:
+        - Programas
+      operationId: versoesGet
+      summary: Ler versão e composição
+      x-papeis:
+        - aluno
+        - coach
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: numero
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Versao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /programas/{uuid}/versoes/{numero}/estrutura:
+    put:
+      tags:
+        - Programas
+      operationId: estruturaPut
+      summary: Substituir estrutura de versão rascunho
+      description: 409 `VERSION_IMMUTABLE` se publicada; 409 `REVISION_CONFLICT` se `expected_revision` divergir.
+      x-papeis:
+        - aluno
+        - coach
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: numero
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstruturaRequest'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Versao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /programas/{uuid}/versoes/{numero}/publicar:
+    post:
+      tags:
+        - Programas
+      operationId: versoesPublicar
+      summary: Validar e publicar atomicamente
+      description: Para origem `coach` cria aceite pendente (RG-019); exige coach verificado (RG-022).
+      x-papeis:
+        - aluno
+        - coach
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: numero
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Versao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /programas/{uuid}/ativar:
+    post:
+      tags:
+        - Programas
+      operationId: programasAtivar
+      summary: Ativar versão publicada
+      description: Origem coach exige aceite `aceito` e vínculo ativo.
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AtivarRequest'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ProgramaAtivo'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /programas/{uuid}/arquivar:
+    post:
+      tags:
+        - Programas
+      operationId: programasArquivar
+      summary: Arquivar sem apagar histórico
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Programa'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /programas/{uuid}/copiar:
+    post:
+      tags:
+        - Programas
+      operationId: programasCopiar
+      summary: Criar cópia editável (origem=usuario, derivado_de preenchido)
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Programa'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/prescricoes:
+    get:
+      tags:
+        - Coach
+      operationId: prescList
+      summary: Prescrições recebidas
+      x-papeis:
+        - aluno
+      x-fase: '3'
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum:
+              - pendente
+              - aceito
+              - recusado
+              - substituido
+              - retirado
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - pagination
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Prescricao'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/prescricoes/{uuid}:
+    get:
+      tags:
+        - Coach
+      operationId: prescGet
+      summary: Prévia da prescrição
+      x-papeis:
+        - aluno
+      x-fase: '3'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PrescricaoDetalhe'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/prescricoes/{uuid}/aceitar:
+    post:
+      tags:
+        - Coach
+      operationId: prescAceitar
+      summary: Aceitar (não ativa o programa)
+      x-papeis:
+        - aluno
+      x-fase: '3'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Prescricao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/prescricoes/{uuid}/recusar:
+    post:
+      tags:
+        - Coach
+      operationId: prescRecusar
+      summary: Recusar prescrição
+      x-papeis:
+        - aluno
+      x-fase: '3'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecusarRequest'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Prescricao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /coach/prescricoes/{uuid}/retirar:
+    post:
+      tags:
+        - Coach
+      operationId: prescRetirar
+      summary: Coach retira prescrição pendente
+      x-papeis:
+        - coach
+      x-fase: '3'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Prescricao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /coach/convites:
+    post:
+      tags:
+        - Coach
+      operationId: convitesCreate
+      summary: Criar convite de vínculo
+      x-papeis:
+        - coach
+      x-fase: '3'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConviteCriar'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Convite'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/convites:
+    get:
+      tags:
+        - Coach
+      operationId: convitesList
+      summary: Convites recebidos
+      x-papeis:
+        - aluno
+      x-fase: '3'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - pagination
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Convite'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/convites/{id}/aceitar:
+    post:
+      tags:
+        - Coach
+      operationId: convitesAceitar
+      summary: Aceitar vínculo
+      description: O corpo define o escopo inicial de compartilhamento e registra consentimento.
+      x-papeis:
+        - aluno
+      x-fase: '3'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Escopo'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Vinculo'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/convites/{id}/recusar:
+    post:
+      tags:
+        - Coach
+      operationId: convitesRecusar
+      summary: Recusar vínculo
+      x-papeis:
+        - aluno
+      x-fase: '3'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Convite'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/coaches:
+    get:
+      tags:
+        - Coach
+      operationId: coachesList
+      summary: Vínculos (vigentes e históricos)
+      x-papeis:
+        - aluno
+      x-fase: '3'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Vinculo'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/coaches/{coach_uuid}/escopo:
+    patch:
+      tags:
+        - Coach
+      operationId: coachesEscopo
+      summary: Alterar escopo de compartilhamento
+      x-papeis:
+        - aluno
+      x-fase: '3'
+      parameters:
+        - name: coach_uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Escopo'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Vinculo'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/coaches/{coach_uuid}:
+    delete:
+      tags:
+        - Coach
+      operationId: coachesDelete
+      summary: Aluno encerra vínculo
+      x-papeis:
+        - aluno
+      x-fase: '3'
+      parameters:
+        - name: coach_uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Sem conteúdo.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /coach/alunos:
+    get:
+      tags:
+        - Coach
+      operationId: coachAlunosList
+      summary: Alunos com vínculo
+      x-papeis:
+        - coach
+      x-fase: '3'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - pagination
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CoachAluno'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /coach/alunos/{aluno_uuid}/programas:
+    post:
+      tags:
+        - Coach
+      operationId: coachProgCreate
+      summary: Criar programa para aluno (origem=coach)
+      x-papeis:
+        - coach
+      x-fase: '3'
+      parameters:
+        - name: aluno_uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramaCriar'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Programa'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    get:
+      tags:
+        - Coach
+      operationId: coachProgList
+      summary: Prescrições do coach para o aluno
+      x-papeis:
+        - coach
+      x-fase: '3'
+      parameters:
+        - name: aluno_uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - pagination
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Programa'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /coach/alunos/{aluno_uuid}/sessoes:
+    get:
+      tags:
+        - Coach
+      operationId: coachSessoes
+      summary: Histórico autorizado (exige compartilha_historico)
+      x-papeis:
+        - coach
+      x-fase: '3'
+      parameters:
+        - name: aluno_uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - pagination
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SessaoResumo'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/profissional:
+    post:
+      tags:
+        - Coach
+      operationId: profSolicitar
+      summary: Solicitar habilitação de coach
+      x-papeis:
+        - aluno
+        - coach
+      x-fase: '3'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfissionalRequest'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Profissional'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    get:
+      tags:
+        - Coach
+      operationId: profGet
+      summary: Estado da habilitação
+      x-papeis:
+        - aluno
+        - coach
+      x-fase: '3'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Profissional'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/sugestoes:
+    post:
+      tags:
+        - Sugestoes
+      operationId: sugCreate
+      summary: Gerar sugestão (motor por regras)
+      x-papeis:
+        - aluno
+      x-fase: '2'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SugestaoRequest'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Sugestao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    get:
+      tags:
+        - Sugestoes
+      operationId: sugList
+      summary: Listar sugestões
+      x-papeis:
+        - aluno
+      x-fase: '2'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - pagination
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Sugestao'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/sugestoes/{id}:
+    get:
+      tags:
+        - Sugestoes
+      operationId: sugGet
+      summary: Detalhe e justificativas
+      x-papeis:
+        - aluno
+      x-fase: '2'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Sugestao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/sugestoes/{id}/aceitar:
+    post:
+      tags:
+        - Sugestoes
+      operationId: sugAceitar
+      summary: 'Aceitar: cria programa origem=app'
+      x-papeis:
+        - aluno
+      x-fase: '2'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Programa'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/sugestoes/{id}/descartar:
+    post:
+      tags:
+        - Sugestoes
+      operationId: sugDescartar
+      summary: Descartar
+      x-papeis:
+        - aluno
+      x-fase: '2'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Sugestao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/sessoes:
+    post:
+      tags:
+        - Sessoes
+      operationId: sessoesCreate
+      summary: Iniciar sessão (programada ou avulsa)
+      description: 409 `SESSION_ALREADY_OPEN` traz `details.sessao_uuid` para retomada.
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessaoCriarRequest'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Sessao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    get:
+      tags:
+        - Sessoes
+      operationId: sessoesList
+      summary: Histórico
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - em_andamento
+              - concluida
+              - cancelada
+        - name: de
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: ate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - pagination
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SessaoResumo'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/sessoes/{uuid}:
+    get:
+      tags:
+        - Sessoes
+      operationId: sessoesGet
+      summary: Snapshot de execução
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Sessao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    patch:
+      tags:
+        - Sessoes
+      operationId: sessoesPatch
+      summary: Observação do treino em andamento
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessaoPatch'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Sessao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/sessoes/{uuid}/series/{serie_uuid}:
+    patch:
+      tags:
+        - Sessoes
+      operationId: serieUpdate
+      summary: Registrar série (última-escrita-vence)
+      description: 409 `SESSION_CLOSED` se a sessão estiver encerrada.
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: serie_uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SerieUpdateRequest'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SessaoSerie'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/sessoes/{uuid}/series:
+    post:
+      tags:
+        - Sessoes
+      operationId: serieCreate
+      summary: Adicionar série extra
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SerieCriarRequest'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SessaoSerie'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/sessoes/{uuid}/exercicios:
+    post:
+      tags:
+        - Sessoes
+      operationId: sessaoExCreate
+      summary: Adicionar exercício à sessão
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExercicioSessaoRequest'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SessaoExercicio'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/sessoes/{uuid}/exercicios/{ex_uuid}/substituir:
+    post:
+      tags:
+        - Sessoes
+      operationId: sessaoExSubstituir
+      summary: Substituir exercício preservando o prescrito
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: ex_uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubstituirRequest'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SessaoExercicio'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/sessoes/{uuid}/pausar:
+    post:
+      tags:
+        - Sessoes
+      operationId: sessaoPausar
+      summary: Pausar (idempotente)
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Pausa'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/sessoes/{uuid}/retomar:
+    post:
+      tags:
+        - Sessoes
+      operationId: sessaoRetomar
+      summary: Retomar (idempotente)
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Pausa'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/sessoes/{uuid}/concluir:
+    post:
+      tags:
+        - Sessoes
+      operationId: sessaoConcluir
+      summary: Concluir idempotentemente
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EncerrarRequest'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Sessao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/sessoes/{uuid}/cancelar:
+    post:
+      tags:
+        - Sessoes
+      operationId: sessaoCancelar
+      summary: Cancelar
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelarRequest'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Sessao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/exercicios/ultimos-registros:
+    get:
+      tags:
+        - Progresso
+      operationId: ultimosRegistros
+      summary: Último registro em lote (máx. 50 ids)
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: ids
+          in: query
+          required: true
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+            minItems: 1
+            maxItems: 50
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UltimoRegistro'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/exercicios/{uuid}/ultimo-registro:
+    get:
+      tags:
+        - Progresso
+      operationId: ultimoRegistro
+      summary: Última sessão concluída com séries realizadas
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UltimoRegistro'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/progresso/resumo:
+    get:
+      tags:
+        - Progresso
+      operationId: progressoResumo
+      summary: Resumo por período (fuso do usuário)
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: de
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: ate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ProgressoResumo'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /me/progresso/exercicios/{uuid}:
+    get:
+      tags:
+        - Progresso
+      operationId: progressoExercicio
+      summary: Evolução por exercício (Fase 2)
+      x-papeis:
+        - aluno
+      x-fase: '2'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: true
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '501':
+          $ref: '#/components/responses/NotImplementedYet'
+  /sync/push:
+    post:
+      tags:
+        - Sync
+      operationId: syncPush
+      summary: Aplicar lote idempotente (≤50 operações / 1 MB)
+      description: Retorna 200 mesmo com operações em conflito/rejeitadas; cada item tem resultado próprio.
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncPushRequest'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SyncPushResponse'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /sync/pull:
+    get:
+      tags:
+        - Sync
+      operationId: syncPull
+      summary: Delta incremental (Fase 2)
+      x-papeis:
+        - aluno
+      x-fase: '2'
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: true
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '501':
+          $ref: '#/components/responses/NotImplementedYet'
+  /admin/exercicios:
+    post:
+      tags:
+        - Admin
+      operationId: admExCreate
+      summary: Criar exercício (rascunho)
+      x-papeis:
+        - admin
+      x-fase: '1'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExercicioAdminInput'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExercicioAdmin'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /admin/exercicios/{uuid}:
+    patch:
+      tags:
+        - Admin
+      operationId: admExPatch
+      summary: Atualizar rascunho
+      x-papeis:
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExercicioAdminInput'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExercicioAdmin'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /admin/exercicios/{uuid}/enviar-revisao:
+    post:
+      tags:
+        - Admin
+      operationId: admExEnviar
+      summary: rascunho → em_revisao
+      x-papeis:
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExercicioAdmin'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /admin/exercicios/{uuid}/revisar:
+    post:
+      tags:
+        - Admin
+      operationId: admExRevisar
+      summary: Aprovar ou rejeitar revisão
+      x-papeis:
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevisarRequest'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExercicioAdmin'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /admin/exercicios/{uuid}/publicar:
+    post:
+      tags:
+        - Admin
+      operationId: admExPublicar
+      summary: Publicar (exige revisão aprovada e instrução textual)
+      x-papeis:
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExercicioAdmin'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /admin/exercicios/{uuid}/midias:
+    post:
+      tags:
+        - Admin
+      operationId: admMidiaCreate
+      summary: Vincular mídia já carregada
+      x-papeis:
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MidiaAdminInput'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MidiaAdmin'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /admin/midias/{id}/aprovar:
+    post:
+      tags:
+        - Admin
+      operationId: admMidiaAprovar
+      summary: Aprovação técnica e editorial
+      x-papeis:
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MidiaAdmin'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /admin/usuarios:
+    get:
+      tags:
+        - Admin
+      operationId: admUsuarios
+      summary: Listar usuários (dados mínimos, auditado)
+      x-papeis:
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - pagination
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UsuarioAdmin'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /admin/usuarios/{uuid}/papeis:
+    put:
+      tags:
+        - Admin
+      operationId: admPapeis
+      summary: Definir papéis (menor privilégio, auditado)
+      x-papeis:
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PapeisRequest'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UsuarioAdmin'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /admin/profissionais/{uuid}/verificar:
+    post:
+      tags:
+        - Admin
+      operationId: admProfVerificar
+      summary: Verificar profissional
+      x-papeis:
+        - admin
+      x-fase: '3'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificarRequest'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Profissional'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /admin/modelos-sugestao:
+    get:
+      tags:
+        - Admin
+      operationId: admModList
+      summary: Listar modelos de sugestão
+      x-papeis:
+        - admin
+      x-fase: '2'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - pagination
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ModeloSugestao'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      tags:
+        - Admin
+      operationId: admModCreate
+      summary: Criar modelo (rascunho)
+      x-papeis:
+        - admin
+      x-fase: '2'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModeloSugestaoInput'
+      responses:
+        '201':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ModeloSugestao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /admin/modelos-sugestao/{id}:
+    patch:
+      tags:
+        - Admin
+      operationId: admModPatch
+      summary: Editar rascunho
+      x-papeis:
+        - admin
+      x-fase: '2'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModeloSugestaoInput'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ModeloSugestao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /admin/modelos-sugestao/{id}/aprovar:
+    post:
+      tags:
+        - Admin
+      operationId: admModAprovar
+      summary: Aprovar (imutável depois)
+      x-papeis:
+        - admin
+      x-fase: '2'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ModeloSugestao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /admin/auditoria:
+    get:
+      tags:
+        - Admin
+      operationId: admAuditoria
+      summary: Consultar trilha de auditoria
+      x-papeis:
+        - admin
+      x-fase: '1'
+      parameters:
+        - name: recurso
+          in: query
+          schema:
+            type: string
+        - name: recurso_id
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - pagination
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditoriaEvento'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token de 15 min. Papel e vínculo são reconferidos no banco em rotas protegidas.
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Cursor opaco; inválido → 400.
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Mesma chave + mesmo corpo devolve a resposta original; corpo diferente → 409 IDEMPOTENCY_KEY_REUSED.
+  responses:
+    BadRequest:
+      description: JSON inválido ou parâmetro malformado (INVALID_JSON).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthenticated:
+      description: Token ausente, inválido ou expirado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Sem papel, vínculo ou escopo adequado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Inexistente ou invisível ao ator (sem vazamento).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Conflito de estado, revisão ou idempotência.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Violação de regra de domínio; `details.fields`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    RateLimited:
+      description: Limite excedido; header Retry-After.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+    NotImplementedYet:
+      description: Planejado, ainda não disponível.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Meta:
+      type: object
+      properties:
+        request_id:
+          type: string
+        schema_version:
+          type: string
+      additionalProperties: false
+    Pagination:
+      type: object
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        next_cursor:
+          oneOf:
+            - type: string
+            - type: 'null'
+      required:
+        - limit
+        - next_cursor
+      additionalProperties: false
+    ErrorCode:
+      type: string
+      enum:
+        - INVALID_JSON
+        - UNAUTHENTICATED
+        - FORBIDDEN
+        - RESOURCE_NOT_FOUND
+        - PROGRAM_VERSION_CONFLICT
+        - VERSION_IMMUTABLE
+        - REVISION_CONFLICT
+        - SESSION_ALREADY_OPEN
+        - SESSION_CLOSED
+        - IDEMPOTENCY_KEY_REUSED
+        - PRESCRIPTION_NOT_PENDING
+        - COACH_NOT_VERIFIED
+        - CONSENT_REQUIRED
+        - UNDERAGE_NOT_ALLOWED
+        - VALIDATION_ERROR
+        - RATE_LIMITED
+        - NOT_IMPLEMENTED
+        - INTERNAL_ERROR
+        - SERVICE_UNAVAILABLE
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              $ref: '#/components/schemas/ErrorCode'
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+              description: 'Em 422: `fields` mapeia campo → lista de mensagens.'
+            request_id:
+              type: string
+          required:
+            - code
+            - message
+          additionalProperties: false
+      required:
+        - error
+      additionalProperties: false
+    RegisterRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 160
+        email:
+          type: string
+          format: email
+          maxLength: 190
+        senha:
+          type: string
+          minLength: 10
+          maxLength: 200
+        aceita_termos:
+          const: true
+        versao_termos:
+          type: string
+        versao_privacidade:
+          type: string
+        maior_de_18:
+          const: true
+        dispositivo_uuid:
+          type: string
+          format: uuid
+      required:
+        - nome
+        - email
+        - senha
+        - aceita_termos
+        - versao_termos
+        - versao_privacidade
+        - maior_de_18
+      additionalProperties: false
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        senha:
+          type: string
+        dispositivo_uuid:
+          type: string
+          format: uuid
+      required:
+        - email
+        - senha
+      additionalProperties: false
+    RefreshRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+        dispositivo_uuid:
+          type: string
+          format: uuid
+      required:
+        - refresh_token
+      additionalProperties: false
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        expires_in:
+          type: integer
+          minimum: 1
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          enum:
+            - Bearer
+        usuario:
+          $ref: '#/components/schemas/UsuarioResumo'
+      required:
+        - access_token
+        - expires_in
+        - refresh_token
+        - token_type
+        - usuario
+      additionalProperties: false
+    ForgotRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+        - email
+      additionalProperties: false
+    ResetRequest:
+      type: object
+      properties:
+        token:
+          type: string
+        nova_senha:
+          type: string
+          minLength: 10
+          maxLength: 200
+      required:
+        - token
+        - nova_senha
+      additionalProperties: false
+    VerifyEmailRequest:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+        - token
+      additionalProperties: false
+    Papel:
+      type: string
+      enum:
+        - aluno
+        - coach
+        - admin
+    UsuarioResumo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        papeis:
+          type: array
+          items:
+            $ref: '#/components/schemas/Papel'
+      required:
+        - id
+        - nome
+        - papeis
+      additionalProperties: false
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+        papeis:
+          type: array
+          items:
+            $ref: '#/components/schemas/Papel'
+        fuso_horario:
+          type: string
+          description: Identificador IANA
+        unidade_peso:
+          type: string
+          enum:
+            - kg
+            - lb
+        idioma:
+          type: string
+        email_verificado:
+          type: boolean
+      required:
+        - id
+        - nome
+        - email
+        - papeis
+      additionalProperties: false
+    UsuarioPatch:
+      type: object
+      properties:
+        nome:
+          type: string
+        fuso_horario:
+          type: string
+        unidade_peso:
+          type: string
+          enum:
+            - kg
+            - lb
+        idioma:
+          type: string
+      additionalProperties: false
+      minProperties: 1
+    PerfilTreinamento:
+      type: object
+      properties:
+        nivel:
+          oneOf:
+            - type: string
+              enum:
+                - iniciante
+                - intermediario
+                - avancado
+            - type: 'null'
+        objetivo:
+          oneOf:
+            - type: string
+              enum:
+                - hipertrofia
+                - forca
+                - condicionamento
+                - outro
+            - type: 'null'
+        dias_semana:
+          oneOf:
+            - type: integer
+              minimum: 1
+              maximum: 7
+            - type: 'null'
+        minutos_sessao:
+          oneOf:
+            - type: integer
+              minimum: 10
+              maximum: 300
+            - type: 'null'
+        preferencias:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+        restricoes:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Dado sensível; nunca em logs. Visível ao coach só com escopo `compartilha_restricoes`.
+      additionalProperties: false
+    Dispositivo:
+      type: object
+      properties:
+        dispositivo_uuid:
+          type: string
+          format: uuid
+        ultima_sync_em:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        revogado_em:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+      required:
+        - dispositivo_uuid
+      additionalProperties: false
+    DispositivoRequest:
+      type: object
+      properties:
+        dispositivo_uuid:
+          type: string
+          format: uuid
+      required:
+        - dispositivo_uuid
+      additionalProperties: false
+    TipoConsentimento:
+      type: string
+      enum:
+        - termos_uso
+        - politica_privacidade
+        - dados_saude
+        - compartilhamento_coach
+    Consentimento:
+      type: object
+      properties:
+        id:
+          type: string
+        tipo:
+          $ref: '#/components/schemas/TipoConsentimento'
+        versao_documento:
+          type: string
+        concedido_em:
+          type: string
+          format: date-time
+        revogado_em:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+      required:
+        - id
+        - tipo
+        - versao_documento
+        - concedido_em
+      additionalProperties: false
+    ConsentimentoRequest:
+      type: object
+      properties:
+        tipo:
+          $ref: '#/components/schemas/TipoConsentimento'
+        versao_documento:
+          type: string
+      required:
+        - tipo
+        - versao_documento
+      additionalProperties: false
+    Solicitacao:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tipo:
+          type: string
+          enum:
+            - exportacao
+            - exclusao
+        estado:
+          type: string
+          enum:
+            - solicitada
+            - em_processamento
+            - concluida
+            - recusada
+        solicitada_em:
+          type: string
+          format: date-time
+        concluida_em:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        download_url:
+          oneOf:
+            - type: string
+              format: uri
+              description: URL temporária (exportação concluída).
+            - type: 'null'
+      required:
+        - id
+        - tipo
+        - estado
+        - solicitada_em
+      additionalProperties: false
+    SolicitacaoRequest:
+      type: object
+      properties:
+        tipo:
+          type: string
+          enum:
+            - exportacao
+            - exclusao
+        senha:
+          type: string
+          description: Obrigatória para exclusão (reautenticação).
+      required:
+        - tipo
+      additionalProperties: false
+    ItemTaxonomia:
+      type: object
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+      required:
+        - id
+        - nome
+      additionalProperties: false
+    Midia:
+      type: object
+      properties:
+        id:
+          type: string
+        tipo:
+          type: string
+          enum:
+            - video_capi
+            - video_humano
+            - imagem
+            - animacao_3d
+        versao:
+          type: string
+        status:
+          type: string
+          enum:
+            - aprovado
+        url:
+          type: string
+          format: uri
+          description: URL temporária/autorizada.
+      required:
+        - id
+        - tipo
+        - versao
+        - url
+      additionalProperties: false
+    Modalidade:
+      type: string
+      enum:
+        - reps_carga
+        - reps_peso_corporal
+        - reps_assistido
+        - tempo
+    ExercicioResumo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        equipamento:
+          oneOf:
+            - $ref: '#/components/schemas/ItemTaxonomia'
+            - type: 'null'
+        grupos_primarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemTaxonomia'
+        modalidade:
+          $ref: '#/components/schemas/Modalidade'
+        miniatura_url:
+          oneOf:
+            - type: string
+              format: uri
+            - type: 'null'
+      required:
+        - id
+        - nome
+        - modalidade
+      additionalProperties: false
+    Exercicio:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        equipamento:
+          oneOf:
+            - $ref: '#/components/schemas/ItemTaxonomia'
+            - type: 'null'
+        musculos:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              nome:
+                type: string
+              papel:
+                type: string
+                enum:
+                  - primario
+                  - secundario
+            required:
+              - id
+              - nome
+              - papel
+            additionalProperties: false
+        unilateral:
+          type: boolean
+        modalidade:
+          $ref: '#/components/schemas/Modalidade'
+        dificuldade:
+          oneOf:
+            - type: string
+              enum:
+                - iniciante
+                - intermediario
+                - avancado
+            - type: 'null'
+        instrucoes:
+          oneOf:
+            - type: string
+            - type: 'null'
+        observacoes_seguranca:
+          oneOf:
+            - type: string
+            - type: 'null'
+        midias:
+          type: array
+          items:
+            $ref: '#/components/schemas/Midia'
+      required:
+        - id
+        - nome
+        - modalidade
+        - unilateral
+        - midias
+      additionalProperties: false
+    Origem:
+      type: string
+      enum:
+        - usuario
+        - coach
+        - app
+    Programa:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        titulo:
+          type: string
+        objetivo:
+          oneOf:
+            - type: string
+            - type: 'null'
+        origem:
+          $ref: '#/components/schemas/Origem'
+        status:
+          type: string
+          enum:
+            - rascunho
+            - publicado
+            - arquivado
+        autor:
+          $ref: '#/components/schemas/UsuarioResumo'
+        versao_atual:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        versao_rascunho:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        derivado_de:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        criado_em:
+          type: string
+          format: date-time
+        atualizado_em:
+          type: string
+          format: date-time
+      required:
+        - id
+        - titulo
+        - origem
+        - status
+        - autor
+        - versao_atual
+      additionalProperties: false
+    ProgramaCriar:
+      type: object
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          maxLength: 180
+        objetivo:
+          type: string
+          maxLength: 100
+      required:
+        - titulo
+      additionalProperties: false
+    ProgramaPatch:
+      type: object
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          maxLength: 180
+        objetivo:
+          type: string
+          maxLength: 100
+      additionalProperties: false
+      minProperties: 1
+    SerieInput:
+      type: object
+      properties:
+        ordem:
+          type: integer
+          minimum: 1
+        tipo:
+          type: string
+          enum:
+            - aquecimento
+            - normal
+            - preparatoria
+            - dropset
+        reps_min:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        reps_max:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        carga_alvo_kg:
+          oneOf:
+            - type: number
+              minimum: 0
+              maximum: 99999.99
+            - type: 'null'
+        rir_alvo:
+          oneOf:
+            - type: integer
+              minimum: 0
+              maximum: 10
+            - type: 'null'
+        duracao_alvo_segundos:
+          oneOf:
+            - type: integer
+              minimum: 1
+              maximum: 65535
+            - type: 'null'
+      required:
+        - ordem
+        - tipo
+      additionalProperties: false
+      description: Se `reps_min` e `reps_max` presentes, `reps_min <= reps_max`.
+    SeriePrescrita:
+      allOf:
+        - $ref: '#/components/schemas/SerieInput'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+          required:
+            - id
+          additionalProperties: true
+      unevaluatedProperties: false
+    ExercicioFichaInput:
+      type: object
+      properties:
+        exercicio_uuid:
+          type: string
+          format: uuid
+        ordem:
+          type: integer
+          minimum: 1
+        descanso_segundos:
+          oneOf:
+            - type: integer
+              minimum: 0
+              maximum: 3600
+            - type: 'null'
+        grupo_superset:
+          oneOf:
+            - type: string
+              maxLength: 30
+            - type: 'null'
+        instrucoes:
+          oneOf:
+            - type: string
+            - type: 'null'
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/SerieInput'
+          minItems: 1
+      required:
+        - exercicio_uuid
+        - ordem
+        - series
+      additionalProperties: false
+    FichaInput:
+      type: object
+      properties:
+        codigo:
+          type: string
+          maxLength: 25
+        titulo:
+          type: string
+          maxLength: 160
+        ordem:
+          type: integer
+          minimum: 1
+        exercicios:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExercicioFichaInput'
+      required:
+        - codigo
+        - titulo
+        - ordem
+        - exercicios
+      additionalProperties: false
+    EstruturaRequest:
+      type: object
+      properties:
+        expected_revision:
+          type: integer
+          minimum: 1
+        fichas:
+          type: array
+          items:
+            $ref: '#/components/schemas/FichaInput'
+      required:
+        - expected_revision
+        - fichas
+      additionalProperties: false
+    ExercicioFicha:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        exercicio:
+          $ref: '#/components/schemas/ExercicioResumo'
+        ordem:
+          type: integer
+          minimum: 1
+        descanso_segundos:
+          oneOf:
+            - type: integer
+              minimum: 0
+              maximum: 3600
+            - type: 'null'
+        grupo_superset:
+          oneOf:
+            - type: string
+            - type: 'null'
+        instrucoes:
+          oneOf:
+            - type: string
+            - type: 'null'
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeriePrescrita'
+      required:
+        - id
+        - exercicio
+        - ordem
+        - series
+      additionalProperties: false
+    Ficha:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        codigo:
+          type: string
+        titulo:
+          type: string
+        ordem:
+          type: integer
+          minimum: 1
+        exercicios:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExercicioFicha'
+      required:
+        - id
+        - codigo
+        - titulo
+        - ordem
+        - exercicios
+      additionalProperties: false
+    Versao:
+      type: object
+      properties:
+        numero:
+          type: integer
+          minimum: 1
+        estado:
+          type: string
+          enum:
+            - rascunho
+            - publicado
+            - substituido
+        revision:
+          type: integer
+          minimum: 1
+        notas:
+          oneOf:
+            - type: string
+            - type: 'null'
+        gerador_versao:
+          oneOf:
+            - type: string
+            - type: 'null'
+        publicado_em:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        fichas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ficha'
+      required:
+        - numero
+        - estado
+        - revision
+        - fichas
+      additionalProperties: false
+    AtivarRequest:
+      type: object
+      properties:
+        versao_numero:
+          type: integer
+          minimum: 1
+      required:
+        - versao_numero
+      additionalProperties: false
+    ProgramaAtivo:
+      type: object
+      properties:
+        programa_id:
+          type: string
+          format: uuid
+        versao_numero:
+          type: integer
+          minimum: 1
+        ativado_em:
+          type: string
+          format: date-time
+      required:
+        - programa_id
+        - versao_numero
+        - ativado_em
+      additionalProperties: false
+    ProgramaAtivoDetalhe:
+      type: object
+      properties:
+        programa:
+          $ref: '#/components/schemas/Programa'
+        versao:
+          $ref: '#/components/schemas/Versao'
+        ativado_em:
+          type: string
+          format: date-time
+      required:
+        - programa
+        - versao
+        - ativado_em
+      additionalProperties: false
+    Prescricao:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        estado:
+          type: string
+          enum:
+            - pendente
+            - aceito
+            - recusado
+            - substituido
+            - retirado
+        programa_id:
+          type: string
+          format: uuid
+        versao_numero:
+          type: integer
+          minimum: 1
+        autor:
+          $ref: '#/components/schemas/UsuarioResumo'
+        enviado_em:
+          type: string
+          format: date-time
+        decidido_em:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        motivo_recusa:
+          oneOf:
+            - type: string
+            - type: 'null'
+      required:
+        - id
+        - estado
+        - programa_id
+        - versao_numero
+        - autor
+        - enviado_em
+      additionalProperties: false
+    PrescricaoDetalhe:
+      allOf:
+        - $ref: '#/components/schemas/Prescricao'
+        - type: object
+          properties:
+            versao:
+              $ref: '#/components/schemas/Versao'
+          required:
+            - versao
+          additionalProperties: true
+      unevaluatedProperties: false
+    RecusarRequest:
+      type: object
+      properties:
+        motivo:
+          type: string
+          maxLength: 255
+      additionalProperties: false
+    Escopo:
+      type: object
+      properties:
+        compartilha_historico:
+          type: boolean
+        compartilha_restricoes:
+          type: boolean
+      required:
+        - compartilha_historico
+        - compartilha_restricoes
+      additionalProperties: false
+    ConviteCriar:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+        - email
+      additionalProperties: false
+    Convite:
+      type: object
+      properties:
+        id:
+          type: string
+        coach:
+          $ref: '#/components/schemas/UsuarioResumo'
+        status:
+          type: string
+          enum:
+            - pendente
+            - ativo
+            - recusado
+            - expirado
+            - revogado
+            - encerrado
+        convidado_em:
+          type: string
+          format: date-time
+        expira_em:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+      required:
+        - id
+        - coach
+        - status
+        - convidado_em
+      additionalProperties: false
+    Vinculo:
+      type: object
+      properties:
+        coach:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            nome:
+              type: string
+            verificado:
+              type: boolean
+          required:
+            - id
+            - nome
+            - verificado
+          additionalProperties: false
+        status:
+          type: string
+          enum:
+            - pendente
+            - ativo
+            - recusado
+            - expirado
+            - revogado
+            - encerrado
+        aceito_em:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        encerrado_em:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        escopo:
+          $ref: '#/components/schemas/Escopo'
+      required:
+        - coach
+        - status
+        - escopo
+      additionalProperties: false
+    CoachAluno:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        status:
+          type: string
+          enum:
+            - pendente
+            - ativo
+        escopo:
+          $ref: '#/components/schemas/Escopo'
+      required:
+        - id
+        - nome
+        - status
+        - escopo
+      additionalProperties: false
+    ProfissionalRequest:
+      type: object
+      properties:
+        conselho:
+          type: string
+          maxLength: 20
+        registro:
+          type: string
+          maxLength: 40
+      required:
+        - conselho
+        - registro
+      additionalProperties: false
+    Profissional:
+      type: object
+      properties:
+        conselho:
+          oneOf:
+            - type: string
+            - type: 'null'
+        registro:
+          oneOf:
+            - type: string
+            - type: 'null'
+        status_verificacao:
+          type: string
+          enum:
+            - nao_verificado
+            - em_analise
+            - verificado
+            - rejeitado
+        verificado_em:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+      required:
+        - status_verificacao
+      additionalProperties: false
+    SugestaoRequest:
+      type: object
+      properties:
+        objetivo:
+          type: string
+          enum:
+            - hipertrofia
+            - forca
+            - condicionamento
+            - outro
+        nivel:
+          type: string
+          enum:
+            - iniciante
+            - intermediario
+            - avancado
+        dias_semana:
+          type: integer
+          minimum: 1
+          maximum: 7
+        minutos_sessao:
+          type: integer
+          minimum: 10
+          maximum: 300
+        equipamentos_disponiveis:
+          type: array
+          items:
+            type: string
+        preferencias:
+          type: object
+          properties:
+            evitar_exercicios_ids:
+              type: array
+              items:
+                type: string
+                format: uuid
+          additionalProperties: false
+      required:
+        - objetivo
+        - nivel
+        - dias_semana
+        - minutos_sessao
+      additionalProperties: false
+    Sugestao:
+      type: object
+      properties:
+        id:
+          type: string
+        estado:
+          type: string
+          enum:
+            - gerada
+            - aceita
+            - editada
+            - descartada
+            - bloqueada
+        motor_versao:
+          type: string
+        justificativas:
+          type: array
+          items:
+            type: string
+        preview:
+          oneOf:
+            - $ref: '#/components/schemas/Versao'
+            - type: 'null'
+        aviso_profissional:
+          oneOf:
+            - type: string
+              description: Preenchido quando houver restrição declarada ou dados insuficientes.
+            - type: 'null'
+        programa_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+      required:
+        - id
+        - estado
+        - motor_versao
+        - justificativas
+      additionalProperties: false
+    SessaoSerie:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        serie_prescrita_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        ordem:
+          type: integer
+          minimum: 1
+        tipo:
+          type: string
+          enum:
+            - aquecimento
+            - normal
+            - preparatoria
+            - dropset
+        carga_kg:
+          oneOf:
+            - type: number
+              minimum: 0
+            - type: 'null'
+        repeticoes:
+          oneOf:
+            - type: integer
+              minimum: 0
+              maximum: 1000
+            - type: 'null'
+        duracao_segundos:
+          oneOf:
+            - type: integer
+              minimum: 0
+              maximum: 65535
+            - type: 'null'
+        rir_real:
+          oneOf:
+            - type: integer
+              minimum: 0
+              maximum: 10
+            - type: 'null'
+        status:
+          type: string
+          enum:
+            - pendente
+            - realizada
+            - ignorada
+        concluida_em:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        revision:
+          type: integer
+          minimum: 1
+      required:
+        - id
+        - ordem
+        - tipo
+        - status
+        - revision
+      additionalProperties: false
+    SessaoExercicio:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ficha_exercicio_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        exercicio:
+          $ref: '#/components/schemas/ExercicioResumo'
+        exercicio_prescrito_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        tipo_item:
+          type: string
+          enum:
+            - prescrito
+            - substituido
+            - adicionado
+        ordem:
+          type: integer
+          minimum: 1
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessaoSerie'
+      required:
+        - id
+        - exercicio
+        - tipo_item
+        - ordem
+        - series
+      additionalProperties: false
+    Pausa:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        iniciada_em:
+          type: string
+          format: date-time
+        encerrada_em:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+      required:
+        - id
+        - iniciada_em
+      additionalProperties: false
+    SessaoResumo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tipo:
+          type: string
+          enum:
+            - programado
+            - avulso
+        titulo:
+          oneOf:
+            - type: string
+            - type: 'null'
+        status:
+          type: string
+          enum:
+            - em_andamento
+            - concluida
+            - cancelada
+        iniciada_em:
+          type: string
+          format: date-time
+        encerrada_em:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        duracao_ativa_segundos:
+          oneOf:
+            - type: integer
+              minimum: 0
+            - type: 'null'
+        programa_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        versao_numero:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        ficha_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        series_realizadas:
+          type: integer
+          minimum: 0
+        series_total:
+          type: integer
+          minimum: 0
+      required:
+        - id
+        - tipo
+        - status
+        - iniciada_em
+      additionalProperties: false
+    Sessao:
+      allOf:
+        - $ref: '#/components/schemas/SessaoResumo'
+        - type: object
+          properties:
+            observacoes:
+              oneOf:
+                - type: string
+                - type: 'null'
+            exercicios:
+              type: array
+              items:
+                $ref: '#/components/schemas/SessaoExercicio'
+            pausas:
+              type: array
+              items:
+                $ref: '#/components/schemas/Pausa'
+          required:
+            - exercicios
+          additionalProperties: true
+      unevaluatedProperties: false
+    SnapshotSerie:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        serie_prescrita_uuid:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        ordem:
+          type: integer
+          minimum: 1
+        tipo:
+          type: string
+          enum:
+            - aquecimento
+            - normal
+            - preparatoria
+            - dropset
+      required:
+        - uuid
+        - ordem
+        - tipo
+      additionalProperties: false
+    SnapshotExercicio:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        ficha_exercicio_uuid:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        exercicio_uuid:
+          type: string
+          format: uuid
+        exercicio_prescrito_uuid:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        tipo_item:
+          type: string
+          enum:
+            - prescrito
+            - substituido
+            - adicionado
+        ordem:
+          type: integer
+          minimum: 1
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnapshotSerie'
+      required:
+        - uuid
+        - exercicio_uuid
+        - tipo_item
+        - ordem
+        - series
+      additionalProperties: false
+    SessaoCriarRequest:
+      type: object
+      properties:
+        sessao_uuid:
+          type: string
+          format: uuid
+        ficha_uuid:
+          type: string
+          format: uuid
+          description: Omitido = treino avulso.
+        titulo_avulso:
+          type: string
+          maxLength: 160
+        iniciada_em:
+          type: string
+          format: date-time
+        exercicios:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnapshotExercicio'
+          description: Snapshot criado offline (RG-020). Online, o servidor monta a partir da ficha.
+      required:
+        - sessao_uuid
+        - iniciada_em
+      additionalProperties: false
+    SessaoPatch:
+      type: object
+      properties:
+        observacoes:
+          type: string
+          maxLength: 5000
+      required:
+        - observacoes
+      additionalProperties: false
+    SerieUpdateRequest:
+      type: object
+      properties:
+        carga_kg:
+          type: number
+          minimum: 0
+          maximum: 99999.99
+        repeticoes:
+          type: integer
+          minimum: 0
+          maximum: 1000
+        duracao_segundos:
+          type: integer
+          minimum: 0
+          maximum: 65535
+        rir_real:
+          type: integer
+          minimum: 0
+          maximum: 10
+        status:
+          type: string
+          enum:
+            - pendente
+            - realizada
+            - ignorada
+        concluida_em:
+          type: string
+          format: date-time
+        atualizado_cliente_em:
+          type: string
+          format: date-time
+        tipo:
+          type: string
+          enum:
+            - aquecimento
+            - normal
+            - preparatoria
+            - dropset
+      additionalProperties: false
+      minProperties: 1
+    SerieCriarRequest:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        sessao_exercicio_uuid:
+          type: string
+          format: uuid
+        tipo:
+          type: string
+          enum:
+            - aquecimento
+            - normal
+            - preparatoria
+            - dropset
+      required:
+        - sessao_exercicio_uuid
+      additionalProperties: false
+    ExercicioSessaoRequest:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        exercicio_uuid:
+          type: string
+          format: uuid
+        ordem:
+          type: integer
+          minimum: 1
+      required:
+        - exercicio_uuid
+      additionalProperties: false
+    SubstituirRequest:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        exercicio_uuid:
+          type: string
+          format: uuid
+      required:
+        - exercicio_uuid
+      additionalProperties: false
+    EncerrarRequest:
+      type: object
+      properties:
+        encerrada_em:
+          type: string
+          format: date-time
+      additionalProperties: false
+    CancelarRequest:
+      type: object
+      properties:
+        motivo:
+          type: string
+          maxLength: 255
+      additionalProperties: false
+    UltimoRegistro:
+      type: object
+      properties:
+        exercicio_id:
+          type: string
+          format: uuid
+        sessao_id:
+          type: string
+          format: uuid
+        data:
+          type: string
+          format: date-time
+        series:
+          type: array
+          items:
+            type: object
+            properties:
+              ordem:
+                type: integer
+                minimum: 1
+              carga_kg:
+                oneOf:
+                  - type: number
+                  - type: 'null'
+              repeticoes:
+                oneOf:
+                  - type: integer
+                    minimum: 0
+                  - type: 'null'
+              duracao_segundos:
+                oneOf:
+                  - type: integer
+                    minimum: 0
+                  - type: 'null'
+            required:
+              - ordem
+            additionalProperties: false
+      required:
+        - exercicio_id
+        - sessao_id
+        - data
+        - series
+      additionalProperties: false
+    ProgressoResumo:
+      type: object
+      properties:
+        de:
+          type: string
+          format: date
+        ate:
+          type: string
+          format: date
+        sessoes_concluidas:
+          type: integer
+          minimum: 0
+        series_realizadas:
+          type: integer
+          minimum: 0
+        tempo_ativo_segundos:
+          type: integer
+          minimum: 0
+        volume_kg:
+          type: number
+          minimum: 0
+          description: >-
+            Σ carga×reps de séries realizadas em exercícios com modalidade reps_carga ou reps_peso_corporal com carga
+            adicional. Indicador operacional.
+        frequencia_semanal:
+          type: array
+          items:
+            type: object
+            properties:
+              semana_inicio:
+                type: string
+                format: date
+              sessoes:
+                type: integer
+                minimum: 0
+            required:
+              - semana_inicio
+              - sessoes
+            additionalProperties: false
+      required:
+        - de
+        - ate
+        - sessoes_concluidas
+        - series_realizadas
+        - tempo_ativo_segundos
+        - volume_kg
+        - frequencia_semanal
+      additionalProperties: false
+    SyncOperacao:
+      type: object
+      properties:
+        operacao_uuid:
+          type: string
+          format: uuid
+        sequencia_cliente:
+          type: integer
+          minimum: 0
+        entidade:
+          type: string
+          enum:
+            - sessao_treino
+            - sessao_pausa
+            - sessao_exercicio
+            - sessao_serie
+        entidade_uuid:
+          type: string
+          format: uuid
+        tipo:
+          type: string
+          enum:
+            - criar
+            - atualizar
+            - concluir
+            - cancelar
+        payload:
+          type: object
+          additionalProperties: true
+          description: Mesmo formato do corpo REST equivalente (Documento 06 §7.2–7.3).
+      required:
+        - operacao_uuid
+        - entidade
+        - entidade_uuid
+        - tipo
+        - payload
+      additionalProperties: false
+    SyncPushRequest:
+      type: object
+      properties:
+        dispositivo_uuid:
+          type: string
+          format: uuid
+        operacoes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncOperacao'
+          minItems: 1
+          maxItems: 50
+      required:
+        - dispositivo_uuid
+        - operacoes
+      additionalProperties: false
+    SyncResultado:
+      type: object
+      properties:
+        operacao_uuid:
+          type: string
+          format: uuid
+        resultado:
+          type: string
+          enum:
+            - aplicada
+            - conflito
+            - rejeitada
+        recurso_uuid:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        erro:
+          type: object
+          properties:
+            code:
+              $ref: '#/components/schemas/ErrorCode'
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+          required:
+            - code
+          additionalProperties: false
+        estado_servidor:
+          type: object
+          additionalProperties: true
+        clock_skew:
+          type: boolean
+      required:
+        - operacao_uuid
+        - resultado
+      additionalProperties: false
+    SyncPushResponse:
+      type: object
+      properties:
+        resultados:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncResultado'
+        server_time:
+          type: string
+          format: date-time
+      required:
+        - resultados
+        - server_time
+      additionalProperties: false
+    ExercicioAdminInput:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 180
+        equipamento_id:
+          oneOf:
+            - type: string
+            - type: 'null'
+        instrucoes:
+          type: string
+        observacoes_seguranca:
+          type: string
+        unilateral:
+          type: boolean
+        modalidade:
+          $ref: '#/components/schemas/Modalidade'
+        dificuldade:
+          type: string
+          enum:
+            - iniciante
+            - intermediario
+            - avancado
+        musculos:
+          type: array
+          items:
+            type: object
+            properties:
+              grupo_id:
+                type: string
+              papel:
+                type: string
+                enum:
+                  - primario
+                  - secundario
+            required:
+              - grupo_id
+              - papel
+            additionalProperties: false
+      required:
+        - nome
+      additionalProperties: false
+    ExercicioAdmin:
+      allOf:
+        - $ref: '#/components/schemas/Exercicio'
+        - type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - rascunho
+                - em_revisao
+                - publicado
+                - arquivado
+            revisado_em:
+              oneOf:
+                - type: string
+                  format: date-time
+                - type: 'null'
+          required:
+            - status
+          additionalProperties: true
+      unevaluatedProperties: false
+    RevisarRequest:
+      type: object
+      properties:
+        decisao:
+          type: string
+          enum:
+            - aprovar
+            - rejeitar
+        justificativa:
+          type: string
+      required:
+        - decisao
+      additionalProperties: false
+      description: '`justificativa` obrigatória quando `decisao=rejeitar`.'
+    MidiaAdminInput:
+      type: object
+      properties:
+        tipo:
+          type: string
+          enum:
+            - video_capi
+            - video_humano
+            - imagem
+            - animacao_3d
+        storage_key:
+          type: string
+          description: Chave de objeto já carregado no storage.
+        versao:
+          type: string
+      required:
+        - tipo
+        - storage_key
+      additionalProperties: false
+    MidiaAdmin:
+      type: object
+      properties:
+        id:
+          type: string
+        tipo:
+          type: string
+        versao:
+          type: string
+        status:
+          type: string
+          enum:
+            - rascunho
+            - em_revisao
+            - aprovado
+            - rejeitado
+      required:
+        - id
+        - tipo
+        - status
+      additionalProperties: false
+    UsuarioAdmin:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        email:
+          type: string
+        estado:
+          type: string
+          enum:
+            - pendente
+            - ativo
+            - suspenso
+            - excluido
+        papeis:
+          type: array
+          items:
+            $ref: '#/components/schemas/Papel'
+      required:
+        - id
+        - nome
+        - estado
+        - papeis
+      additionalProperties: false
+    PapeisRequest:
+      type: object
+      properties:
+        papeis:
+          type: array
+          items:
+            $ref: '#/components/schemas/Papel'
+          minItems: 1
+          uniqueItems: true
+      required:
+        - papeis
+      additionalProperties: false
+    VerificarRequest:
+      type: object
+      properties:
+        decisao:
+          type: string
+          enum:
+            - verificar
+            - rejeitar
+        observacao:
+          type: string
+      required:
+        - decisao
+      additionalProperties: false
+    ModeloSugestaoInput:
+      type: object
+      properties:
+        codigo:
+          type: string
+        objetivo:
+          type: string
+          enum:
+            - hipertrofia
+            - forca
+            - condicionamento
+            - outro
+        nivel:
+          type: string
+          enum:
+            - iniciante
+            - intermediario
+            - avancado
+        dias_semana:
+          type: integer
+          minimum: 1
+          maximum: 7
+        minutos_min:
+          type: integer
+          minimum: 1
+        minutos_max:
+          type: integer
+          minimum: 1
+        estrutura:
+          type: object
+          additionalProperties: true
+      required:
+        - codigo
+        - objetivo
+        - nivel
+        - dias_semana
+        - minutos_min
+        - minutos_max
+        - estrutura
+      additionalProperties: false
+    ModeloSugestao:
+      allOf:
+        - $ref: '#/components/schemas/ModeloSugestaoInput'
+        - type: object
+          properties:
+            id:
+              type: string
+            versao:
+              type: integer
+              minimum: 1
+            status:
+              type: string
+              enum:
+                - rascunho
+                - em_revisao
+                - aprovado
+                - arquivado
+          required:
+            - id
+            - versao
+            - status
+          additionalProperties: true
+      unevaluatedProperties: false
+    AuditoriaEvento:
+      type: object
+      properties:
+        id:
+          type: string
+        ator_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        acao:
+          type: string
+        recurso:
+          type: string
+        recurso_id:
+          type: string
+        criado_em:
+          type: string
+          format: date-time
+      required:
+        - id
+        - acao
+        - recurso
+        - recurso_id
+        - criado_em
+      additionalProperties: false
