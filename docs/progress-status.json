@@ -18,7 +18,10 @@
     "E01-05": "in-progress",
     "E07-03": "in-progress",
     "E09-01": "in-progress",
-    "E09-02": "in-progress"
+    "E09-02": "in-progress",
+    "E06-01": "in-progress",
+    "E06-02": "in-progress",
+    "E07-12": "in-progress"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
@@ -38,7 +41,10 @@
     "E01-05": "Limite de taxa em /auth/* pronto (por IP e por e-mail, com HMAC, 429 e Retry-After). Falta o CI com MySQL 8.",
     "E07-03": "Último registro por exercício (unitário e em lote) pronto. Falta o CI com MySQL 8.",
     "E09-01": "Histórico (lista paginada e detalhe da sessão) já entregue junto da E07-01. Falta o CI com MySQL 8.",
-    "E09-02": "Resumo de progresso por período (fuso do usuário, volume, tempo e frequência semanal) pronto. Falta o CI com MySQL 8."
+    "E09-02": "Resumo de progresso por período (fuso do usuário, volume, tempo e frequência semanal) pronto. Falta o CI com MySQL 8.",
+    "E06-01": "API de programas pronta e testada: criar, listar, versões, estrutura com revisão, publicar, ativar, arquivar, copiar e programa ativo; programa de coach só após aceite e não editável pelo aluno. Falta o CI com MySQL 8.",
+    "E06-02": "Conflito por revisão (409 REVISION_CONFLICT) e versão imutável (409 VERSION_IMMUTABLE) já cobertos junto da E06-01. Falta o CI com MySQL 8.",
+    "E07-12": "Sessão programada a partir de ficha publicada pronta (copia exercícios e séries prescritas; versão e ficha coerentes). Falta o CI com MySQL 8."
   },
   "externas": {
     "revisor": "pending",

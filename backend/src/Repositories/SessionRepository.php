@@ -10,6 +10,10 @@ use CapiFit\Infrastructure\Database\Connection;
 final class SessionRepository
 {
     private const SUMMARY_COLUMNS = "s.id, s.uuid, s.tipo, s.titulo_avulso, s.status, s.iniciada_em, s.encerrada_em, s.duracao_ativa_segundos, s.observacoes,
+        (SELECT p.uuid FROM versoes_programa v JOIN programas_treino p ON p.id = v.programa_id WHERE v.id = s.programa_versao_id) AS programa_uuid,
+        (SELECT v.numero FROM versoes_programa v WHERE v.id = s.programa_versao_id) AS versao_numero,
+        (SELECT f.uuid FROM fichas_treino f WHERE f.id = s.ficha_id) AS ficha_uuid,
+        (SELECT f.titulo FROM fichas_treino f WHERE f.id = s.ficha_id) AS ficha_titulo,
         (SELECT COUNT(*) FROM sessoes_series ss JOIN sessoes_exercicios se ON se.id = ss.sessao_exercicio_id WHERE se.sessao_id = s.id) AS series_total,
         (SELECT COUNT(*) FROM sessoes_series ss JOIN sessoes_exercicios se ON se.id = ss.sessao_exercicio_id WHERE se.sessao_id = s.id AND ss.status = 'realizada') AS series_realizadas";
 
@@ -53,6 +57,62 @@ final class SessionRepository
         );
 
         return $this->db->lastInsertId();
+    }
+
+    /**
+     * Ficha que o aluno pode treinar: de versão já publicada (ou substituída, para histórico), de programa não arquivado
+     * e visível a ele (programa de coach só depois do aceite).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findTrainableFicha(string $fichaUuid, int $userId): ?array
+    {
+        return $this->db->fetchOne(
+            "SELECT f.id, f.versao_id FROM fichas_treino f
+               JOIN versoes_programa v ON v.id = f.versao_id
+               JOIN programas_treino p ON p.id = v.programa_id
+              WHERE f.uuid = ? AND v.estado <> 'rascunho' AND p.status <> 'arquivado' AND p.aluno_id = ?
+                AND (p.origem <> 'coach' OR EXISTS (SELECT 1 FROM aceites_programa ac WHERE ac.programa_id = p.id))",
+            'si',
+            $fichaUuid,
+            $userId,
+        );
+    }
+
+    public function insertProgrammed(string $uuid, int $userId, int $versionId, int $fichaId, string $startedAtDb): int
+    {
+        $this->db->execute(
+            "INSERT INTO sessoes_treino(uuid, aluno_id, tipo, programa_versao_id, ficha_id, status, iniciada_em) VALUES (?, ?, 'programado', ?, ?, 'em_andamento', ?)",
+            'siiis',
+            $uuid,
+            $userId,
+            $versionId,
+            $fichaId,
+            $startedAtDb,
+        );
+
+        return $this->db->lastInsertId();
+    }
+
+    /** @return list<array<string, mixed>> exercícios prescritos da ficha, com as séries prescritas em `series` */
+    public function prescribedItems(int $fichaId): array
+    {
+        $items = $this->db->fetchAll('SELECT id, exercicio_id, ordem FROM ficha_exercicios WHERE ficha_id = ? ORDER BY ordem, id', 'i', $fichaId);
+        $series = $this->db->fetchAll(
+            'SELECT sp.id, sp.ficha_exercicio_id, sp.ordem, sp.tipo FROM series_prescritas sp JOIN ficha_exercicios fe ON fe.id = sp.ficha_exercicio_id WHERE fe.ficha_id = ? ORDER BY sp.ordem, sp.id',
+            'i',
+            $fichaId,
+        );
+        $byItem = [];
+        foreach ($series as $s) {
+            $byItem[(int) $s['ficha_exercicio_id']][] = $s;
+        }
+        foreach ($items as &$item) {
+            $item['series'] = $byItem[(int) $item['id']] ?? [];
+        }
+        unset($item);
+
+        return $items;
     }
 
     /**
@@ -127,6 +187,7 @@ final class SessionRepository
     {
         return $this->db->fetchAll(
             'SELECT se.id, se.uuid, se.ordem, se.tipo_item, se.ficha_exercicio_id, se.exercicio_prescrito_id, p.uuid AS prescrito_uuid,
+                    (SELECT fe.uuid FROM ficha_exercicios fe WHERE fe.id = se.ficha_exercicio_id) AS ficha_exercicio_uuid,
                     e.id AS exercicio_id, e.uuid AS exercicio_uuid, e.nome, e.modalidade, eq.id AS equipamento_id, eq.nome AS equipamento_nome
                FROM sessoes_exercicios se
                JOIN exercicios e ON e.id = se.exercicio_id
@@ -143,7 +204,7 @@ final class SessionRepository
     public function findExercise(int $sessionId, string $uuid): ?array
     {
         return $this->db->fetchOne(
-            'SELECT se.id, se.uuid, se.ordem, se.tipo_item, se.exercicio_id, se.exercicio_prescrito_id, e.modalidade
+            'SELECT se.id, se.uuid, se.ordem, se.tipo_item, se.ficha_exercicio_id, se.exercicio_id, se.exercicio_prescrito_id, e.modalidade
                FROM sessoes_exercicios se JOIN exercicios e ON e.id = se.exercicio_id
               WHERE se.sessao_id = ? AND se.uuid = ?',
             'is',
@@ -170,17 +231,25 @@ final class SessionRepository
         return $this->db->fetchOne('SELECT 1 AS x FROM sessoes_exercicios WHERE sessao_id = ? AND ordem = ?', 'ii', $sessionId, $order) !== null;
     }
 
-    public function insertExercise(string $uuid, int $sessionId, int $exerciseId, int $order, string $itemType = 'adicionado', ?int $prescribedExerciseId = null): int
-    {
+    public function insertExercise(
+        string $uuid,
+        int $sessionId,
+        int $exerciseId,
+        int $order,
+        string $itemType = 'adicionado',
+        ?int $prescribedExerciseId = null,
+        ?int $fichaExerciseId = null,
+    ): int {
         $this->db->execute(
-            'INSERT INTO sessoes_exercicios(uuid, sessao_id, exercicio_id, ordem, tipo_item, exercicio_prescrito_id) VALUES (?, ?, ?, ?, ?, ?)',
-            'siiisi',
+            'INSERT INTO sessoes_exercicios(uuid, sessao_id, exercicio_id, ordem, tipo_item, exercicio_prescrito_id, ficha_exercicio_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            'siiisii',
             $uuid,
             $sessionId,
             $exerciseId,
             $order,
             $itemType,
             $prescribedExerciseId,
+            $fichaExerciseId,
         );
 
         return $this->db->lastInsertId();
@@ -225,7 +294,8 @@ final class SessionRepository
     {
         return $this->db->fetchAll(
             'SELECT ss.id, ss.uuid, ss.sessao_exercicio_id, ss.ordem, ss.tipo, ss.carga_kg, ss.repeticoes, ss.duracao_segundos, ss.rir_real,
-                    ss.status, ss.concluida_em, ss.revision, ss.atualizado_cliente_em
+                    ss.status, ss.concluida_em, ss.revision, ss.atualizado_cliente_em,
+                    (SELECT sp.uuid FROM series_prescritas sp WHERE sp.id = ss.serie_prescrita_id) AS serie_prescrita_uuid
                FROM sessoes_series ss JOIN sessoes_exercicios se ON se.id = ss.sessao_exercicio_id
               WHERE se.sessao_id = ? ORDER BY se.ordem, ss.ordem',
             'i',
@@ -256,15 +326,16 @@ final class SessionRepository
         return (int) ($row['n'] ?? 1);
     }
 
-    public function insertSeries(string $uuid, int $sessionExerciseId, int $order, string $type): int
+    public function insertSeries(string $uuid, int $sessionExerciseId, int $order, string $type, ?int $prescribedSeriesId = null): int
     {
         $this->db->execute(
-            "INSERT INTO sessoes_series(uuid, sessao_exercicio_id, ordem, tipo, status) VALUES (?, ?, ?, ?, 'pendente')",
-            'siis',
+            "INSERT INTO sessoes_series(uuid, sessao_exercicio_id, ordem, tipo, status, serie_prescrita_id) VALUES (?, ?, ?, ?, 'pendente', ?)",
+            'siisi',
             $uuid,
             $sessionExerciseId,
             $order,
             $type,
+            $prescribedSeriesId,
         );
 
         return $this->db->lastInsertId();

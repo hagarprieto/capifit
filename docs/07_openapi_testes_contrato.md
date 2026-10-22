@@ -84,6 +84,9 @@ Estes pontos não estavam fechados nos Documentos 05/06 e foram definidos no Ope
 | C-17 | `GET /me/exercicios/ultimos-registros` devolve só os exercícios que têm registro, na ordem pedida e sem repetir; `data` é o `encerrada_em` da sessão; sessão cancelada não conta e o histórico sobrevive ao arquivamento do exercício | CT-39 |
 | C-18 | `GET /me/progresso/resumo`: o dia é o do `fuso_horario` do usuário; semanas de segunda a domingo, **incluindo semanas sem treino**; aquecimento, tempo, assistido e carga zero ficam fora do volume; período máximo de 366 dias | CT-40, CT-41; Doc 09 §4.1 |
 | C-19 | Recuperação de senha e verificação de e-mail: `204` sem corpo; token inválido, expirado, usado ou de outro tipo → o mesmo `422` em `details.fields.token`; limites de taxa devolvem `429` com `Retry-After` | CT-02; Doc 05 §4 |
+| C-20 | `PATCH /programas/{id}` (título e objetivo) é permitido em qualquer status **exceto arquivado** (`409 VERSION_IMMUTABLE`): renomear não altera versão publicada; `objetivo` vazio vira `null` | Doc 04 §5 |
+| C-21 | Programa de coach: sem aceite ele não existe para o aluno (`404`); com aceite o aluno lê e ativa, mas qualquer edição ou nova versão é `403` e a cópia é o caminho | RG-005; RG-019; CT-18…CT-21 |
+| C-22 | `POST /me/sessoes` com `ficha_uuid` copia a prescrição para a sessão e guarda `programa_id`, `versao_numero`, `ficha_id`, `ficha_exercicio_id` e `serie_prescrita_id`; `titulo` vem da ficha; `titulo_avulso` junto de `ficha_uuid` é `422`; só o `exercicios` (instantâneo) segue `501` | CT-31, CT-32 |
 
 ## 5. Estratégia de testes de contrato
 

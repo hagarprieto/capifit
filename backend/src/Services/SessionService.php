@@ -16,8 +16,8 @@ use CapiFit\Support\Uuid;
 use CapiFit\Validation\FieldErrors;
 
 /**
- * Sessões de treino AVULSAS (sem ficha): criar, consultar, anotar, adicionar exercícios e séries, registrar,
- * concluir e cancelar (E07-01; Doc 04 §7, Doc 06 D-05). Sessão programada: E07-12; substituir/pausar: E07-02.
+ * Sessões de treino, avulsas (sem ficha) ou programadas (a partir de uma ficha): criar, consultar, anotar, adicionar
+ * exercícios e séries, registrar, concluir e cancelar (E07-01, E07-12; Doc 04 §7, Doc 06 D-05). Substituir/pausar: E07-02.
  *
  * Regras: só o dono acessa (outro usuário = 404, sem vazamento); só sessão `em_andamento` aceita mudanças
  * (senão 409 SESSION_CLOSED); no máximo uma sessão aberta por aluno (RG-013).
@@ -65,10 +65,17 @@ final class SessionService
                 $errors->add('titulo_avulso', 'Deve ter entre 1 e 160 caracteres.');
             }
         }
+        $fichaUuid = $input['ficha_uuid'] ?? null;
+        if ($fichaUuid !== null && !Uuid::isValid($fichaUuid)) {
+            $errors->add('ficha_uuid', 'Informe um UUID válido.');
+        }
+        if ($fichaUuid !== null && $title !== null) {
+            $errors->add('titulo_avulso', 'Treino a partir de ficha usa o título da ficha.');
+        }
         $errors->throwIfAny();
 
-        if (($input['ficha_uuid'] ?? null) !== null || ($input['exercicios'] ?? null) !== null) {
-            throw new ApiException(ErrorCode::NotImplemented, 'Sessão a partir de ficha ainda não está disponível. Use o treino avulso.');
+        if (($input['exercicios'] ?? null) !== null) {
+            throw new ApiException(ErrorCode::NotImplemented, 'Envio do instantâneo de exercícios chega com a sincronização offline.');
         }
         /** @var string $uuid */
         /** @var \DateTimeImmutable $startedAt */
@@ -88,8 +95,20 @@ final class SessionService
         if ($open !== null) {
             throw $this->alreadyOpen($open);
         }
+        $ficha = null;
+        if ($fichaUuid !== null) {
+            $ficha = $this->sessions->findTrainableFicha(strtolower((string) $fichaUuid), $user->id);
+            if ($ficha === null) {
+                throw new ApiException(ErrorCode::ValidationError, null, ['fields' => ['ficha_uuid' => ['Ficha inexistente, de programa arquivado ou ainda em rascunho.']]]);
+            }
+        }
         try {
-            $this->sessions->insertAvulsa($uuid, $user->id, is_string($title) ? $title : null, Dates::toDb($startedAt));
+            if ($ficha !== null) {
+                $sessionId = $this->sessions->insertProgrammed($uuid, $user->id, (int) $ficha['versao_id'], (int) $ficha['id'], Dates::toDb($startedAt));
+                $this->copyPrescription($sessionId, (int) $ficha['id']);
+            } else {
+                $this->sessions->insertAvulsa($uuid, $user->id, is_string($title) ? $title : null, Dates::toDb($startedAt));
+            }
         } catch (\mysqli_sql_exception $e) {
             if ($e->getCode() === 1062 && str_contains($e->getMessage(), 'uq_sessao_em_andamento')) {
                 throw $this->alreadyOpen($this->sessions->openSessionUuid($user->id), $e);
@@ -102,6 +121,17 @@ final class SessionService
         }
 
         return ['status' => 201, 'data' => $this->present($row)];
+    }
+
+    /** Copia a prescrição para a sessão: o que foi feito fica independente de edições futuras do programa. */
+    private function copyPrescription(int $sessionId, int $fichaId): void
+    {
+        foreach ($this->sessions->prescribedItems($fichaId) as $item) {
+            $itemId = $this->sessions->insertExercise(Uuid::v4(), $sessionId, (int) $item['exercicio_id'], (int) $item['ordem'], 'prescrito', null, (int) $item['id']);
+            foreach ($item['series'] as $series) {
+                $this->sessions->insertSeries(Uuid::v4(), $itemId, (int) $series['ordem'], (string) $series['tipo'], (int) $series['id']);
+            }
+        }
     }
 
     /** @return array<string, mixed> */
@@ -265,7 +295,15 @@ final class SessionService
         $originalPlanned = $old['exercicio_prescrito_id'] !== null ? (int) $old['exercicio_prescrito_id'] : (int) $old['exercicio_id'];
         $this->sessions->shiftOrdersAfter($sessionId, (int) $old['ordem']);
         try {
-            $newItemId = $this->sessions->insertExercise($newUuid, $sessionId, $newExerciseId, (int) $old['ordem'] + 1, 'substituido', $originalPlanned);
+            $newItemId = $this->sessions->insertExercise(
+                $newUuid,
+                $sessionId,
+                $newExerciseId,
+                (int) $old['ordem'] + 1,
+                'substituido',
+                $originalPlanned,
+                $old['ficha_exercicio_id'] === null ? null : (int) $old['ficha_exercicio_id'],
+            );
         } catch (\mysqli_sql_exception $e) {
             if ($e->getCode() === 1062 && $clientUuid !== null) {
                 throw new ApiException(ErrorCode::ValidationError, null, ['fields' => ['uuid' => ['Este UUID já foi utilizado.']]], [], $e);
@@ -608,14 +646,14 @@ final class SessionService
         return [
             'id' => $row['uuid'],
             'tipo' => $row['tipo'],
-            'titulo' => $row['titulo_avulso'],
+            'titulo' => $row['titulo_avulso'] ?? $row['ficha_titulo'],
             'status' => $row['status'],
             'iniciada_em' => Dates::fromDb($row['iniciada_em']),
             'encerrada_em' => Dates::fromDb($row['encerrada_em']),
             'duracao_ativa_segundos' => $row['duracao_ativa_segundos'] === null ? null : (int) $row['duracao_ativa_segundos'],
-            'programa_id' => null,
-            'versao_numero' => null,
-            'ficha_id' => null,
+            'programa_id' => $row['programa_uuid'],
+            'versao_numero' => $row['versao_numero'] === null ? null : (int) $row['versao_numero'],
+            'ficha_id' => $row['ficha_uuid'],
             'series_realizadas' => (int) $row['series_realizadas'],
             'series_total' => (int) $row['series_total'],
         ];
@@ -670,7 +708,7 @@ final class SessionService
     {
         return [
             'id' => $e['uuid'],
-            'ficha_exercicio_id' => null,
+            'ficha_exercicio_id' => $e['ficha_exercicio_uuid'] ?? null,
             'exercicio' => ExercisePresenter::summary(['uuid' => $e['exercicio_uuid']] + $e, $groups),
             'exercicio_prescrito_id' => $e['prescrito_uuid'] ?? null,
             'tipo_item' => $e['tipo_item'],
@@ -696,7 +734,7 @@ final class SessionService
     {
         return [
             'id' => $s['uuid'] ?? null,
-            'serie_prescrita_id' => null,
+            'serie_prescrita_id' => $s['serie_prescrita_uuid'] ?? null,
             'ordem' => (int) ($s['ordem'] ?? 0),
             'tipo' => $s['tipo'] ?? 'normal',
             'carga_kg' => ($s['carga_kg'] ?? null) === null ? null : (float) $s['carga_kg'],

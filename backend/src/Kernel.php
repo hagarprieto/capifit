@@ -11,6 +11,7 @@ use CapiFit\Controllers\AuthController;
 use CapiFit\Controllers\CatalogController;
 use CapiFit\Controllers\HealthController;
 use CapiFit\Controllers\ProfileController;
+use CapiFit\Controllers\ProgramController;
 use CapiFit\Controllers\SessionController;
 use CapiFit\Http\Middleware\AccessLogMiddleware;
 use CapiFit\Http\Middleware\CorsMiddleware;
@@ -25,14 +26,18 @@ use CapiFit\Mail\FileMailer;
 use CapiFit\Mail\Mailer;
 use CapiFit\Mail\NullMailer;
 use CapiFit\Repositories\CatalogRepository;
+use CapiFit\Repositories\ProgramRepository;
 use CapiFit\Repositories\SessionRepository;
+use CapiFit\Repositories\StructureRepository;
 use CapiFit\Services\AccountTokens;
 use CapiFit\Services\AuthService;
 use CapiFit\Services\IdempotencyService;
 use CapiFit\Services\ProfileService;
+use CapiFit\Services\ProgramService;
 use CapiFit\Services\ProgressService;
 use CapiFit\Services\RateLimiter;
 use CapiFit\Services\SessionService;
+use CapiFit\Validation\StructureValidator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
@@ -91,7 +96,19 @@ final class Kernel
             ->add('POST', '/me/sessoes/{uuid}/cancelar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->cancel($r))
             ->add('POST', '/me/sessoes/{uuid}/exercicios/{ex_uuid}/substituir', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->replaceExercise($r))
             ->add('POST', '/me/sessoes/{uuid}/pausar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->pause($r))
-            ->add('POST', '/me/sessoes/{uuid}/retomar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->resume($r));
+            ->add('POST', '/me/sessoes/{uuid}/retomar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->resume($r))
+            ->add('GET', '/me/programas', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->list($r))
+            ->add('POST', '/me/programas', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->create($r))
+            ->add('GET', '/me/programa-ativo', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->active($r))
+            ->add('GET', '/programas/{uuid}', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->show($r))
+            ->add('PATCH', '/programas/{uuid}', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->update($r))
+            ->add('POST', '/programas/{uuid}/versoes', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->createVersion($r))
+            ->add('GET', '/programas/{uuid}/versoes/{numero}', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->showVersion($r))
+            ->add('PUT', '/programas/{uuid}/versoes/{numero}/estrutura', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->replaceStructure($r))
+            ->add('POST', '/programas/{uuid}/versoes/{numero}/publicar', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->publish($r))
+            ->add('POST', '/programas/{uuid}/ativar', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->activate($r))
+            ->add('POST', '/programas/{uuid}/arquivar', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->archive($r))
+            ->add('POST', '/programas/{uuid}/copiar', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->copy($r));
 
         return (new Pipeline([
             new RequestIdMiddleware(),
@@ -120,6 +137,18 @@ final class Kernel
         $sessions = new SessionService(new SessionRepository($this->db), new CatalogRepository($this->db));
 
         return new SessionController($sessions, new IdempotencyService($this->db), $this->db);
+    }
+
+    private function programController(): ProgramController
+    {
+        $programs = new ProgramService(
+            new ProgramRepository($this->db),
+            new StructureRepository($this->db),
+            new StructureValidator($this->db),
+            new CatalogRepository($this->db),
+        );
+
+        return new ProgramController($programs, new IdempotencyService($this->db), $this->db);
     }
 
     private function profileController(): ProfileController
