@@ -10,7 +10,7 @@ use CapiFit\Auth\TokenService;
 use CapiFit\Controllers\AuthController;
 use CapiFit\Controllers\CatalogController;
 use CapiFit\Controllers\HealthController;
-use CapiFit\Controllers\MeController;
+use CapiFit\Controllers\ProfileController;
 use CapiFit\Controllers\SessionController;
 use CapiFit\Http\Middleware\AccessLogMiddleware;
 use CapiFit\Http\Middleware\CorsMiddleware;
@@ -29,6 +29,8 @@ use CapiFit\Repositories\SessionRepository;
 use CapiFit\Services\AccountTokens;
 use CapiFit\Services\AuthService;
 use CapiFit\Services\IdempotencyService;
+use CapiFit\Services\ProfileService;
+use CapiFit\Services\ProgressService;
 use CapiFit\Services\RateLimiter;
 use CapiFit\Services\SessionService;
 use Psr\Http\Message\ResponseInterface;
@@ -65,7 +67,13 @@ final class Kernel
             ->public('POST', '/auth/email/verify', fn (ServerRequestInterface $r): ResponseInterface => $this->authController()->verifyEmail($r))
             ->add('POST', '/auth/logout', fn (ServerRequestInterface $r): ResponseInterface => $this->authController()->logout($r))
             ->add('POST', '/auth/logout-all', fn (ServerRequestInterface $r): ResponseInterface => $this->authController()->logoutAll($r))
-            ->add('GET', '/me', fn (ServerRequestInterface $r): ResponseInterface => (new MeController($this->db))->show($r))
+            ->add('GET', '/me', fn (ServerRequestInterface $r): ResponseInterface => $this->profileController()->me($r))
+            ->add('PATCH', '/me', fn (ServerRequestInterface $r): ResponseInterface => $this->profileController()->updateMe($r))
+            ->add('GET', '/me/perfil-treinamento', fn (ServerRequestInterface $r): ResponseInterface => $this->profileController()->trainingProfile($r))
+            ->add('PUT', '/me/perfil-treinamento', fn (ServerRequestInterface $r): ResponseInterface => $this->profileController()->replaceTrainingProfile($r))
+            ->add('GET', '/me/exercicios/ultimos-registros', fn (ServerRequestInterface $r): ResponseInterface => $this->profileController()->lastRecords($r))
+            ->add('GET', '/me/exercicios/{uuid}/ultimo-registro', fn (ServerRequestInterface $r): ResponseInterface => $this->profileController()->lastRecord($r))
+            ->add('GET', '/me/progresso/resumo', fn (ServerRequestInterface $r): ResponseInterface => $this->profileController()->summary($r))
             ->add('GET', '/exercicios', fn (ServerRequestInterface $r): ResponseInterface => $this->catalogController()->list($r))
             ->add('GET', '/exercicios/{uuid}', fn (ServerRequestInterface $r): ResponseInterface => $this->catalogController()->show($r))
             ->add('GET', '/exercicios/{uuid}/alternativas', fn (ServerRequestInterface $r): ResponseInterface => $this->catalogController()->alternatives($r))
@@ -112,6 +120,11 @@ final class Kernel
         $sessions = new SessionService(new SessionRepository($this->db), new CatalogRepository($this->db));
 
         return new SessionController($sessions, new IdempotencyService($this->db), $this->db);
+    }
+
+    private function profileController(): ProfileController
+    {
+        return new ProfileController(new ProfileService($this->db), new ProgressService($this->db), $this->db);
     }
 
     private function catalogController(): CatalogController
