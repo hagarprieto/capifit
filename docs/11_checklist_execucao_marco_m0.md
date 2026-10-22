@@ -158,7 +158,7 @@ Estrutura do Doc 05 §2.1 (controller → service → repository, `mysqli` com p
 - [ ] `.env.example` com as variáveis (banco, segredo JWT, origens CORS) e **sem valores reais**.
 - [ ] Testes: rota inexistente → 404 JSON no envelope de erro; JSON inválido → 400; resposta de erro nunca contém SQL; `request_id` presente; testes dos 4 cenários de integridade do §5.2 via banco real.
 
-**Andamento (22/10/2026):** esqueleto criado em `backend/` (PSR-7/PSR-15, roteador, middlewares, envelope e erros do contrato, conexão mysqli, logs com redação, `/health`); 30 testes e PHPStan nível 6 passam localmente (integração contra MariaDB temporária); job `api-php` adicionado ao CI. **Falta:** CI verde no GitHub e integração em MySQL 8 real.
+**Andamento (22/10/2026):** esqueleto criado em `backend/` (PSR-7/PSR-15, roteador, middlewares, envelope e erros do contrato, conexão mysqli, logs com redação, `/health`); 30 testes e PHPStan nível 6 passam localmente (integração contra MariaDB temporária); job `api-php` adicionado ao CI. **CI verde no GitHub com MySQL 8.0.46 em 22/10/2026** (PHPUnit com os 7 testes de integração e PHPStan). O primeiro CI falhou porque `apply-schema.ps1` usava `cmd /c` (só Windows); o script foi corrigido para rodar também no Linux.
 
 **Pronto quando:** `composer test` passa no CI com MySQL 8, `GET /health` responde, e qualquer erro devolve o envelope documentado.
 

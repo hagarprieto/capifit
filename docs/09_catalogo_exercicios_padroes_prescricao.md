@@ -35,7 +35,7 @@ Definir **o que existe no catálogo** (taxonomia, ficha do exercício, conjunto 
 
 **Ordem de aplicação:** `04_schema_inicial_mysql8.sql` → `06_migration_001_reconciliacao.sql` → `09_migration_002_catalogo.sql` → `09_seed_catalogo.sql`.
 
-**Validação executada:** os quatro scripts foram aplicados em sequência em uma MariaDB 10.4 temporária (sem erros). Verificado: 54 exercícios sem nomes duplicados, todos com grupo primário, nenhum sinônimo ambíguo, JSON dos modelos válido e rejeição de edição/exclusão de modelo aprovado. **Pendente:** repetir em MySQL 8 real (Doc 06 §5).
+**Validação executada:** os quatro scripts foram aplicados em sequência em uma MariaDB 10.4 temporária (sem erros). Verificado: 54 exercícios sem nomes duplicados, todos com grupo primário, nenhum sinônimo ambíguo, JSON dos modelos válido e rejeição de edição/exclusão de modelo aprovado. **Confirmado em MySQL 8.0.46** no CI do GitHub em 22/10/2026 (04 → 06 → 09 → seed, com as contagens esperadas).
 
 ## 3. Governança do catálogo
 
@@ -367,7 +367,7 @@ Revisor técnico definido; equipe de mídia com rig técnico (Doc 08 §16); proc
 5. Definir quando entram 5–7 dias/semana e periodização (fora do MVP).
 6. Tabela `recomendacoes_progressao` e política de dados para a Fase 2.
 7. Atualizar o OpenAPI (Doc 07) para expor `padrao_movimento`, `convencao_carga` e sinônimos na busca, e a Matriz TEL→API se necessário.
-8. Rodar a Migration 002 e o seed em MySQL 8 real.
+8. ~~Rodar a Migration 002 e o seed em MySQL 8 real~~ — feito no CI (22/10/2026).
 
 ## 11. Próximo documento
 

@@ -3,15 +3,15 @@
   "stories": {
     "E00-01": "done",
     "E00-03": "in-progress",
-    "E00-05": "in-progress",
-    "E00-04": "in-progress",
+    "E00-05": "done",
+    "E00-04": "done",
     "E00-08": "in-progress"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
-    "E00-03": "Script tools/db/apply-schema.ps1 testado em MariaDB 10.4; falta rodar em MySQL 8 real.",
-    "E00-05": "CI criado (.github/workflows/ci.yml); falta confirmar a primeira execução na aba Actions do GitHub.",
-    "E00-04": "Esqueleto em backend/: 30 testes e PHPStan nível 6 passando localmente (integração em MariaDB temporária). Falta CI verde no GitHub e validação em MySQL 8.",
+    "E00-03": "Script tools/db/apply-schema.ps1 validado em MySQL 8.0.46 no CI (04 → 06 → 09 → seed, 36 tabelas, 16 triggers). Falta testar que o usuário capifit_app (só DML) não altera o schema.",
+    "E00-05": "CI com 4 jobs (contrato/contraste, schema, API PHP, app Expo) verde na branch chore/fundacoes-m0 em 22/10/2026. Proteção da main não se aplica (trabalho solo).",
+    "E00-04": "Esqueleto em backend/ com 30 testes e PHPStan nível 6; CI verde no GitHub com MySQL 8.0.46 (incluindo 7 testes de integração do schema).",
     "E00-08": "Esqueleto em mobile/ (Expo SDK 58, Router, tema por tokens claro/escuro, i18n pt-BR, lint de hex e texto fixo): 17 testes, tsc, lint e expo-doctor passam e o bundle Android compila. Falta abrir em aparelho Android/iOS e registrar tempo de abertura."
   },
   "externas": {
