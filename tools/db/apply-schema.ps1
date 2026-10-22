@@ -18,6 +18,8 @@ param(
   [switch]$Recreate
 )
 $ErrorActionPreference = 'Stop'
+if ($PSVersionTable.PSVersion.Major -lt 7) { throw 'Requer PowerShell 7+ (pwsh): o Windows PowerShell 5.1 corrompe a codificação UTF-8 ao enviar o SQL.' }
+$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 $docs = (Resolve-Path (Join-Path $PSScriptRoot '../../docs')).Path
 $files = @('04_schema_inicial_mysql8.sql', '06_migration_001_reconciliacao.sql', '09_migration_002_catalogo.sql')
 if ($WithSeed) { $files += '09_seed_catalogo.sql' }
@@ -44,8 +46,9 @@ if ($versao -match 'MariaDB') { Write-Warning 'MariaDB detectada: o alvo oficial
 foreach ($f in $files) {
   $path = Join-Path $docs $f
   Write-Host "Aplicando $f ..."
-  $cmd = '"' + $Mysql + '" ' + (($base | ForEach-Object { '"' + $_ + '"' }) -join ' ') + ' < "' + $path + '"'
-  cmd /c $cmd
+  # O arquivo vai por stdin: funciona em Windows e Linux, o cliente trata DELIMITER e para no primeiro erro (exit != 0).
+  # (`-e "source arquivo"` NÃO serve: o cliente continua após erro e retorna 0.)
+  Get-Content -LiteralPath $path -Raw -Encoding utf8 | & $Mysql @base
   if ($LASTEXITCODE -ne 0) { throw "Falha ao aplicar $f" }
 }
 
