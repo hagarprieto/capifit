@@ -7,6 +7,7 @@ namespace CapiFit;
 use CapiFit\Auth\Authenticator;
 use CapiFit\Auth\PasswordHasher;
 use CapiFit\Auth\TokenService;
+use CapiFit\Controllers\AccountDataController;
 use CapiFit\Controllers\AuthController;
 use CapiFit\Controllers\CatalogController;
 use CapiFit\Controllers\HealthController;
@@ -31,6 +32,8 @@ use CapiFit\Repositories\SessionRepository;
 use CapiFit\Repositories\StructureRepository;
 use CapiFit\Services\AccountTokens;
 use CapiFit\Services\AuthService;
+use CapiFit\Services\ConsentService;
+use CapiFit\Services\DeviceService;
 use CapiFit\Services\IdempotencyService;
 use CapiFit\Services\ProfileService;
 use CapiFit\Services\ProgramService;
@@ -97,6 +100,12 @@ final class Kernel
             ->add('POST', '/me/sessoes/{uuid}/exercicios/{ex_uuid}/substituir', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->replaceExercise($r))
             ->add('POST', '/me/sessoes/{uuid}/pausar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->pause($r))
             ->add('POST', '/me/sessoes/{uuid}/retomar', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->resume($r))
+            ->add('GET', '/me/consentimentos', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->listConsents($r))
+            ->add('POST', '/me/consentimentos', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->grantConsent($r))
+            ->add('POST', '/me/consentimentos/{id}/revogar', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->revokeConsent($r))
+            ->add('GET', '/me/dispositivos', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->listDevices($r))
+            ->add('POST', '/me/dispositivos', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->registerDevice($r))
+            ->add('DELETE', '/me/dispositivos/{uuid}', fn (ServerRequestInterface $r): ResponseInterface => $this->accountDataController()->revokeDevice($r))
             ->add('GET', '/me/programas', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->list($r))
             ->add('POST', '/me/programas', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->create($r))
             ->add('GET', '/me/programa-ativo', fn (ServerRequestInterface $r): ResponseInterface => $this->programController()->active($r))
@@ -137,6 +146,11 @@ final class Kernel
         $sessions = new SessionService(new SessionRepository($this->db), new CatalogRepository($this->db));
 
         return new SessionController($sessions, new IdempotencyService($this->db), $this->db);
+    }
+
+    private function accountDataController(): AccountDataController
+    {
+        return new AccountDataController(new ConsentService($this->db), new DeviceService($this->db), $this->db);
     }
 
     private function programController(): ProgramController

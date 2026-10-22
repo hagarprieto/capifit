@@ -21,7 +21,10 @@
     "E09-02": "done",
     "E06-01": "done",
     "E06-02": "done",
-    "E07-12": "done"
+    "E07-12": "done",
+    "E02-01": "in-progress",
+    "E01-08": "in-progress",
+    "E00-10": "in-progress"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
@@ -44,7 +47,10 @@
     "E09-02": "Resumo de progresso por período (fuso do usuário, volume, tempo e frequência semanal) pronto. Validado no CI com MySQL 8.",
     "E06-01": "API de programas pronta e testada: criar, listar, versões, estrutura com revisão, publicar, ativar, arquivar, copiar e programa ativo; programa de coach só após aceite e não editável pelo aluno. Validado no CI com MySQL 8.",
     "E06-02": "Conflito por revisão (409 REVISION_CONFLICT) e versão imutável (409 VERSION_IMMUTABLE) já cobertos junto da E06-01. Validado no CI com MySQL 8.",
-    "E07-12": "Sessão programada a partir de ficha publicada pronta (copia exercícios e séries prescritas; versão e ficha coerentes). Validado no CI com MySQL 8."
+    "E07-12": "Sessão programada a partir de ficha publicada pronta (copia exercícios e séries prescritas; versão e ficha coerentes). Validado no CI com MySQL 8.",
+    "E02-01": "API de consentimentos pronta e testada (listar, registrar sem duplicar, revogar; termos e política não se revogam: CONSENT_MANDATORY). Falta o CI com MySQL 8.",
+    "E01-08": "API de dispositivos pronta e testada (registrar idempotente, listar, revogar cortando as sessões de login do aparelho; máximo 20 ativos). Falta o CI com MySQL 8.",
+    "E00-10": "Faxina pronta e testada (php bin/cleanup.php: limites de taxa 2 dias, idempotência 7 dias, tokens de ação e sessões de login vencidos). Falta agendar na hospedagem e o CI com MySQL 8."
   },
   "externas": {
     "revisor": "pending",

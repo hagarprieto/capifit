@@ -87,6 +87,8 @@ Estes pontos não estavam fechados nos Documentos 05/06 e foram definidos no Ope
 | C-20 | `PATCH /programas/{id}` (título e objetivo) é permitido em qualquer status **exceto arquivado** (`409 VERSION_IMMUTABLE`): renomear não altera versão publicada; `objetivo` vazio vira `null` | Doc 04 §5 |
 | C-21 | Programa de coach: sem aceite ele não existe para o aluno (`404`); com aceite o aluno lê e ativa, mas qualquer edição ou nova versão é `403` e a cópia é o caminho | RG-005; RG-019; CT-18…CT-21 |
 | C-22 | `POST /me/sessoes` com `ficha_uuid` copia a prescrição para a sessão e guarda `programa_id`, `versao_numero`, `ficha_id`, `ficha_exercicio_id` e `serie_prescrita_id`; `titulo` vem da ficha; `titulo_avulso` junto de `ficha_uuid` é `422`; só o `exercicios` (instantâneo) segue `501` | CT-31, CT-32 |
+| C-23 | Consentimentos: o histórico nunca é apagado (revogar preenche `revogado_em`; revogar de novo mantém o instante); repetir um aceite vigente do mesmo tipo e versão devolve o mesmo registro; `termos_uso` e `politica_privacidade` não se revogam (`409 CONSENT_MANDATORY`, o caminho é pedir exclusão da conta); `compartilhamento_coach` só nasce do vínculo com coach (Fase 3) | LGPD; Doc 06 §8.3 |
+| C-24 | Dispositivos: registrar é idempotente por UUID (sempre `201`); revogar é idempotente (`204`), revoga também as sessões de login daquele dispositivo e o UUID revogado não volta a ser registrado; máximo de 20 ativos | Doc 05 §4 |
 
 ## 5. Estratégia de testes de contrato
 
