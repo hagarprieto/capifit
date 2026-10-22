@@ -12,6 +12,9 @@ import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
 import { t } from '@/i18n';
 
+import { RestTimerCard } from '../rest/RestTimerCard';
+import { useRestTimer } from '../rest/useRestTimer';
+
 import { formatDecimal } from './input';
 import { lastTimeSummary } from './prefill';
 import { useWorkout, type RowView } from './useWorkout';
@@ -31,6 +34,8 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
   const { uuid } = useLocalSearchParams<{ uuid: string }>();
   const workout = useWorkout(String(uuid), api);
   const [confirming, setConfirming] = useState(false);
+  const rest = useRestTimer();
+  const [autoRest, setAutoRest] = useState(true);
 
   // Ao voltar do seletor de exercícios, recarrega a sessão (o exercício novo aparece).
   const first = useRef(true);
@@ -68,8 +73,17 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
   const current = workout.items[workout.index];
   const pending = workout.totals.total - workout.totals.done;
 
+  /** Concluir uma série nova inicia o descanso (se estiver habilitado); corrigir uma série não reinicia. */
+  async function completeAndRest(seriesId: string) {
+    const outcome = await workout.complete(seriesId);
+    if (outcome === 'new' && autoRest) {
+      rest.start();
+    }
+  }
+
   async function confirmFinish() {
     if (await workout.finish()) {
+      rest.skip();
       setConfirming(false);
       router.replace('/');
     } else {
@@ -121,11 +135,25 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
                 errors={row.errors}
                 summary={summaryOf(current.modality, row)}
                 onChange={(field, value) => workout.change(row.series.id, field, value)}
-                onComplete={() => void workout.complete(row.series.id)}
+                onComplete={() => void completeAndRest(row.series.id)}
                 onCorrect={() => workout.correct(row.series.id)}
               />
             ))}
           </View>
+
+          <RestTimerCard
+            state={rest.state}
+            remainingMs={rest.remainingMs}
+            progress={rest.progress}
+            stepSeconds={rest.step}
+            autoStart={autoRest}
+            onAutoStartChange={setAutoRest}
+            onStart={() => rest.start()}
+            onPause={rest.pause}
+            onResume={rest.resume}
+            onSkip={rest.skip}
+            onAdjust={rest.adjust}
+          />
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Button variant="text" label={t('treino.maisSerie')} onPress={() => void workout.addSeries(current.item.id)} />

@@ -107,29 +107,33 @@ export function useWorkout(sessionUuid: string, injected?: WorkoutApi) {
     setErrors((current) => ({ ...current, [seriesId]: {} }));
   }, [items]);
 
-  const complete = useCallback(async (seriesId: string) => {
+  /** `new` = primeira conclusão da série; `corrected` = correção de série já concluída; `failed` = nada foi registrado. */
+  const complete = useCallback(async (seriesId: string): Promise<'new' | 'corrected' | 'failed'> => {
     const view = items.find((i) => i.rows.some((r) => r.series.id === seriesId));
     const row = view?.rows.find((r) => r.series.id === seriesId);
     if (!view || !row || saving[seriesId]) {
-      return;
+      return 'failed';
     }
     const result = validateDraft(view.modality, row.draft);
     if (!result.ok) {
       setErrors((current) => ({ ...current, [seriesId]: result.errors }));
-      return;
+      return 'failed';
     }
     setNotice(null);
     setSaving((current) => ({ ...current, [seriesId]: true }));
     try {
+      const wasCorrection = Boolean(correcting[seriesId]);
       replaceSeries(await workoutApi.completeSeries(sessionUuid, seriesId, result.values));
       setEdits(({ [seriesId]: _dropped, ...rest }) => rest);
       setCorrecting(({ [seriesId]: _dropped, ...rest }) => rest);
+      return wasCorrection ? 'corrected' : 'new';
     } catch (error) {
       setNotice(isApiError(error) && error.code === 'SESSION_CLOSED' ? t('treino.erro.encerrado') : t('treino.erro.salvar'));
+      return 'failed';
     } finally {
       setSaving(({ [seriesId]: _dropped, ...rest }) => rest);
     }
-  }, [items, saving, workoutApi, sessionUuid, replaceSeries]);
+  }, [items, saving, correcting, workoutApi, sessionUuid, replaceSeries]);
 
   const correct = useCallback((seriesId: string) => {
     setCorrecting((current) => ({ ...current, [seriesId]: true }));

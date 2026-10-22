@@ -142,6 +142,25 @@ export const ptBR = {
   'picker.erro': 'Não foi possível buscar os exercícios. Tente de novo.',
   'picker.adicionando': 'Adicionando…',
   'picker.voltar': 'Voltar ao treino',
+
+  'descanso.canal': 'Descanso entre séries',
+  'descanso.notificacaoTitulo': 'Descanso terminou',
+  'descanso.notificacaoTexto': 'Hora da próxima série.',
+  'descanso.titulo': 'Descanso',
+  'descanso.iniciar': 'Iniciar descanso',
+  'descanso.automatico': 'Iniciar o descanso ao concluir uma série',
+  'descanso.pausar': 'Pausar',
+  'descanso.retomar': 'Retomar',
+  'descanso.pular': 'Pular',
+  'descanso.menos': '-{segundos} s',
+  'descanso.mais': '+{segundos} s',
+  'descanso.menosA11y': 'Diminuir o descanso em {segundos} segundos',
+  'descanso.maisA11y': 'Aumentar o descanso em {segundos} segundos',
+  'descanso.tempoA11y': 'Descanso: faltam cerca de {tempo}',
+  'descanso.pausado': 'Descanso pausado em {tempo}',
+  'descanso.terminou': 'Descanso terminou. Pronto para a próxima série.',
+  'descanso.dispensar': 'Dispensar',
+  'descanso.dica': 'Recupere o fôlego para a próxima.',
 } as const;
 
 export type MessageKey = keyof typeof ptBR;
