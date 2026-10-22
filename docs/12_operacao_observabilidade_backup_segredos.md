@@ -152,6 +152,28 @@ O dump é lido inteiro em memória na restauração (adequado ao tamanho atual; 
 - [ ] Verificar se o *secret scanning* está disponível para o plano do repositório e ativá-lo.
 - [ ] Ativar autenticação em dois fatores na conta.
 
+### 5.5 Revisão do fluxo de dados e dos logs (E02-05, 22/10/2026)
+
+Revisão de **todo** ponto do código que escreve log, imprime erro ou devolve mensagem de erro, mais o inventário de onde cada dado sensível é guardado. Resultado: **nenhum vazamento encontrado**; foram acrescentadas barreiras e testes para que continue assim.
+
+| Onde | O que sai | Avaliação |
+|---|---|---|
+| Log de acesso | Id da requisição, método, **padrão** da rota, status, duração e tamanho | Sem IP, consulta, cabeçalhos, corpo nem caminho real |
+| Erro inesperado | Id, método, caminho, **classe**, código, arquivo (sem diretório) e linha | Nunca a mensagem da exceção (exceção de banco pode trazer valores e dados de conexão) |
+| Reuso de refresh token | Evento e uuid da família de sessões | Identificador técnico; não identifica a pessoa sem acesso ao banco |
+| Falha de e-mail / e-mail não enviado | Evento e classe da exceção | Sem destinatário, assunto ou link |
+| Respostas de erro (`422` etc.) | Mensagens fixas por campo | Nunca devolvem o valor enviado (saúde, texto livre, senha); sem SQL, caminhos de arquivo ou pilha |
+| Scripts de linha de comando | Contagens em JSON; falha só com classe ou mensagem fixa | Sem dado de usuário |
+| Fila de sincronização (`operacoes_sync`) | Hash do conteúdo e o resultado da operação | O conteúdo da operação não é guardado |
+
+**Onde ficam os dados sensíveis (banco):** restrições de saúde em `perfis_treinamento.restricoes_json` (nunca em log, nunca em resposta de erro; removidas na exclusão de conta); anotações livres em `sessoes_treino.observacoes`; respostas guardadas em `requisicoes_idempotentes` (apagadas pela faxina em 7 dias e na exclusão da conta); justificativa editorial em `auditoria_eventos.metadados_json` (dado de catálogo, não do usuário; não é devolvida na consulta). Tokens e senhas só existem como hash (Argon2id e SHA-256); IP e e-mail só como HMAC nos limites de taxa.
+
+**Barreiras acrescentadas:** (1) o `RedactingProcessor` agora também mascara, **dentro de qualquer texto** (mensagem e valores), e-mails, JWT, cabeçalho `Bearer` e sequências longas com cara de token, e ganhou chaves de dado pessoal, de rede e de arquivo (`email`, `nome`, `observacoes`, `ip`, `storage_key`, `download_url`…); (2) o teste `LogPrivacyTest` roda todos os fluxos (cadastro, login certo e errado, renovação e reuso, recuperação de senha, perfil com restrições, sessão com anotação, programa, consentimento, dispositivo, sincronização, admin, exportação e exclusão de conta) com valores-marcador e falha se qualquer um aparecer no log **bruto** (sem o processador); (3) outro teste confere que respostas a requisições inválidas nunca repetem o valor enviado; (4) outro, que falha de conexão ao banco não registra usuário, senha nem host.
+
+**Regra para quem escrever log novo:** só identificadores técnicos (id de requisição, padrão de rota, classe de exceção, contagens). Se for preciso um identificador de pessoa para suporte, usar o uuid do usuário, nunca nome, e-mail ou IP. Todo fluxo novo entra no `LogPrivacyTest`.
+
+**Fora do alcance desta revisão (dependem de decisão ou de implantação):** retenção dos logs na plataforma de coleta, criptografia em repouso dos backups e do banco, e o que a hospedagem registra por conta própria (logs de servidor web e de proxy podem guardar IP e URL). Ver pendências abaixo.
+
 ## 6. Usuários e permissões do banco
 
 | Usuário | Privilégios | Uso |

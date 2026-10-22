@@ -98,6 +98,7 @@ Estes pontos não estavam fechados nos Documentos 05/06 e foram definidos no Ope
 | C-31 | `Midia.url` é temporária e assinada (HMAC-SHA256, validade padrão 10 min); `Midia.status` continua sempre `aprovado` | CT-70, CT-71 |
 | C-32 | `POST /me/solicitacoes`: `senha` só vale (e é obrigatória) na exclusão, com `422` em `senha` se estiver errada; pedido ativo do mesmo tipo devolve o existente (sempre `201`); a exclusão suspende a conta e revoga as sessões antes da anonimização | RG-021; CA-04-18 |
 | C-33 | `Solicitacao.download_url` só aparece em exportação `concluida` e é temporária e assinada; sem base e segredo de exportação configurados, o pedido conclui mas o link é `null` (falha fechada) | Doc 12 |
+| C-34 | Nenhum fluxo grava dado pessoal, de saúde, credencial ou token em log (varredura com valores-marcador no log bruto) e nenhuma resposta de erro devolve o valor enviado, SQL, caminho de arquivo ou detalhe de conexão | CT-80; RN-10; Doc 12 §5.5 |
 
 ## 5. Estratégia de testes de contrato
 
