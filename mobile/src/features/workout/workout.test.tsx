@@ -187,7 +187,7 @@ describe('WorkoutScreen', () => {
     expect(screen.getByRole('button', { name: 'Próximo' }).props.accessibilityState.disabled).toBe(true);
   });
 
-  it('finalizar com séries pendentes pede confirmação, conta as pendentes e volta ao início', async () => {
+  it('finalizar com séries pendentes pede confirmação, conta as pendentes e abre o resumo', async () => {
     const api = fakeApi();
     await ready(api);
 
@@ -200,7 +200,7 @@ describe('WorkoutScreen', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Finalizar' }));
 
     await waitFor(() => expect(api.finish).toHaveBeenCalledWith('sessao-1'));
-    await waitFor(() => expect(mockRouter.replace).toHaveBeenCalledWith('/'));
+    await waitFor(() => expect(mockRouter.replace).toHaveBeenCalledWith({ pathname: '/treino/[uuid]/resumo', params: { uuid: 'sessao-1' } }));
   });
 
   it('erro ao carregar oferece tentar de novo', async () => {

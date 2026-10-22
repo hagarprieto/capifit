@@ -161,6 +161,22 @@ export const ptBR = {
   'descanso.terminou': 'Descanso terminou. Pronto para a próxima série.',
   'descanso.dispensar': 'Dispensar',
   'descanso.dica': 'Recupere o fôlego para a próxima.',
+
+  'resumo.titulo': 'Treino concluído!',
+  'resumo.carregando': 'Conferindo o treino…',
+  'resumo.erro': 'Não foi possível conferir o treino agora. Verifique a conexão e tente de novo.',
+  'resumo.naoConcluido': 'Este treino ainda não aparece como concluído. Tente de novo em instantes.',
+  'resumo.duracao': 'Duração: {minutos} min',
+  'resumo.series': 'Séries concluídas: {feitas} de {total}',
+  'resumo.exercicios': 'Exercícios executados: {quantidade}',
+  'resumo.volume': 'Volume: {volume} kg',
+  'resumo.volumeExplicacao': 'Carga × repetições das séries de trabalho (sem aquecimento), como registrado. É um número de acompanhamento, não uma nota do treino.',
+  'resumo.verRegistros': 'Ver registros',
+  'resumo.ocultarRegistros': 'Ocultar registros',
+  'resumo.voltar': 'Voltar ao início',
+  'resumo.serieCargaReps': 'Série {numero}: {carga} kg × {reps}',
+  'resumo.serieReps': 'Série {numero}: {reps} repetições',
+  'resumo.serieTempo': 'Série {numero}: {segundos} s',
 } as const;
 
 export type MessageKey = keyof typeof ptBR;

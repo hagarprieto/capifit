@@ -36,7 +36,8 @@
     "E01-06": "in-progress",
     "E01-07": "in-progress",
     "E07-05": "in-progress",
-    "E07-06": "in-progress"
+    "E07-06": "in-progress",
+    "E07-09": "in-progress"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
@@ -75,7 +76,8 @@
     "E01-07": "Restauração de sessão ao abrir e rotas por estado de sessão prontas e validadas no CI (Jest). Falta validar em aparelho.",
     "E04-02": "Parcial: botão, campo de texto, campo numérico, caixa de seleção, aviso, linha de série, diálogo de confirmação e estado vazio prontos e testados. Falta validar em aparelho (a Capi do estado vazio depende do asset da marca).",
     "E07-05": "Executor pronto e testado em Jest (102 testes): um exercício por vez, séries com valores sugeridos que só viram registro ao concluir (D-14), correção de série, + série, navegação entre exercícios, finalizar com confirmação, escolha de exercício e entrada pelo Início. Funciona online; salvar offline vem com a E08. Falta o CI e validar em aparelho (teclado numérico, fonte ampliada, leitor de tela, uso com uma mão).",
-    "E07-06": "Timer de descanso por instante final pronto e testado em Jest (121 testes): inicia ao concluir série (configurável), pausar, pular, ajuste de 15 s, recálculo ao voltar do segundo plano, háptico uma vez e aviso local agendado e cancelado. Falta o CI e validar em aparelho: aviso com a tela bloqueada e o app em segundo plano, permissão de notificação no Android 13+ e no iOS, háptico e leitor de tela."
+    "E07-06": "Timer de descanso por instante final pronto e testado em Jest (121 testes): inicia ao concluir série (configurável), pausar, pular, ajuste de 15 s, recálculo ao voltar do segundo plano, háptico uma vez e aviso local agendado e cancelado. Falta o CI e validar em aparelho: aviso com a tela bloqueada e o app em segundo plano, permissão de notificação no Android 13+ e no iOS, háptico e leitor de tela.",
+    "E07-09": "Resumo da sessão pronto e testado em Jest (133 testes): confere a conclusão no servidor antes de comemorar, duração, séries, exercícios, volume com a regra explícita (mesma do servidor) e registros expansíveis. Falta o CI e validar em aparelho. A Capi comemorando entra quando o asset da marca existir."
   },
   "externas": {
     "revisor": "pending",

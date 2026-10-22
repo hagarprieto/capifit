@@ -85,7 +85,7 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
     if (await workout.finish()) {
       rest.skip();
       setConfirming(false);
-      router.replace('/');
+      router.replace({ pathname: '/treino/[uuid]/resumo', params: { uuid: String(uuid) } });
     } else {
       setConfirming(false);
     }
