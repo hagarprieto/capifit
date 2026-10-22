@@ -50,7 +50,7 @@ function mount(fetchImpl: jest.Mock) {
   );
 }
 
-const session = (over: Partial<StoredSession> = {}): StoredSession => ({ accessToken: 'acesso-salvo', accessExpiresAt: Date.now() + 600_000, refreshToken: 'refresh-salvo', user: { id: USER.id, nome: 'Ana' }, ...over });
+const session = (over: Partial<StoredSession> = {}): StoredSession => ({ accessToken: 'acesso-salvo', accessExpiresAt: Date.now() + 600_000, refreshToken: 'segredo-de-teste-refresh-salvo', user: { id: USER.id, nome: 'Ana' }, ...over });
 
 beforeEach(() => {
   mockStore.clear();
@@ -59,7 +59,7 @@ beforeEach(() => {
 describe('tokenStore', () => {
   it('guarda e lê a sessão, e trata dado corrompido como "sem sessão"', async () => {
     await saveSession(session());
-    expect((await loadSession())?.refreshToken).toBe('refresh-salvo');
+    expect((await loadSession())?.refreshToken).toBe('segredo-de-teste-refresh-salvo');
 
     mockStore.set('capifit.session', '{"accessToken": 1}');
     expect(await loadSession()).toBeNull();
@@ -105,7 +105,7 @@ describe('AuthProvider', () => {
     await waitFor(() => expect(screen.getByText('signedIn|Ana|online')).toBeTruthy());
     const [url, init] = fetchImpl.mock.calls[0];
     expect(String(url)).toBe('https://api.exemplo.invalid/auth/refresh');
-    expect(JSON.parse(String((init as RequestInit).body))).toMatchObject({ refresh_token: 'refresh-salvo' });
+    expect(JSON.parse(String((init as RequestInit).body))).toMatchObject({ refresh_token: 'segredo-de-teste-refresh-salvo' });
     expect((await loadSession())?.refreshToken).toBe('refresh-2');
   });
 
@@ -122,7 +122,7 @@ describe('AuthProvider', () => {
     await mount(jest.fn().mockRejectedValue(new TypeError('Network request failed')));
 
     await waitFor(() => expect(screen.getByText('signedIn|Ana|offline')).toBeTruthy());
-    expect((await loadSession())?.refreshToken).toBe('refresh-salvo');
+    expect((await loadSession())?.refreshToken).toBe('segredo-de-teste-refresh-salvo');
   });
 
   it('login envia e-mail normalizado e o aparelho, guarda a sessão e registra o dispositivo', async () => {
