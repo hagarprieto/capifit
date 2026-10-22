@@ -3,6 +3,9 @@ import { useState } from 'react';
 
 import { Button } from './Button';
 import { CheckField } from './CheckField';
+import { ConfirmDialog } from './ConfirmDialog';
+import { EmptyState } from './EmptyState';
+import { NumberField } from './NumberField';
 import { Notice } from './Notice';
 import { TextField } from './TextField';
 import { ThemeProvider } from './ThemeProvider';
@@ -93,5 +96,54 @@ describe('CheckField e Notice', () => {
     expect(screen.getByRole('alert')).toBeTruthy();
     expect(screen.getByText('Algo deu errado')).toBeTruthy();
     expect(screen.getByText('Sem conexão.')).toBeTruthy();
+  });
+});
+
+describe('NumberField, ConfirmDialog e EmptyState', () => {
+  it('campo numérico usa teclado decimal para carga e numérico para repetições', async () => {
+    await wrap(
+      <>
+        <NumberField label="Carga" value="40" onChangeText={jest.fn()} kind="decimal" />
+        <NumberField label="Reps" value="10" onChangeText={jest.fn()} />
+      </>,
+    );
+
+    expect(screen.getByLabelText('Carga').props.keyboardType).toBe('decimal-pad');
+    expect(screen.getByLabelText('Reps').props.keyboardType).toBe('number-pad');
+  });
+
+  it('campo bloqueado (série concluída) não aceita edição', async () => {
+    await wrap(<NumberField label="Reps" value="10" onChangeText={jest.fn()} editable={false} />);
+
+    expect(screen.getByLabelText('Reps').props.editable).toBe(false);
+  });
+
+  it('diálogo mostra título e efeito, e separa cancelar de confirmar', async () => {
+    const onConfirm = jest.fn();
+    const onCancel = jest.fn();
+    await wrap(<ConfirmDialog visible title="Excluir?" message="Isso não pode ser desfeito." confirmLabel="Excluir" destructive onConfirm={onConfirm} onCancel={onCancel} />);
+
+    expect(screen.getByText('Isso não pode ser desfeito.')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onConfirm).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: 'Excluir' }));
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('diálogo fechado não mostra nada', async () => {
+    await wrap(<ConfirmDialog visible={false} title="Excluir?" message="x" confirmLabel="Excluir" onConfirm={jest.fn()} onCancel={jest.fn()} />);
+
+    expect(screen.queryByText('Excluir?')).toBeNull();
+  });
+
+  it('estado vazio mostra a frase e uma única ação', async () => {
+    const onAction = jest.fn();
+    await wrap(<EmptyState title="Nada aqui" message="Comece adicionando." actionLabel="Adicionar" onAction={onAction} />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Adicionar' }));
+
+    expect(onAction).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText('Nada aqui. Comece adicionando.')).toBeTruthy();
   });
 });

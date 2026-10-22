@@ -13,11 +13,13 @@ type Props = {
   /** Mostra o indicador de progresso mantendo o texto; enquanto carrega, o toque é ignorado (sem envio duplo). */
   loading?: boolean;
   accessibilityHint?: string;
+  /** Rótulo falado, quando precisa ser mais descritivo que o texto do botão ("Concluir série 2 de Supino reto: 40 kg, 10 repetições"). */
+  accessibilityLabel?: string;
   testID?: string;
 };
 
 /** Botão do design system (Doc 08 §8): primário 56 dp com `brand.primary`, secundário com contorno e texto simples. */
-export function Button({ label, onPress, variant = 'primary', disabled = false, loading = false, accessibilityHint, testID }: Props) {
+export function Button({ label, onPress, variant = 'primary', disabled = false, loading = false, accessibilityHint, accessibilityLabel, testID }: Props) {
   const { theme } = useTheme();
   const { colors, radius, size, space } = theme;
   const inactive = disabled || loading;
@@ -30,7 +32,7 @@ export function Button({ label, onPress, variant = 'primary', disabled = false, 
     <Pressable
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: inactive, busy: loading }}
       disabled={inactive}

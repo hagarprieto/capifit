@@ -29,6 +29,14 @@ npm run mock:api       # servidor mock do contrato em http://localhost:4010 (Pri
 - **Sessão:** tokens ficam só no armazenamento seguro do aparelho (`expo-secure-store`: Keychain/Keystore), nunca em log nem em estado de tela. `src/auth/authCore.ts` renova com uma chamada por vez; o app restaura a sessão ao abrir, inclusive sem rede (o treino não depende da conexão). O identificador do aparelho é criado uma vez e sobrevive ao logout.
 - **Rotas por sessão:** `src/app/_layout.tsx` usa `Stack.Protected`: sem sessão só as telas de entrada (`boas-vindas`, `entrar`, `cadastrar`, `recuperar`); com sessão a área logada. O link do e-mail abre `redefinir-senha?token=…` (esquema `capifit://`). O guard só esconde telas: a autorização é do servidor.
 
+## Executor de treino (TEL-012)
+
+- **Fluxo:** Início → "Iniciar treino avulso" (ou "Continuar treino em andamento" se já houver um aberto: o servidor aceita só um por vez) → `treino/[uuid]` → `treino/[uuid]/exercicios` (escolha de exercício do catálogo, que já cria 3 séries). Finalizar volta ao Início.
+- **Pré-preenchimento (D-14):** carga e repetições vêm **sugeridas** e editáveis, em cor secundária até o usuário editar; só viram registro no toque em **Concluir**. Ordem da sugestão: série anterior já concluída neste treino → série de mesma posição (ou a última) do último treino concluído do exercício → em branco. Corrigir uma série concluída reabre os campos e registra de novo.
+- **Validação local = servidor:** carga e repetições (`reps_carga`), só repetições (peso corporal e assistido; carga opcional) ou só duração (`tempo`). Carga aceita vírgula (`42,5`).
+- **Lógica fora da tela:** `features/workout/input.ts` (digitação), `prefill.ts` (sugestão), `workoutApi.ts` (chamadas) e `useWorkout.ts` (estado). Esta entrega é **online**: salvar offline e a fila de sincronização são as histórias E08-01…E08-03.
+- **Fora desta entrega:** timer de descanso (E07-06), substituir exercício e pausar (E07-07/E07-08), resumo da sessão (E07-09) e rótulos de carga por convenção (E07-10).
+
 ## Pendências desta base (história E00-08)
 
 - Abrir o app em um Android de entrada e em um iPhone e registrar o **tempo de abertura** (linha de base do Doc 10 §7.6).
