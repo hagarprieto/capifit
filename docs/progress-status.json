@@ -30,8 +30,8 @@
     "E03-07": "done",
     "E03-06": "done",
     "E03-02": "done",
-    "E02-02": "in-progress",
-    "E02-05": "in-progress"
+    "E02-02": "done",
+    "E02-05": "done"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
@@ -63,8 +63,8 @@
     "E03-07": "Eventos de auditoria gravados nas ações do catálogo e consulta GET /admin/auditoria (filtro e cursor) prontos. Validado no CI com MySQL 8. Falta plugar as demais ações administrativas (usuários, papéis, modelos) quando existirem.",
     "E03-06": "Vínculo por chave de storage, aprovação por outro admin e URLs temporárias assinadas (HMAC) prontos e validados no CI com MySQL 8. A função de borda do storage/CDN que confere a assinatura entra com a hospedagem (Doc 12 §8, item 7).",
     "E03-02": "Importador idempotente pronto e testado (php bin/import-seed.php): só insere o que falta, nunca sobrescreve conteúdo curado, recusa instruções fora do catálogo e confere nomes e sinônimos (CAT-09) com reversão total. Validado no CI com MySQL 8.",
-    "E02-02": "API de pedidos (exportação e exclusão com senha e suspensão imediata) e workflow interno (php bin/process-privacy-requests.php: exportação em JSON privado com link assinado; anonimização da conta) prontos e testados. Falta o CI com MySQL 8, agendar o workflow, definir o armazenamento dos arquivos e a revisão jurídica da retenção.",
-    "E02-05": "Revisão feita (Doc 12 §5.5): nenhum vazamento encontrado no código; filtro de log reforçado (padrões de e-mail, JWT, Bearer e token) e testes que varrem os logs de todos os fluxos e as respostas de erro. Falta o CI com MySQL 8; retenção de logs e criptografia em repouso dependem da hospedagem."
+    "E02-02": "API de pedidos (exportação e exclusão com senha e suspensão imediata) e workflow interno (php bin/process-privacy-requests.php: exportação em JSON privado com link assinado; anonimização da conta) prontos e validados no CI com MySQL 8. Para operar: agendar o workflow, definir o armazenamento dos arquivos e a revisão jurídica da retenção.",
+    "E02-05": "Revisão feita (Doc 12 §5.5): nenhum vazamento encontrado no código; filtro de log reforçado (e-mail, JWT, Bearer e token) e testes que varrem os logs de todos os fluxos e as respostas de erro, validados no CI com MySQL 8. Retenção de logs e criptografia em repouso dependem da hospedagem."
   },
   "externas": {
     "revisor": "pending",
