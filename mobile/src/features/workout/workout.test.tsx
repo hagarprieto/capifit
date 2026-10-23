@@ -72,6 +72,7 @@ function fakeApi(over: Partial<WorkoutApi> = {}): WorkoutApi {
     completeSeries: jest.fn().mockImplementation(async (_s: string, id: string, values: object) => serie(id, Number(id.slice(1)), { status: 'realizada', ...values })),
     addSeries: jest.fn().mockImplementation(async () => serie('s-novo', 4)),
     addExercise: jest.fn().mockResolvedValue({ id: 'item-novo' }),
+    replaceExercise: jest.fn().mockResolvedValue({ id: 'item-troca' }),
     finish: jest.fn().mockResolvedValue(undefined),
     pause: jest.fn().mockResolvedValue({ id: 'pausa-1', iniciada_em: '2026-10-22T10:20:00.000Z', encerrada_em: null }),
     resume: jest.fn().mockResolvedValue({ id: 'pausa-1', iniciada_em: '2026-10-22T10:20:00.000Z', encerrada_em: '2026-10-22T10:22:00.000Z' }),
@@ -226,6 +227,16 @@ describe('WorkoutScreen', () => {
   });
 });
 
+describe('WorkoutScreen: substituir exercício', () => {
+  it('leva à escolha do substituto com o exercício atual', async () => {
+    await ready(fakeApi());
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Substituir exercício' }));
+
+    expect(mockRouter.push).toHaveBeenCalledWith({ pathname: '/treino/[uuid]/substituir', params: { uuid: 'sessao-1', itemId: 'item-1' } });
+  });
+});
+
 describe('WorkoutScreen: pausar, retomar e descartar', () => {
   const paused = (): Session => ({ ...makeSession(), pausas: [{ id: 'pausa-1', iniciada_em: '2026-10-22T10:20:00.000Z', encerrada_em: null }] });
 
@@ -345,7 +356,7 @@ describe('ExercisePickerScreen', () => {
     await fireEvent.press(await screen.findByRole('button', { name: 'Remada baixa' }));
 
     await waitFor(() => expect(mockRouter.back).toHaveBeenCalled());
-    expect(api.addExercise).toHaveBeenCalledWith('sessao-1', 'ex-1');
+    expect(api.addExercise).toHaveBeenCalledWith('sessao-1', expect.objectContaining({ id: 'ex-1' }));
     expect(api.addSeries).toHaveBeenCalledTimes(3);
   });
 

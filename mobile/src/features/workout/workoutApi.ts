@@ -2,7 +2,7 @@ import type { ApiClient, Schemas } from '@/api/client';
 import { isApiError } from '@/api/errors';
 import { newUuid } from '@/lib/uuid';
 
-import { createExercisesApi } from '../exercises/exercisesApi';
+import { createExercisesApi, type ExerciseSummary } from '../exercises/exercisesApi';
 
 import type { SeriesValues } from './input';
 import type { Target } from './prefill';
@@ -124,8 +124,18 @@ export function createWorkoutApi(api: ApiClient) {
       return result.data;
     },
 
-    async addExercise(sessionUuid: string, exerciseUuid: string): Promise<SessionItem> {
-      const result = await api.post<SessionItem>(`/me/sessoes/${sessionUuid}/exercicios`, { uuid: newUuid(), exercicio_uuid: exerciseUuid });
+    /** Acrescenta um exercício do catálogo ao treino (depois do último). Recebe o resumo para poder gravá-lo também no aparelho. */
+    async addExercise(sessionUuid: string, exercise: ExerciseSummary): Promise<SessionItem> {
+      const result = await api.post<SessionItem>(`/me/sessoes/${sessionUuid}/exercicios`, { uuid: newUuid(), exercicio_uuid: exercise.id });
+      return result.data;
+    },
+
+    /**
+     * Troca o exercício no meio do treino sem perder o histórico: o original fica com o que já foi registrado e as séries
+     * ainda pendentes passam para o substituto, que entra logo depois dele.
+     */
+    async replaceExercise(sessionUuid: string, itemId: string, exercise: ExerciseSummary): Promise<SessionItem> {
+      const result = await api.post<SessionItem>(`/me/sessoes/${sessionUuid}/exercicios/${itemId}/substituir`, { uuid: newUuid(), exercicio_uuid: exercise.id });
       return result.data;
     },
 

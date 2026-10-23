@@ -1,4 +1,5 @@
 import type { Schemas } from '@/api/client';
+import type { ExerciseSummary } from '@/features/exercises/exercisesApi';
 import type { WorkoutApi } from '@/features/workout/workoutApi';
 import { targetsFromVersion } from '@/features/workout/workoutApi';
 import type { SeriesValues } from '@/features/workout/input';
@@ -127,6 +128,32 @@ export function createLocalFirstWorkoutApi({ remote, sessions, queue, engine, to
     await sessions.setStatus(sessionUuid, 'cancelada', iso(), null);
     await queue.enqueue({ entidade: 'sessao_treino', entidade_uuid: sessionUuid, sessao_uuid: sessionUuid, tipo: 'cancelar', payload: {} });
     flushLater();
+  }
+
+  async function addExerciseLocally(sessionUuid: string, exercise: ExerciseSummary): Promise<Schemas['SessaoExercicio']> {
+    const item = await sessions.addExercise(sessionUuid, newUuid(), exercise);
+    if (!item) {
+      throw new Error('Sessão não encontrada neste aparelho.');
+    }
+    await queue.enqueue({ entidade: 'sessao_exercicio', entidade_uuid: item.id, sessao_uuid: sessionUuid, tipo: 'criar', payload: { sessao_uuid: sessionUuid, exercicio_uuid: exercise.id } });
+    flushLater();
+    return item;
+  }
+
+  async function replaceExerciseLocally(sessionUuid: string, itemId: string, exercise: ExerciseSummary): Promise<Schemas['SessaoExercicio']> {
+    const item = await sessions.replaceExercise(sessionUuid, itemId, newUuid(), exercise);
+    if (!item) {
+      throw new Error('Não foi possível trocar o exercício neste aparelho.');
+    }
+    await queue.enqueue({
+      entidade: 'sessao_exercicio',
+      entidade_uuid: item.id,
+      sessao_uuid: sessionUuid,
+      tipo: 'criar',
+      payload: { sessao_uuid: sessionUuid, substitui_uuid: itemId, exercicio_uuid: exercise.id },
+    });
+    flushLater();
+    return item;
   }
 
   async function startOffline(origin: Parameters<typeof buildOfflineSession>[0]): Promise<string> {
@@ -274,6 +301,38 @@ export function createLocalFirstWorkoutApi({ remote, sessions, queue, engine, to
       } catch (error) {
         if (isTemporary(error) && (await sessions.isSynced(sessionUuid)) !== null) {
           return addLocally(sessionUuid, itemId);
+        }
+        throw error;
+      }
+    },
+
+    async addExercise(sessionUuid: string, exercise: ExerciseSummary) {
+      if (await isLocalMode(sessionUuid)) {
+        return addExerciseLocally(sessionUuid, exercise);
+      }
+      try {
+        const item = await remote.addExercise(sessionUuid, exercise);
+        await sessions.addExercise(sessionUuid, item.id, item.exercicio ?? exercise).catch(() => undefined); // a cópia local acompanha
+        return item;
+      } catch (error) {
+        if (isTemporary(error) && (await sessions.isSynced(sessionUuid)) !== null) {
+          return addExerciseLocally(sessionUuid, exercise);
+        }
+        throw error;
+      }
+    },
+
+    async replaceExercise(sessionUuid: string, itemId: string, exercise: ExerciseSummary) {
+      if (await isLocalMode(sessionUuid)) {
+        return replaceExerciseLocally(sessionUuid, itemId, exercise);
+      }
+      try {
+        const item = await remote.replaceExercise(sessionUuid, itemId, exercise);
+        await sessions.replaceExercise(sessionUuid, itemId, item.id, item.exercicio ?? exercise).catch(() => undefined);
+        return item;
+      } catch (error) {
+        if (isTemporary(error) && (await sessions.isSynced(sessionUuid)) !== null) {
+          return replaceExerciseLocally(sessionUuid, itemId, exercise);
         }
         throw error;
       }

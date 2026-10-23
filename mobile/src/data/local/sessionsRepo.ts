@@ -182,6 +182,57 @@ export function createSessionsRepo(db: LocalDb, userUuid: string) {
       return { id: seriesUuid, serie_prescrita_id: null, ordem, tipo: type, status: 'pendente', carga_kg: null, repeticoes: null, duracao_segundos: null, rir_real: null, concluida_em: null, revision: 0 };
     },
 
+    /** Acrescenta um exercício ao fim do treino (sem séries), com o UUID já gerado — ou o que o servidor devolveu. */
+    async addExercise(sessionUuid: string, itemUuid: string, exercise: SessionItem['exercicio']): Promise<SessionItem | null> {
+      const owned = await db.getFirstAsync<{ uuid: string }>('SELECT uuid FROM sessao WHERE uuid = ? AND usuario_uuid = ?', [sessionUuid, userUuid]);
+      if (!owned) {
+        return null;
+      }
+      const last = await db.getFirstAsync<{ ordem: number | null }>('SELECT MAX(ordem) AS ordem FROM sessao_exercicio WHERE sessao_uuid = ?', [sessionUuid]);
+      const ordem = (last?.ordem ?? 0) + 1;
+      await db.runAsync(
+        "INSERT OR IGNORE INTO sessao_exercicio (uuid, sessao_uuid, exercicio_uuid, exercicio_json, tipo_item, ordem) VALUES (?, ?, ?, ?, 'adicionado', ?)",
+        [itemUuid, sessionUuid, exercise.id, JSON.stringify(exercise), ordem],
+      );
+      return { id: itemUuid, ficha_exercicio_id: null, exercicio: exercise, exercicio_prescrito_id: null, tipo_item: 'adicionado', ordem, series: [] };
+    },
+
+    /**
+     * Troca o exercício como o servidor faz: o item original continua com o que já foi registrado; as séries PENDENTES
+     * passam ao substituto, que fica logo depois (os seguintes descem uma posição) e guarda o exercício que estava
+     * previsto no início. `null` se o item não existe aqui ou se o exercício escolhido é o mesmo do item.
+     */
+    async replaceExercise(sessionUuid: string, oldItemUuid: string, newItemUuid: string, exercise: SessionItem['exercicio']): Promise<SessionItem | null> {
+      let created: SessionItem | null = null;
+      await db.transaction(async (tx) => {
+        const old = await tx.getFirstAsync<ItemRow & { exercicio_uuid: string }>(
+          'SELECT se.* FROM sessao_exercicio se JOIN sessao s ON s.uuid = se.sessao_uuid WHERE se.uuid = ? AND se.sessao_uuid = ? AND s.usuario_uuid = ?',
+          [oldItemUuid, sessionUuid, userUuid],
+        );
+        if (!old || old.exercicio_uuid === exercise.id) {
+          return;
+        }
+        const planned = old.exercicio_prescrito_uuid ?? old.exercicio_uuid;
+        await tx.runAsync('UPDATE sessao_exercicio SET ordem = ordem + 1 WHERE sessao_uuid = ? AND ordem > ?', [sessionUuid, old.ordem]);
+        await tx.runAsync(
+          "INSERT INTO sessao_exercicio (uuid, sessao_uuid, exercicio_uuid, exercicio_json, ficha_exercicio_uuid, exercicio_prescrito_uuid, tipo_item, ordem) VALUES (?, ?, ?, ?, ?, ?, 'substituido', ?)",
+          [newItemUuid, sessionUuid, exercise.id, JSON.stringify(exercise), old.ficha_exercicio_uuid, planned, old.ordem + 1],
+        );
+        await tx.runAsync("UPDATE sessao_serie SET sessao_exercicio_uuid = ? WHERE sessao_exercicio_uuid = ? AND status = 'pendente'", [newItemUuid, oldItemUuid]);
+        const moved = await tx.getAllAsync<SeriesRow>('SELECT * FROM sessao_serie WHERE sessao_exercicio_uuid = ? ORDER BY ordem', [newItemUuid]);
+        created = {
+          id: newItemUuid,
+          ficha_exercicio_id: old.ficha_exercicio_uuid,
+          exercicio: exercise,
+          exercicio_prescrito_id: planned,
+          tipo_item: 'substituido',
+          ordem: old.ordem + 1,
+          series: moved.map(toSeries),
+        };
+      });
+      return created;
+    },
+
     /** A pausa em aberto da sessão, se houver. */
     async openPause(sessionUuid: string): Promise<{ id: string; iniciada_em: string } | null> {
       const row = await db.getFirstAsync<{ uuid: string; iniciada_em: string }>(

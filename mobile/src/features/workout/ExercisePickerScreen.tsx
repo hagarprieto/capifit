@@ -26,7 +26,7 @@ export function ExercisePickerScreen({ api }: { api?: WorkoutApi }) {
     setAdding(exercise.id);
     setFailed(false);
     try {
-      const item = await workoutApi.addExercise(String(uuid), exercise.id);
+      const item = await workoutApi.addExercise(String(uuid), exercise);
       for (let n = 0; n < DEFAULT_SERIES; n += 1) {
         await workoutApi.addSeries(String(uuid), item.id);
       }

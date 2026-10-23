@@ -53,6 +53,7 @@ function ThemedStack({ fontsReady }: { fontsReady: boolean }) {
           <Stack.Screen name="exercicios/[uuid]" />
           <Stack.Screen name="treino/[uuid]/index" />
           <Stack.Screen name="treino/[uuid]/exercicios" />
+          <Stack.Screen name="treino/[uuid]/substituir" />
           <Stack.Screen name="treino/[uuid]/resumo" />
           <Stack.Screen name="programas/novo" />
           <Stack.Screen name="programas/[uuid]/index" />

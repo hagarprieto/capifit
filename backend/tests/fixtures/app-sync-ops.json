@@ -19,7 +19,9 @@
     ],
     "exercicio": [
       "aaaaaaaa-aaaa-4aaa-8aaa-000000000021",
-      "aaaaaaaa-aaaa-4aaa-8aaa-000000000022"
+      "aaaaaaaa-aaaa-4aaa-8aaa-000000000022",
+      "aaaaaaaa-aaaa-4aaa-8aaa-000000000023",
+      "aaaaaaaa-aaaa-4aaa-8aaa-000000000024"
     ]
   },
   "cenarios": {
@@ -209,6 +211,121 @@
         "series_total": 5,
         "series_realizadas": 5,
         "pausas": 1
+      }
+    },
+    "avulso_com_troca": {
+      "operacoes": [
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000027",
+          "sequencia_cliente": 1,
+          "entidade": "sessao_treino",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000026",
+          "tipo": "criar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000026",
+            "tipo": "avulso",
+            "iniciada_em": "2026-10-22T10:00:00.000Z",
+            "exercicios": []
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000029",
+          "sequencia_cliente": 2,
+          "entidade": "sessao_exercicio",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000028",
+          "tipo": "criar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000026",
+            "exercicio_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-000000000023"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000031",
+          "sequencia_cliente": 3,
+          "entidade": "sessao_serie",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000030",
+          "tipo": "criar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000026",
+            "uuid": "00000000-0000-4000-8000-000000000030",
+            "sessao_exercicio_uuid": "00000000-0000-4000-8000-000000000028"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000033",
+          "sequencia_cliente": 4,
+          "entidade": "sessao_serie",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000032",
+          "tipo": "criar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000026",
+            "uuid": "00000000-0000-4000-8000-000000000032",
+            "sessao_exercicio_uuid": "00000000-0000-4000-8000-000000000028"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000034",
+          "sequencia_cliente": 5,
+          "entidade": "sessao_serie",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000030",
+          "tipo": "atualizar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000026",
+            "carga_kg": 30,
+            "repeticoes": 12,
+            "status": "realizada",
+            "concluida_em": "2026-10-22T10:05:00.000Z",
+            "atualizado_cliente_em": "2026-10-22T10:05:00.000Z"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000036",
+          "sequencia_cliente": 6,
+          "entidade": "sessao_exercicio",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000035",
+          "tipo": "criar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000026",
+            "substitui_uuid": "00000000-0000-4000-8000-000000000028",
+            "exercicio_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-000000000024"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000037",
+          "sequencia_cliente": 7,
+          "entidade": "sessao_serie",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000032",
+          "tipo": "atualizar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000026",
+            "carga_kg": 25,
+            "repeticoes": 12,
+            "status": "realizada",
+            "concluida_em": "2026-10-22T10:10:00.000Z",
+            "atualizado_cliente_em": "2026-10-22T10:10:00.000Z"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000038",
+          "sequencia_cliente": 8,
+          "entidade": "sessao_treino",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000026",
+          "tipo": "concluir",
+          "payload": {
+            "encerrada_em": "2026-10-22T10:20:00.000Z"
+          }
+        }
+      ],
+      "esperado": {
+        "tipo": "avulso",
+        "status": "concluida",
+        "exercicios": 2,
+        "tipos_item": [
+          "adicionado",
+          "substituido"
+        ],
+        "series_total": 2,
+        "series_realizadas": 2
       }
     },
     "avulso_descartado": {

@@ -59,6 +59,9 @@ final class AppSyncContractTest extends ApiTestCase
         $ficha = $this->call('GET', "/programas/$program/versoes/1")['body']['data']['fichas'][0];
         $s = $this->fixture['sentinelas'];
         $map = [$s['ficha'] => $ficha['id']];
+        // Exercícios extras que o treino avulso escolhe/troca durante a execução (precisam estar publicados).
+        $map[$s['exercicio'][2]] = $this->published('Crucifixo');
+        $map[$s['exercicio'][3]] = $this->published('Remada alta');
         foreach ($ficha['exercicios'] as $i => $item) {
             $map[$s['ficha_exercicio'][$i]] = $item['id'];
             $map[$s['exercicio'][$i]] = $exercises[$i];
@@ -141,6 +144,32 @@ final class AppSyncContractTest extends ApiTestCase
         self::assertEquals($first, $again, 'reenviar a fila (resposta perdida) devolve os mesmos resultados');
         $count = (int) $this->kernel->db->fetchOne('SELECT COUNT(*) AS n FROM sessoes_treino WHERE uuid = ?', 's', $operations[0]['entidade_uuid'])['n'];
         self::assertSame(1, $count);
+    }
+
+    public function testAddingAndReplacingAnExerciseOfflineIsAcceptedAndMovesThePendingSeries(): void
+    {
+        $ids = $this->realIds();
+        $operations = $this->operations('avulso_com_troca', $ids);
+        $expected = $this->fixture['cenarios']['avulso_com_troca']['esperado'];
+
+        $results = $this->push($operations);
+
+        foreach ($results as $i => $result) {
+            self::assertSame('aplicada', $result['resultado'], "operação $i ({$operations[$i]['entidade']}:{$operations[$i]['tipo']}): " . json_encode($result));
+        }
+        $session = $this->call('GET', '/me/sessoes/' . $operations[0]['entidade_uuid'])['body']['data'];
+        self::assertSame([$expected['tipo'], $expected['status']], [$session['tipo'], $session['status']]);
+        self::assertCount($expected['exercicios'], $session['exercicios']);
+        self::assertSame($expected['tipos_item'], array_column($session['exercicios'], 'tipo_item'));
+        self::assertSame($expected['series_total'], $session['series_total']);
+        self::assertSame($expected['series_realizadas'], $session['series_realizadas']);
+
+        [$original, $replacement] = $session['exercicios'];
+        self::assertCount(1, $original['series'], 'o original ficou só com o que foi registrado');
+        self::assertSame(['realizada', 30.0], [$original['series'][0]['status'], (float) $original['series'][0]['carga_kg']]);
+        self::assertCount(1, $replacement['series'], 'a série que faltava passou ao substituto');
+        self::assertSame(['realizada', 25.0], [$replacement['series'][0]['status'], (float) $replacement['series'][0]['carga_kg']]);
+        self::assertSame($ids[$this->fixture['sentinelas']['exercicio'][3]], $replacement['exercicio']['id']);
     }
 
     public function testADiscardedFreeWorkoutIsAcceptedAndCancelled(): void

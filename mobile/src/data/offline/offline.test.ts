@@ -95,7 +95,8 @@ async function setup(options: { cached?: boolean } = {}) {
     pause: jest.fn().mockRejectedValue(networkError()),
     resume: jest.fn().mockRejectedValue(networkError()),
     cancel: jest.fn().mockRejectedValue(networkError()),
-    addExercise: jest.fn(),
+    addExercise: jest.fn().mockRejectedValue(networkError()),
+    replaceExercise: jest.fn().mockRejectedValue(networkError()),
     searchExercises: jest.fn(),
   };
   const api = createLocalFirstWorkoutApi({ remote: remote as unknown as WorkoutApi, sessions, queue, engine: { flush: jest.fn().mockResolvedValue({ status: 'offline', applied: 0 }) } as never, today, now: () => clock });
@@ -227,6 +228,81 @@ describe('registrar e finalizar no aparelho', () => {
 
     env.remote.recentCompleted.mockResolvedValue([{ id: uuid(800), tipo: 'avulso', status: 'concluida', iniciada_em: '2026-10-20T10:00:00.000Z', encerrada_em: '2026-10-20T11:00:00.000Z' }]);
     expect((await env.api.recentCompleted()).map((s) => s.id)).toEqual([id, uuid(800)]); // com rede, junto com o do servidor
+    env.db.close();
+  });
+});
+
+const FLY = { id: uuid(503), nome: 'Crucifixo', modalidade: 'reps_carga' } as never;
+const ROW = { id: uuid(504), nome: 'Remada alta', modalidade: 'reps_carga' } as never;
+
+describe('adicionar e trocar exercício no aparelho', () => {
+  it('adicionar sem rede grava o item local e enfileira com o contrato do servidor', async () => {
+    const env = await setup();
+    const id = await env.api.startProgrammedWorkout(uuid(101));
+
+    const item = await env.api.addExercise(id, FLY);
+    const extra = await env.api.addSeries(id, item.id); // as séries do novo exercício também funcionam sem rede
+
+    expect(item).toMatchObject({ tipo_item: 'adicionado', ordem: 2 });
+    expect((await env.api.getSession(id)).exercicios[1].series.map((s) => s.id)).toEqual([extra.id]);
+    const ops = await env.queue.pending();
+    expect(ops.map((o) => o.entidade + ':' + o.tipo)).toEqual(['sessao_treino:criar', 'sessao_exercicio:criar', 'sessao_serie:criar']);
+    expect(ops[1]).toMatchObject({ entidade_uuid: item.id });
+    expect(ops[1].payload).toEqual({ sessao_uuid: id, exercicio_uuid: uuid(503) });
+    env.db.close();
+  });
+
+  it('trocar sem rede leva as séries pendentes ao substituto e enfileira a troca', async () => {
+    const env = await setup();
+    const id = await env.api.startProgrammedWorkout(uuid(101));
+    const first = (await env.api.getSession(id)).exercicios[0];
+    await env.api.completeSeries(id, first.series[0].id, { carga_kg: 60, repeticoes: 10 });
+
+    const replacement = await env.api.replaceExercise(id, first.id, FLY);
+
+    expect(replacement).toMatchObject({ tipo_item: 'substituido', ordem: 2, series: [{ id: first.series[1].id }] });
+    const back = await env.api.getSession(id);
+    expect(back.exercicios[0].series.map((s) => s.status)).toEqual(['realizada']);
+    const last = (await env.queue.pending()).at(-1);
+    expect(last).toMatchObject({ entidade: 'sessao_exercicio', tipo: 'criar', entidade_uuid: replacement.id });
+    expect(last?.payload).toEqual({ sessao_uuid: id, substitui_uuid: first.id, exercicio_uuid: uuid(503) });
+    env.db.close();
+  });
+
+  it('com rede vai direto ao servidor e a cópia local acompanha; se a conexão cair, a ação seguinte já funciona', async () => {
+    const env = await setup();
+    env.remote.getSession.mockResolvedValueOnce(REMOTE_SESSION);
+    await env.api.getSession(uuid(900));
+    env.remote.addExercise.mockResolvedValueOnce({ id: uuid(940), exercicio: { id: uuid(503), nome: 'Crucifixo' }, tipo_item: 'adicionado', ordem: 2, series: [] });
+
+    const item = await env.api.addExercise(uuid(900), FLY);
+    expect(await env.queue.pending()).toEqual([]);
+    const series = await env.api.addSeries(uuid(900), item.id); // a conexão caiu logo depois
+    expect(series).toMatchObject({ ordem: 1, status: 'pendente' });
+
+    env.remote.replaceExercise.mockResolvedValueOnce({ id: uuid(941), exercicio: { id: uuid(504), nome: 'Remada alta' }, tipo_item: 'substituido', ordem: 3, series: [] });
+    expect((await env.queue.pending()).map((o) => o.entidade + ':' + o.tipo)).toEqual(['sessao_serie:criar']);
+    env.db.close();
+  });
+
+  it('erro do servidor ao trocar (exercício igual, treino encerrado) continua sendo erro', async () => {
+    const env = await setup();
+    env.remote.getSession.mockResolvedValueOnce(REMOTE_SESSION);
+    await env.api.getSession(uuid(900));
+    env.remote.replaceExercise.mockRejectedValue(new ApiError({ status: 422, code: 'VALIDATION_ERROR', message: '' }));
+
+    await expect(env.api.replaceExercise(uuid(900), uuid(910), ROW)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    expect(await env.queue.pending()).toEqual([]);
+    env.db.close();
+  });
+
+  it('trocar pelo mesmo exercício sem rede é recusado sem enfileirar nada', async () => {
+    const env = await setup();
+    const id = await env.api.startProgrammedWorkout(uuid(101));
+    const first = (await env.api.getSession(id)).exercicios[0];
+
+    await expect(env.api.replaceExercise(id, first.id, { id: uuid(501), nome: 'Supino', modalidade: 'reps_carga' } as never)).rejects.toThrow();
+    expect((await env.queue.pending()).map((o) => o.tipo)).toEqual(['criar']);
     env.db.close();
   });
 });

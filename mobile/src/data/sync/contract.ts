@@ -12,7 +12,8 @@ const ALLOWED: Record<string, readonly string[]> = {
   'sessao_treino:cancelar': ['motivo'],
   'sessao_pausa:criar': ['sessao_uuid', 'iniciada_em'],
   'sessao_pausa:atualizar': ['sessao_uuid', 'encerrada_em'],
-  'sessao_exercicio:criar': ['sessao_uuid', 'uuid', 'exercicio_uuid', 'ordem', 'substitui_uuid'],
+  // O UUID do item vem de entidade_uuid. Trocar exercício (substitui_uuid) não aceita "ordem": o servidor põe logo depois do original.
+  'sessao_exercicio:criar': ['sessao_uuid', 'exercicio_uuid', 'ordem', 'substitui_uuid'],
   'sessao_serie:criar': ['sessao_uuid', 'uuid', 'sessao_exercicio_uuid', 'tipo'],
   'sessao_serie:atualizar': ['sessao_uuid', 'carga_kg', 'repeticoes', 'duracao_segundos', 'rir_real', 'status', 'concluida_em', 'atualizado_cliente_em', 'tipo'],
 };
@@ -47,6 +48,9 @@ export function serverContractProblems(op: { entidade: QueueEntity; tipo: QueueT
     if ((op.payload.tipo === 'programado') !== (op.payload.ficha_uuid !== undefined && op.payload.ficha_uuid !== null)) {
       problems.push(`${key}: "tipo" tem de ser programado se, e só se, houver ficha_uuid`);
     }
+  }
+  if (key === 'sessao_exercicio:criar' && op.payload.substitui_uuid !== undefined && op.payload.ordem !== undefined) {
+    problems.push(`${key}: troca de exercício não aceita "ordem"`);
   }
   return problems;
 }

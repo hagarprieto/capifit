@@ -249,6 +249,57 @@ describe('sessões', () => {
   });
 });
 
+describe('exercícios da sessão (adicionar e trocar)', () => {
+  const press = { id: uuid(502), nome: 'Remada curvada' } as Session['exercicios'][number]['exercicio'];
+  const fly = { id: uuid(503), nome: 'Crucifixo' } as Session['exercicios'][number]['exercicio'];
+
+  it('acrescenta o exercício no fim, sem séries', async () => {
+    const repo = createSessionsRepo(db, ANA);
+    await repo.save(makeSession(), false);
+
+    const item = await repo.addExercise(uuid(1), uuid(40), fly);
+
+    expect(item).toMatchObject({ id: uuid(40), tipo_item: 'adicionado', ordem: 3, series: [] });
+    expect((await repo.get(uuid(1)))?.exercicios.map((e) => e.exercicio.nome)).toEqual(['Supino reto', 'Remada curvada', 'Crucifixo']);
+    expect(await createSessionsRepo(db, BIA).addExercise(uuid(1), uuid(41), fly)).toBeNull(); // sessão de outro usuário
+    expect(await repo.addExercise(uuid(999), uuid(42), fly)).toBeNull();
+  });
+
+  it('trocar leva só as séries pendentes ao substituto, que entra logo depois e guarda o exercício previsto', async () => {
+    const repo = createSessionsRepo(db, ANA);
+    await repo.save(makeSession(), false); // item 10 (Supino): série 20 realizada e 21 pendente; item 11 (Remada) na ordem 2
+
+    const item = await repo.replaceExercise(uuid(1), uuid(10), uuid(40), fly);
+
+    expect(item).toMatchObject({ id: uuid(40), tipo_item: 'substituido', ordem: 2, exercicio_prescrito_id: uuid(500), ficha_exercicio_id: uuid(110) });
+    expect(item?.series.map((s) => s.id)).toEqual([uuid(21)]);
+    const back = await repo.get(uuid(1));
+    expect(back?.exercicios.map((e) => [e.exercicio.nome, e.ordem])).toEqual([['Supino reto', 1], ['Crucifixo', 2], ['Remada curvada', 3]]);
+    expect(back?.exercicios[0].series.map((s) => [s.id, s.status])).toEqual([[uuid(20), 'realizada']]);
+    expect(back?.exercicios[1].series.map((s) => s.id)).toEqual([uuid(21)]);
+  });
+
+  it('trocar de novo mantém o exercício previsto no início', async () => {
+    const repo = createSessionsRepo(db, ANA);
+    await repo.save(makeSession(), false);
+    await repo.replaceExercise(uuid(1), uuid(10), uuid(40), fly);
+
+    const second = await repo.replaceExercise(uuid(1), uuid(40), uuid(41), press);
+
+    expect(second?.exercicio_prescrito_id).toBe(uuid(500));
+  });
+
+  it('não troca pelo mesmo exercício, nem item que não existe ou de outro usuário', async () => {
+    const repo = createSessionsRepo(db, ANA);
+    await repo.save(makeSession(), false);
+
+    expect(await repo.replaceExercise(uuid(1), uuid(10), uuid(40), { id: uuid(500), nome: 'Supino reto' } as never)).toBeNull();
+    expect(await repo.replaceExercise(uuid(1), uuid(999), uuid(41), fly)).toBeNull();
+    expect(await createSessionsRepo(db, BIA).replaceExercise(uuid(1), uuid(10), uuid(42), fly)).toBeNull();
+    expect((await repo.get(uuid(1)))?.exercicios).toHaveLength(2);
+  });
+});
+
 describe('fila de operações', () => {
   const op = (n: number) => ({ operacao_uuid: uuid(900 + n), entidade: 'sessao_serie' as const, entidade_uuid: uuid(20 + n), tipo: 'atualizar' as const, payload: { repeticoes: n } });
 

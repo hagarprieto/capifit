@@ -29,3 +29,16 @@ describe('contrato das operações do /sync/push', () => {
     expect(serverContractProblems({ entidade: 'sessao_pausa', tipo: 'concluir', payload: {} })).toEqual(['sessao_pausa:concluir: o servidor não aceita esta combinação']);
   });
 });
+
+describe('contrato: exercícios da sessão', () => {
+  it('aceita adicionar e trocar exercício', () => {
+    expect(serverContractProblems({ entidade: 'sessao_exercicio', tipo: 'criar', payload: { sessao_uuid: uuid, exercicio_uuid: uuid } })).toEqual([]);
+    expect(serverContractProblems({ entidade: 'sessao_exercicio', tipo: 'criar', payload: { sessao_uuid: uuid, exercicio_uuid: uuid, substitui_uuid: uuid } })).toEqual([]);
+  });
+
+  it('pega troca com "ordem", o UUID do item no corpo e falta de sessao_uuid', () => {
+    expect(serverContractProblems({ entidade: 'sessao_exercicio', tipo: 'criar', payload: { sessao_uuid: uuid, exercicio_uuid: uuid, substitui_uuid: uuid, ordem: 2 } })).toEqual(['sessao_exercicio:criar: troca de exercício não aceita "ordem"']);
+    expect(serverContractProblems({ entidade: 'sessao_exercicio', tipo: 'criar', payload: { sessao_uuid: uuid, exercicio_uuid: uuid, uuid } })).toEqual(['sessao_exercicio:criar: campo desconhecido "uuid"']);
+    expect(serverContractProblems({ entidade: 'sessao_exercicio', tipo: 'criar', payload: { exercicio_uuid: uuid } })).toEqual(['sessao_exercicio:criar: falta "sessao_uuid"']);
+  });
+});

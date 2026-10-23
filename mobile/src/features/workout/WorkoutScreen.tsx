@@ -174,6 +174,11 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
             <Button variant="text" label={t('treino.maisSerie')} onPress={() => void workout.addSeries(current.item.id)} />
             <Button variant="text" label={t('treino.adicionarExercicio')} onPress={addExercise} />
           </View>
+          <Button
+            variant="text"
+            label={t('treino.substituir')}
+            onPress={() => router.push({ pathname: '/treino/[uuid]/substituir', params: { uuid: String(uuid), itemId: current.item.id } })}
+          />
 
           <View style={{ flexDirection: 'row', gap: theme.space[2] }}>
             <View style={{ flex: 1 }}>

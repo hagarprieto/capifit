@@ -35,7 +35,7 @@ const SENTINELS = {
     [sentinel(11), sentinel(12)],
     [sentinel(13), sentinel(14)],
   ],
-  exercicio: [sentinel(21), sentinel(22)],
+  exercicio: [sentinel(21), sentinel(22), sentinel(23), sentinel(24)],
 };
 
 const ACTIVE = {
@@ -50,7 +50,7 @@ const ACTIVE = {
         codigo: 'A',
         titulo: 'Peito e tríceps',
         ordem: 1,
-        exercicios: SENTINELS.exercicio.map((exercise, i) => ({
+        exercicios: SENTINELS.exercicio.slice(0, 2).map((exercise, i) => ({
           id: SENTINELS.ficha_exercicio[i],
           exercicio: { id: exercise, nome: `Exercício ${i + 1}`, modalidade: 'reps_carga' },
           ordem: i + 1,
@@ -140,6 +140,25 @@ async function build() {
     await api.cancel(id);
   });
 
+  // Treino avulso em que o usuário acrescentou um exercício, deixou duas séries, fez uma, trocou o exercício (a série
+  // que faltava passa ao substituto) e concluiu — tudo sem rede.
+  const troca = await scenario(async (api, at) => {
+    at('10:00');
+    const id = await api.startFreeWorkout();
+    at('10:02');
+    const item = await api.addExercise(id, { id: SENTINELS.exercicio[2], nome: 'Crucifixo', modalidade: 'reps_carga' } as never);
+    const first = await api.addSeries(id, item.id);
+    const second = await api.addSeries(id, item.id);
+    at('10:05');
+    await api.completeSeries(id, first.id, { carga_kg: 30, repeticoes: 12 });
+    at('10:07');
+    await api.replaceExercise(id, item.id, { id: SENTINELS.exercicio[3], nome: 'Remada alta', modalidade: 'reps_carga' } as never);
+    at('10:10');
+    await api.completeSeries(id, second.id, { carga_kg: 25, repeticoes: 12 });
+    at('10:20');
+    await api.finish(id);
+  });
+
   return {
     comentario: 'GERADO por mobile/src/data/contract/appSyncFixture.test.ts. Não edite: regenere com UPDATE_CONTRACT_FIXTURE=1 npx jest appSyncFixture.',
     base_time: BASE,
@@ -148,6 +167,10 @@ async function build() {
       programado_completo: {
         operacoes: programado,
         esperado: { tipo: 'programado', status: 'concluida', duracao_ativa_segundos: 40 * 60 - 5 * 60, series_total: 5, series_realizadas: 5, pausas: 1 },
+      },
+      avulso_com_troca: {
+        operacoes: troca,
+        esperado: { tipo: 'avulso', status: 'concluida', exercicios: 2, tipos_item: ['adicionado', 'substituido'], series_total: 2, series_realizadas: 2 },
       },
       avulso_descartado: {
         operacoes: avulso,
@@ -182,6 +205,16 @@ describe('fixture de operações do app para o servidor', () => {
       'sessao_pausa:criar',
       'sessao_pausa:atualizar',
       'sessao_serie:atualizar',
+      'sessao_serie:atualizar',
+      'sessao_treino:concluir',
+    ]);
+    expect(fixture.cenarios.avulso_com_troca.operacoes.map((o) => `${o.entidade}:${o.tipo}`)).toEqual([
+      'sessao_treino:criar',
+      'sessao_exercicio:criar',
+      'sessao_serie:criar',
+      'sessao_serie:criar',
+      'sessao_serie:atualizar',
+      'sessao_exercicio:criar',
       'sessao_serie:atualizar',
       'sessao_treino:concluir',
     ]);

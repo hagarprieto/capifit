@@ -1,6 +1,6 @@
 # CapiFit — Documento 14: Roteiro de validação do app em aparelho
 
-**Versão:** 2.1 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11 e E06-06
+**Versão:** 2.2 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06 e E07-07
 **Por que existe:** os testes automáticos (Jest, tipos, lint) já passam no CI, mas só um aparelho de verdade mostra teclado, rolagem, tema, notificação, vibração, leitor de tela e desempenho. Este roteiro transforma "falta validar em aparelho" em uma lista que você executa e marca.
 
 ## 0. Como usar
@@ -151,6 +151,17 @@ Pré-requisito: logado, API no ar, exercícios publicados (§1.2).
 | V-02.10 🔴 | Com um treino aberto, volte ao Início. | Aparece o cartão **TREINO EM ANDAMENTO** com "N de M séries concluídas" e o botão **Continuar treino**; "Iniciar treino avulso" some. | Permite iniciar um segundo treino aberto. |
 | V-02.11 🔴 | Use **só uma mão** (polegar) para registrar 3 séries seguidas. | Alcança os botões; alvos de toque confortáveis (sem tocar errado). | Botões pequenos demais ou fora do alcance. |
 | V-02.12 🟡 | Registre uma série de **peso corporal** (flexão) e uma **assistida** (barra fixa assistida). | Peso corporal: só reps (carga opcional); assistida: reps e carga de assistência. | Campo obrigatório indevido. |
+
+### R2b — Substituir e acrescentar exercício (E07-07)
+
+| ID | Passos | Esperado | Reprova se |
+|---|---|---|---|
+| V-02b.1 🔴 | Treino aberto com um exercício de 3 séries: conclua a 1ª. Toque em **Substituir exercício** e escolha outro. | Volta ao treino: o exercício original ficou com a 1ª série concluída, e o **novo** aparece logo depois com as 2 séries que faltavam (vazias). A lista mostra os dois. | A série concluída some, ou as pendentes ficam no original. |
+| V-02b.2 🔴 | Conclua uma série no exercício novo e finalize; abra o resumo. | O resumo conta as séries dos dois exercícios; a Evolução/histórico mostra o treino uma única vez. | Contagem errada, ou exercício duplicado. |
+| V-02b.3 🔴 | Na escolha do substituto, toque em **Detalhes** de um candidato e volte. | Abre a explicação sem trocar nada. | Troca sem querer. |
+| V-02b.4 🔴 | Tente trocar pelo **mesmo** exercício. | Recusa com mensagem; nada muda. | Duplica o exercício. |
+| V-02b.5 🟡 | Abra o substituto e troque de novo o já substituído. | Funciona; o exercício previsto no início é preservado (visto no servidor/histórico). | Perde o vínculo com o previsto. |
+| V-02b.6 🟡 | Treino aberto com rede: **abra a busca**, corte a rede (avião) e escolha o exercício. | Se a troca/adição não completar, o aviso é claro e o treino permanece intacto; se completar, entra na fila e sincroniza depois. | Perde o treino. |
 
 ### R3 — Descanso (E07-06)
 
@@ -320,6 +331,7 @@ Copie e preencha (uma cópia por aparelho). **P**/**F**/**N/A** e uma observaç�
 | V-00.3 |  |  |  |
 | V-01.1 … V-01.10 |  |  |  |
 | V-02.1 … V-02.11 |  |  |  |
+| V-02b.1 … V-02b.4 |  |  |  |
 | V-03.1 … V-03.9 |  |  |  |
 | V-04.1 … V-04.4 |  |  |  |
 | V-05.1 … V-05.12 |  |  |  |
@@ -352,6 +364,7 @@ Não coloque senhas, tokens nem e-mails reais no relato.
 | E01-06 (entrar, cadastrar, recuperar) | V-00.1 a V-00.3, V-01.1 a V-01.5, V-01.8 a V-01.10, V-06.1 |
 | E01-07 (restaurar sessão) | V-01.6, V-01.7 |
 | E07-05 (executor) | V-02.1 a V-02.11, V-06.2 |
+| E07-07 (acrescentar e substituir exercício) | V-02b.1 a V-02b.4 |
 | E07-06 (descanso) | V-03.1 a V-03.9, V-06.3 |
 | E07-09 (resumo) | V-04.1 a V-04.4 |
 | E06-03 (Meus treinos) | V-05.1, V-05.2, V-06.4 |
@@ -398,5 +411,6 @@ adb logcat *:E ReactNativeJS:V
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0 | 22/10/2026 | Primeira versão: preparação, 6 roteiros, quadro de resultados e critério de conclusão para as histórias do app já entregues. |
+| 2.2 | 23/10/2026 | R2b (substituir e acrescentar exercício, E07-07). |
 | 2.1 | 23/10/2026 | R12 (biblioteca de exercícios, E06-06) e critérios correspondentes. |
 | 2.0 | 23/10/2026 | Cinco roteiros novos (R7 Início e abas, R8 Evolução, R9 programa ativo e metas, R10 offline completo, R11 conflitos e sair da conta); textos atualizados onde as telas mudaram (Sair no Perfil, Treinos como aba, executor offline, cartão de treino em andamento); quadro e critérios estendidos. |
