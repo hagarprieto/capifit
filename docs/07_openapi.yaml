@@ -4507,6 +4507,16 @@ components:
         - reps_peso_corporal
         - reps_assistido
         - tempo
+    ConvencaoCarga:
+      type: string
+      enum:
+        - total
+        - por_halter
+        - por_lado
+        - selecao_maquina
+        - adicional_corporal
+        - assistencia
+      description: Doc 09 §6.
     ExercicioResumo:
       type: object
       properties:
@@ -4525,6 +4535,14 @@ components:
             $ref: '#/components/schemas/ItemTaxonomia'
         modalidade:
           $ref: '#/components/schemas/Modalidade'
+        unilateral:
+          type: boolean
+          description: A série registra as repetições de cada lado (Doc 09 §6).
+        convencao_carga:
+          oneOf:
+            - $ref: '#/components/schemas/ConvencaoCarga'
+            - type: 'null'
+          description: O que o número de carga digitado significa (Doc 09 §6); nulo quando o exercício não usa carga.
         miniatura_url:
           oneOf:
             - type: string
@@ -4570,6 +4588,10 @@ components:
           type: boolean
         modalidade:
           $ref: '#/components/schemas/Modalidade'
+        convencao_carga:
+          oneOf:
+            - $ref: '#/components/schemas/ConvencaoCarga'
+            - type: 'null'
         dificuldade:
           oneOf:
             - type: string

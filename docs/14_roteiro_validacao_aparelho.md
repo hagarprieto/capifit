@@ -1,6 +1,6 @@
 # CapiFit — Documento 14: Roteiro de validação do app em aparelho
 
-**Versão:** 2.2 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06 e E07-07
+**Versão:** 2.3 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07 e E07-10
 **Por que existe:** os testes automáticos (Jest, tipos, lint) já passam no CI, mas só um aparelho de verdade mostra teclado, rolagem, tema, notificação, vibração, leitor de tela e desempenho. Este roteiro transforma "falta validar em aparelho" em uma lista que você executa e marca.
 
 ## 0. Como usar
@@ -151,6 +151,18 @@ Pré-requisito: logado, API no ar, exercícios publicados (§1.2).
 | V-02.10 🔴 | Com um treino aberto, volte ao Início. | Aparece o cartão **TREINO EM ANDAMENTO** com "N de M séries concluídas" e o botão **Continuar treino**; "Iniciar treino avulso" some. | Permite iniciar um segundo treino aberto. |
 | V-02.11 🔴 | Use **só uma mão** (polegar) para registrar 3 séries seguidas. | Alcança os botões; alvos de toque confortáveis (sem tocar errado). | Botões pequenos demais ou fora do alcance. |
 | V-02.12 🟡 | Registre uma série de **peso corporal** (flexão) e uma **assistida** (barra fixa assistida). | Peso corporal: só reps (carga opcional); assistida: reps e carga de assistência. | Campo obrigatório indevido. |
+
+### R2c — Rótulos de carga e unilaterais (E07-10)
+
+Pré-requisito: exercícios publicados de convenções diferentes (§1.2): barra (total), halteres (por halter), máquina/polia (máquina), peso corporal (kg extra), assistido (assistência) e um unilateral.
+
+| ID | Passos | Esperado | Reprova se |
+|---|---|---|---|
+| V-02c.1 🔴 | Abra, no executor, um exercício de **halteres**. | Sob o nome aparece "Carga em kg por halter"; com TalkBack/VoiceOver o campo é lido como "Carga em kg por halter, série 1 de …". | Rótulo "kg" simples, ou legenda ausente. |
+| V-02c.2 🔴 | Um exercício **unilateral** (ex.: remada unilateral com halter). | A legenda inclui "Repetições por lado" e o campo de repetições é lido como "Repetições por lado…". | Sem a indicação de lado. |
+| V-02c.3 🔴 | Barra livre, máquina/polia, peso corporal e assistido, um de cada. | "kg (total)" é só implícito (sem legenda se for o padrão) ou aparece como "kg (total)"; máquina: "kg (máquina)"; peso corporal: "kg extra"; assistido: "kg de assistência". | Rótulo trocado entre exercícios. |
+| V-02c.4 🔴 | Conclua uma série de halter unilateral e leia o botão e o resumo ao finalizar. | O botão fala "…20 kg por halter, 10 repetições por lado"; o resumo/registros mostram "Série 1: 20 kg por halter × 10 por lado". | Resumo sem unidade ou sem "por lado". |
+| V-02c.5 🟡 | Fonte 200 %. | A legenda quebra em linhas sem cortar o texto. | Legenda cortada. |
 
 ### R2b — Substituir e acrescentar exercício (E07-07)
 
@@ -332,6 +344,7 @@ Copie e preencha (uma cópia por aparelho). **P**/**F**/**N/A** e uma observaç�
 | V-01.1 … V-01.10 |  |  |  |
 | V-02.1 … V-02.11 |  |  |  |
 | V-02b.1 … V-02b.4 |  |  |  |
+| V-02c.1 … V-02c.4 |  |  |  |
 | V-03.1 … V-03.9 |  |  |  |
 | V-04.1 … V-04.4 |  |  |  |
 | V-05.1 … V-05.12 |  |  |  |
@@ -365,6 +378,7 @@ Não coloque senhas, tokens nem e-mails reais no relato.
 | E01-07 (restaurar sessão) | V-01.6, V-01.7 |
 | E07-05 (executor) | V-02.1 a V-02.11, V-06.2 |
 | E07-07 (acrescentar e substituir exercício) | V-02b.1 a V-02b.4 |
+| E07-10 (rótulos de carga e unilaterais) | V-02c.1 a V-02c.4 |
 | E07-06 (descanso) | V-03.1 a V-03.9, V-06.3 |
 | E07-09 (resumo) | V-04.1 a V-04.4 |
 | E06-03 (Meus treinos) | V-05.1, V-05.2, V-06.4 |
@@ -411,6 +425,7 @@ adb logcat *:E ReactNativeJS:V
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0 | 22/10/2026 | Primeira versão: preparação, 6 roteiros, quadro de resultados e critério de conclusão para as histórias do app já entregues. |
+| 2.3 | 23/10/2026 | R2c (rótulos de carga por convenção e unilaterais, E07-10). |
 | 2.2 | 23/10/2026 | R2b (substituir e acrescentar exercício, E07-07). |
 | 2.1 | 23/10/2026 | R12 (biblioteca de exercícios, E06-06) e critérios correspondentes. |
 | 2.0 | 23/10/2026 | Cinco roteiros novos (R7 Início e abas, R8 Evolução, R9 programa ativo e metas, R10 offline completo, R11 conflitos e sair da conta); textos atualizados onde as telas mudaram (Sair no Perfil, Treinos como aba, executor offline, cartão de treino em andamento); quadro e critérios estendidos. |

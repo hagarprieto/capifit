@@ -1,7 +1,18 @@
 import { formatDecimal, type Modality } from './input';
+import { loadUnit } from './loadLabels';
 import type { Session } from './workoutApi';
 
-export type SummarySet = { ordem: number; kind: 'loadReps' | 'reps' | 'time'; carga: string; reps: number; segundos: number };
+export type SummarySet = {
+  ordem: number;
+  kind: 'loadReps' | 'reps' | 'time';
+  carga: string;
+  /** Unidade da carga conforme a convenção do exercício ("kg por halter"…). */
+  unit: string;
+  /** As repetições são de cada lado (exercício unilateral). */
+  perSide: boolean;
+  reps: number;
+  segundos: number;
+};
 
 export type SummaryExercise = { id: string; nome: string; sets: SummarySet[] };
 
@@ -47,6 +58,8 @@ export function summarize(session: Session): SessionSummary {
         ordem: series.ordem,
         kind: modality === 'tempo' ? 'time' : load !== null ? 'loadReps' : 'reps',
         carga: formatDecimal(load),
+        unit: loadUnit(item.exercicio.convencao_carga, modality),
+        perSide: Boolean(item.exercicio.unilateral),
         reps,
         segundos: series.duracao_segundos ?? 0,
       });

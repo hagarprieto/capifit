@@ -1614,6 +1614,11 @@ export interface components {
         };
         /** @enum {string} */
         Modalidade: "reps_carga" | "reps_peso_corporal" | "reps_assistido" | "tempo";
+        /**
+         * @description Doc 09 §6.
+         * @enum {string}
+         */
+        ConvencaoCarga: "total" | "por_halter" | "por_lado" | "selecao_maquina" | "adicional_corporal" | "assistencia";
         ExercicioResumo: {
             /** Format: uuid */
             id: string;
@@ -1621,6 +1626,10 @@ export interface components {
             equipamento?: components["schemas"]["ItemTaxonomia"] | null;
             grupos_primarios?: components["schemas"]["ItemTaxonomia"][];
             modalidade: components["schemas"]["Modalidade"];
+            /** @description A série registra as repetições de cada lado (Doc 09 §6). */
+            unilateral?: boolean;
+            /** @description O que o número de carga digitado significa (Doc 09 §6); nulo quando o exercício não usa carga. */
+            convencao_carga?: components["schemas"]["ConvencaoCarga"] | null;
             miniatura_url?: string | null;
         };
         Exercicio: {
@@ -1636,6 +1645,7 @@ export interface components {
             }[];
             unilateral: boolean;
             modalidade: components["schemas"]["Modalidade"];
+            convencao_carga?: components["schemas"]["ConvencaoCarga"] | null;
             dificuldade?: ("iniciante" | "intermediario" | "avancado") | null;
             instrucoes?: string | null;
             observacoes_seguranca?: string | null;

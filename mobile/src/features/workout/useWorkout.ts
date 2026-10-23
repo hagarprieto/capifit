@@ -4,6 +4,7 @@ import { isApiError } from '@/api/errors';
 import { t } from '@/i18n';
 
 import { EMPTY_DRAFT, validateDraft, type Draft, type Modality } from './input';
+import { loadCaption, loadUnit } from './loadLabels';
 import { initialDraft, type LastRecord, type Target } from './prefill';
 import { useWorkoutApi } from './useWorkoutApi';
 import type { Session, SessionItem, SessionSeries, WorkoutApi } from './workoutApi';
@@ -22,6 +23,10 @@ export type ItemView = {
   modality: Modality;
   rows: RowView[];
   last: LastRecord | undefined;
+  /** Unidade da carga ("kg por halter"…) e se as repetições são de cada lado, para rótulos e legenda. */
+  loadUnit: string;
+  caption: string | null;
+  unilateral: boolean;
   /** Meta prescrita das séries de TRABALHO (sem aquecimento) deste exercício; vazio se o treino não veio de uma ficha. */
   workTargets: (Target | undefined)[];
 };
@@ -90,7 +95,9 @@ export function useWorkout(sessionUuid: string, injected?: WorkoutApi) {
         };
       });
       const workTargets = item.series.filter((s) => s.tipo !== 'aquecimento').map((s) => targetOf(s.serie_prescrita_id));
-      return { item, modality, rows, last: record, workTargets };
+      const convention = item.exercicio.convencao_carga;
+      const unilateral = Boolean(item.exercicio.unilateral);
+      return { item, modality, rows, last: record, workTargets, loadUnit: loadUnit(convention, modality), caption: loadCaption(convention, modality, unilateral), unilateral };
     });
   }, [session, last, targets, edits, correcting, saving, errors]);
 

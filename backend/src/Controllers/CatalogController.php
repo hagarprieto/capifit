@@ -81,6 +81,7 @@ final class CatalogController
             'musculos' => $this->catalog->muscles($exerciseId),
             'unilateral' => (bool) $row['unilateral'],
             'modalidade' => $row['modalidade'],
+            'convencao_carga' => $row['convencao_carga'],
             'dificuldade' => $row['dificuldade'],
             'instrucoes' => $row['instrucoes'],
             'observacoes_seguranca' => $row['observacoes_seguranca'],

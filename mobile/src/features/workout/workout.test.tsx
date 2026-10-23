@@ -227,6 +227,30 @@ describe('WorkoutScreen', () => {
   });
 });
 
+describe('WorkoutScreen: rótulos de carga por convenção e unilaterais', () => {
+  const dumbbell = (): Session => {
+    const base = makeSession();
+    return { ...base, exercicios: [{ ...base.exercicios[0], exercicio: { ...base.exercicios[0].exercicio, nome: 'Remada com halter', convencao_carga: 'por_halter', unilateral: true } }] } as Session;
+  };
+
+  it('mostra a legenda e usa a unidade e "por lado" nos rótulos do campo e da conclusão', async () => {
+    await show(<WorkoutScreen api={fakeApi({ getSession: jest.fn().mockResolvedValue(dumbbell()) })} />);
+    await screen.findByText('Remada com halter');
+
+    expect(screen.getByText('Carga em kg por halter · Repetições por lado')).toBeTruthy();
+    expect(screen.getByLabelText('Carga em kg por halter, série 1 de Remada com halter')).toBeTruthy();
+    expect(screen.getByLabelText('Repetições por lado, série 1 de Remada com halter')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Concluir série 1 de Remada com halter: 40 kg por halter, 10 repetições por lado' })).toBeTruthy();
+  });
+
+  it('exercício comum continua com "kg" e sem legenda', async () => {
+    await ready(fakeApi());
+
+    expect(screen.queryByText(/Carga em kg/)).toBeNull();
+    expect(screen.getByLabelText('Carga em kg, série 1 de Supino reto')).toBeTruthy();
+  });
+});
+
 describe('WorkoutScreen: substituir exercício', () => {
   it('leva à escolha do substituto com o exercício atual', async () => {
     await ready(fakeApi());

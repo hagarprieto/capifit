@@ -156,7 +156,7 @@ final class CatalogTest extends TestCase
         $r = $this->call('GET', '/exercicios?q=' . urlencode($this->prefix));
         $item = $r['body']['data'][0];
 
-        self::assertSame(['id', 'nome', 'equipamento', 'grupos_primarios', 'modalidade', 'miniatura_url'], array_keys($item));
+        self::assertSame(['id', 'nome', 'equipamento', 'grupos_primarios', 'modalidade', 'unilateral', 'convencao_carga', 'miniatura_url'], array_keys($item));
         self::assertSame($ex['uuid'], $item['id']);
         self::assertSame(['id' => (string) $barra, 'nome' => 'Barra livre'], $item['equipamento']);
         self::assertSame([['id' => (string) $this->groupId('Peitoral'), 'nome' => 'Peitoral']], $item['grupos_primarios'], 'só primários, com id textual');
@@ -243,6 +243,23 @@ final class CatalogTest extends TestCase
         self::assertSame(200, $this->call('GET', '/exercicios?limit=100')['status']);
     }
 
+    /** Doc 09 §6: o app mostra o rótulo da carga e a regra de unilateral a partir do que a API devolve. */
+    public function testListAndDetailCarryTheLoadConventionAndUnilateral(): void
+    {
+        $dumbbell = $this->exercise("{$this->prefix} Remada com halter", 'publicado', $this->equipmentId('Barra livre'));
+        $this->kernel->db->execute("UPDATE exercicios SET convencao_carga = 'por_halter', unilateral = 1 WHERE id = ?", 'i', $dumbbell['id']);
+        $plain = $this->exercise("{$this->prefix} Sem convenção", 'publicado', $this->equipmentId('Barra livre'));
+
+        $list = $this->call('GET', '/exercicios?q=' . urlencode($this->prefix))['body']['data'];
+        $byName = array_column($list, null, 'nome');
+        self::assertSame(['por_halter', true], [$byName["{$this->prefix} Remada com halter"]['convencao_carga'], $byName["{$this->prefix} Remada com halter"]['unilateral']]);
+        self::assertSame([null, false], [$byName["{$this->prefix} Sem convenção"]['convencao_carga'], $byName["{$this->prefix} Sem convenção"]['unilateral']]);
+
+        $detail = $this->call('GET', '/exercicios/' . $dumbbell['uuid'])['body']['data'];
+        self::assertSame(['por_halter', true], [$detail['convencao_carga'], $detail['unilateral']]);
+        self::assertNull($this->call('GET', '/exercicios/' . $plain['uuid'])['body']['data']['convencao_carga']);
+    }
+
     public function testDetailShowsMusclesAndOnlyApprovedMedia(): void
     {
         $ex = $this->exercise("{$this->prefix} Detalhe", 'publicado', $this->equipmentId('Polia'));
@@ -262,7 +279,7 @@ final class CatalogTest extends TestCase
         $data = $r['body']['data'];
 
         self::assertSame(200, $r['status']);
-        self::assertSame(['id', 'nome', 'equipamento', 'musculos', 'unilateral', 'modalidade', 'dificuldade', 'instrucoes', 'observacoes_seguranca', 'midias'], array_keys($data));
+        self::assertSame(['id', 'nome', 'equipamento', 'musculos', 'unilateral', 'modalidade', 'convencao_carga', 'dificuldade', 'instrucoes', 'observacoes_seguranca', 'midias'], array_keys($data));
         self::assertFalse($data['unilateral']);
         self::assertSame('Polia', $data['equipamento']['nome']);
         self::assertSame(['primario', 'secundario'], array_column($data['musculos'], 'papel'));

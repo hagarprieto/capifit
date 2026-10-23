@@ -13,6 +13,10 @@ type Props = {
   numero: number;
   exercicio: string;
   modality: 'reps_carga' | 'reps_peso_corporal' | 'reps_assistido' | 'tempo';
+  /** Unidade da carga para o leitor de tela ("kg por halter"); padrão "kg". */
+  loadUnit?: string;
+  /** Exercício unilateral: as repetições são de cada lado. */
+  perSide?: boolean;
   extra?: boolean;
   carga: string;
   reps: string;
@@ -30,7 +34,7 @@ type Props = {
 };
 
 /** Linha de série do executor (Doc 08 §8): Série · Carga · Reps · Concluir. Concluída: valores fixos e opção de corrigir. */
-export function SetRow({ numero, exercicio, modality, extra = false, carga, reps, duracao, prefilled, done, saving, errors, summary, onChange, onComplete, onCorrect }: Props) {
+export function SetRow({ numero, exercicio, modality, loadUnit = 'kg', perSide = false, extra = false, carga, reps, duracao, prefilled, done, saving, errors, summary, onChange, onComplete, onCorrect }: Props) {
   const { theme } = useTheme();
   const { colors, space, radius, size } = theme;
   const params = { numero, exercicio };
@@ -51,8 +55,8 @@ export function SetRow({ numero, exercicio, modality, extra = false, carga, reps
           <NumberField label={t('treino.campoTempo', params)} value={duracao} onChangeText={(v) => onChange('duracao', v)} prefilled={prefilled} invalid={Boolean(errors.duracao)} editable={!done} />
         ) : (
           <>
-            <NumberField label={t('treino.campoCarga', params)} value={carga} onChangeText={(v) => onChange('carga', v)} kind="decimal" prefilled={prefilled} invalid={Boolean(errors.carga)} editable={!done} />
-            <NumberField label={t('treino.campoReps', params)} value={reps} onChangeText={(v) => onChange('reps', v)} prefilled={prefilled} invalid={Boolean(errors.reps)} editable={!done} />
+            <NumberField label={t('treino.campoCarga', { ...params, unidade: loadUnit })} value={carga} onChangeText={(v) => onChange('carga', v)} kind="decimal" prefilled={prefilled} invalid={Boolean(errors.carga)} editable={!done} />
+            <NumberField label={t(perSide ? 'treino.campoRepsLado' : 'treino.campoReps', params)} value={reps} onChangeText={(v) => onChange('reps', v)} prefilled={prefilled} invalid={Boolean(errors.reps)} editable={!done} />
           </>
         )}
 

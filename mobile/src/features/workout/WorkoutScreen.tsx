@@ -18,14 +18,18 @@ import { useRestTimer } from '../rest/useRestTimer';
 
 import { formatDecimal } from './input';
 import { lastTimeSummary, targetSummary } from './prefill';
-import { useWorkout, type RowView } from './useWorkout';
+import { useWorkout, type ItemView, type RowView } from './useWorkout';
 import type { WorkoutApi } from './workoutApi';
 
-function summaryOf(modality: string, row: RowView): string {
-  if (modality === 'tempo') {
+function summaryOf(item: ItemView, row: RowView): string {
+  if (item.modality === 'tempo') {
     return t('treino.resumoTempo', { segundos: row.draft.duracao || '0' });
   }
-  return row.draft.carga === '' ? t('treino.resumoReps', { reps: row.draft.reps || '0' }) : t('treino.resumoCargaReps', { carga: row.draft.carga, reps: row.draft.reps || '0' });
+  const reps = row.draft.reps || '0';
+  if (row.draft.carga === '') {
+    return t(item.unilateral ? 'treino.resumoRepsLado' : 'treino.resumoReps', { reps });
+  }
+  return t(item.unilateral ? 'treino.resumoCargaRepsLado' : 'treino.resumoCargaReps', { carga: row.draft.carga, unidade: item.loadUnit, reps });
 }
 
 /** TEL-012: executor. Um exercício por vez, séries com valores sugeridos que só viram registro ao concluir (D-14). */
@@ -128,6 +132,11 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
             <Text variant="headline" accessibilityRole="header">
               {current.item.exercicio.nome}
             </Text>
+            {current.caption ? (
+              <Text variant="bodySmall" color="secondary">
+                {current.caption}
+              </Text>
+            ) : null}
             <Goal modality={current.modality} targets={current.workTargets} />
             <Button variant="text" label={t('treino.comoFazer')} onPress={() => router.push({ pathname: '/exercicios/[uuid]', params: { uuid: current.item.exercicio.id } })} />
             <LastTime modality={current.modality} record={current.last} />
@@ -148,7 +157,9 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
                 done={row.done}
                 saving={row.saving}
                 errors={row.errors}
-                summary={summaryOf(current.modality, row)}
+                summary={summaryOf(current, row)}
+                loadUnit={current.loadUnit}
+                perSide={current.unilateral}
                 onChange={(field, value) => workout.change(row.series.id, field, value)}
                 onComplete={() => void completeAndRest(row.series.id)}
                 onCorrect={() => workout.correct(row.series.id)}

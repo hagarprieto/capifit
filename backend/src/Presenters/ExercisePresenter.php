@@ -8,7 +8,7 @@ namespace CapiFit\Presenters;
 final class ExercisePresenter
 {
     /**
-     * @param array<string, mixed> $row linha com uuid, nome, modalidade, equipamento_id, equipamento_nome
+     * @param array<string, mixed> $row linha com uuid, nome, modalidade, unilateral, convencao_carga, equipamento_id, equipamento_nome
      * @param list<array{id: string, nome: string}> $primaryGroups
      * @return array<string, mixed>
      */
@@ -20,6 +20,8 @@ final class ExercisePresenter
             'equipamento' => self::equipment($row),
             'grupos_primarios' => $primaryGroups,
             'modalidade' => $row['modalidade'],
+            'unilateral' => (bool) ($row['unilateral'] ?? false),
+            'convencao_carga' => $row['convencao_carga'] ?? null,
             'miniatura_url' => null,
         ];
     }

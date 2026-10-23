@@ -30,7 +30,7 @@ final class StructureRepository
         }
         $items = $this->db->fetchAll(
             'SELECT fe.id, fe.uuid, fe.ficha_id, fe.ordem, fe.grupo_superset, fe.descanso_segundos, fe.instrucoes,
-                    e.id AS exercicio_id, e.uuid AS exercicio_uuid, e.nome, e.modalidade, eq.id AS equipamento_id, eq.nome AS equipamento_nome
+                    e.id AS exercicio_id, e.uuid AS exercicio_uuid, e.nome, e.modalidade, e.unilateral, e.convencao_carga, eq.id AS equipamento_id, eq.nome AS equipamento_nome
                FROM ficha_exercicios fe
                JOIN fichas_treino f ON f.id = fe.ficha_id
                JOIN exercicios e ON e.id = fe.exercicio_id

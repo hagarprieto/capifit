@@ -52,7 +52,7 @@ final class CatalogRepository
         $params[] = $limit + 1;
 
         return $this->db->fetchAll(
-            'SELECT e.id, e.uuid, e.nome, e.nome_normalizado, e.modalidade, eq.id AS equipamento_id, eq.nome AS equipamento_nome
+            'SELECT e.id, e.uuid, e.nome, e.nome_normalizado, e.modalidade, e.unilateral, e.convencao_carga, eq.id AS equipamento_id, eq.nome AS equipamento_nome
                FROM exercicios e
                LEFT JOIN equipamentos eq ON eq.id = e.equipamento_id
               WHERE ' . implode(' AND ', $where) . '
@@ -67,7 +67,7 @@ final class CatalogRepository
     public function findPublished(string $uuid): ?array
     {
         return $this->db->fetchOne(
-            "SELECT e.id, e.uuid, e.nome, e.modalidade, e.unilateral, e.dificuldade, e.instrucoes, e.observacoes_seguranca,
+            "SELECT e.id, e.uuid, e.nome, e.modalidade, e.unilateral, e.convencao_carga, e.dificuldade, e.instrucoes, e.observacoes_seguranca,
                     eq.id AS equipamento_id, eq.nome AS equipamento_nome
                FROM exercicios e
                LEFT JOIN equipamentos eq ON eq.id = e.equipamento_id
@@ -120,7 +120,7 @@ final class CatalogRepository
     public function alternatives(int $exerciseId): array
     {
         return $this->db->fetchAll(
-            "SELECT a.id, a.uuid, a.nome, a.nome_normalizado, a.modalidade, eq.id AS equipamento_id, eq.nome AS equipamento_nome
+            "SELECT a.id, a.uuid, a.nome, a.nome_normalizado, a.modalidade, a.unilateral, a.convencao_carga, eq.id AS equipamento_id, eq.nome AS equipamento_nome
                FROM exercicios_alternativas ea
                JOIN exercicios a ON a.id = ea.alternativa_id AND a.status = 'publicado'
                LEFT JOIN equipamentos eq ON eq.id = a.equipamento_id

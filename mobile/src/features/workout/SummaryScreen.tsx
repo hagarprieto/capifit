@@ -20,8 +20,8 @@ function setText(set: SummarySet): string {
     return t('resumo.serieTempo', { numero: set.ordem, segundos: set.segundos });
   }
   return set.kind === 'loadReps'
-    ? t('resumo.serieCargaReps', { numero: set.ordem, carga: set.carga, reps: set.reps })
-    : t('resumo.serieReps', { numero: set.ordem, reps: set.reps });
+    ? t(set.perSide ? 'resumo.serieCargaRepsLado' : 'resumo.serieCargaReps', { numero: set.ordem, carga: set.carga, unidade: set.unit, reps: set.reps })
+    : t(set.perSide ? 'resumo.serieRepsLado' : 'resumo.serieReps', { numero: set.ordem, reps: set.reps });
 }
 
 /**

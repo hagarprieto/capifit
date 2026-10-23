@@ -124,6 +124,21 @@ describe('SummaryScreen', () => {
     expect(screen.queryByText('Série 1: 40 kg × 10')).toBeNull();
   });
 
+  it('os registros mostram a unidade pela convenção do exercício e "por lado" nos unilaterais', async () => {
+    const dumbbell = {
+      ...item('1', 'Remada com halter', 'reps_carga', [done(1, { carga_kg: 20, repeticoes: 10 })]),
+      exercicio: { id: 'ex-1', nome: 'Remada com halter', modalidade: 'reps_carga', convencao_carga: 'por_halter', unilateral: true },
+    };
+    const machine = { ...item('2', 'Leg press', 'reps_carga', [done(1, { carga_kg: 120, repeticoes: 12 })]), exercicio: { id: 'ex-2', nome: 'Leg press', modalidade: 'reps_carga', convencao_carga: 'selecao_maquina', unilateral: false } };
+    await show({ getSession: jest.fn().mockResolvedValue(makeSession({ exercicios: [dumbbell, machine] } as unknown as Partial<Session>)) });
+    await screen.findByText('Treino concluído!');
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Ver registros' }));
+
+    expect(screen.getByText('Série 1: 20 kg por halter × 10 por lado')).toBeTruthy();
+    expect(screen.getByText('Série 1: 120 kg (máquina) × 12')).toBeTruthy();
+  });
+
   it('sem carga registrada não mostra volume', async () => {
     await show({ getSession: jest.fn().mockResolvedValue(makeSession({ exercicios: [item('1', 'Flexão', 'reps_peso_corporal', [done(1, { repeticoes: 15 })])] } as Partial<Session>)) });
 

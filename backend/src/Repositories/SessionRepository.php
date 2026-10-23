@@ -218,7 +218,7 @@ final class SessionRepository
         return $this->db->fetchAll(
             'SELECT se.id, se.uuid, se.ordem, se.tipo_item, se.ficha_exercicio_id, se.exercicio_prescrito_id, p.uuid AS prescrito_uuid,
                     (SELECT fe.uuid FROM ficha_exercicios fe WHERE fe.id = se.ficha_exercicio_id) AS ficha_exercicio_uuid,
-                    e.id AS exercicio_id, e.uuid AS exercicio_uuid, e.nome, e.modalidade, eq.id AS equipamento_id, eq.nome AS equipamento_nome
+                    e.id AS exercicio_id, e.uuid AS exercicio_uuid, e.nome, e.modalidade, e.unilateral, e.convencao_carga, eq.id AS equipamento_id, eq.nome AS equipamento_nome
                FROM sessoes_exercicios se
                JOIN exercicios e ON e.id = se.exercicio_id
                LEFT JOIN equipamentos eq ON eq.id = e.equipamento_id
