@@ -11,6 +11,7 @@ export type QueuedOperation = {
   operacao_uuid: string;
   entidade: QueueEntity;
   entidade_uuid: string;
+  sessao_uuid: string | null;
   tipo: QueueType;
   payload: Record<string, unknown>;
   estado: QueueState;
@@ -32,12 +33,12 @@ const now = () => new Date().toISOString();
  */
 export function createQueueRepo(db: LocalDb, userUuid: string) {
   return {
-    async enqueue(op: { entidade: QueueEntity; entidade_uuid: string; tipo: QueueType; payload: Record<string, unknown>; operacao_uuid?: string }): Promise<QueuedOperation> {
+    async enqueue(op: { entidade: QueueEntity; entidade_uuid: string; tipo: QueueType; payload: Record<string, unknown>; sessao_uuid?: string; operacao_uuid?: string }): Promise<QueuedOperation> {
       const operacaoUuid = op.operacao_uuid ?? newUuid();
       const at = now();
       await db.runAsync(
-        `INSERT INTO fila_operacao (operacao_uuid, usuario_uuid, entidade, entidade_uuid, tipo, payload, criada_em, atualizada_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [operacaoUuid, userUuid, op.entidade, op.entidade_uuid, op.tipo, JSON.stringify(op.payload), at, at],
+        `INSERT INTO fila_operacao (operacao_uuid, usuario_uuid, entidade, entidade_uuid, sessao_uuid, tipo, payload, criada_em, atualizada_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [operacaoUuid, userUuid, op.entidade, op.entidade_uuid, op.sessao_uuid ?? null, op.tipo, JSON.stringify(op.payload), at, at],
       );
       const row = await db.getFirstAsync<Row>('SELECT * FROM fila_operacao WHERE operacao_uuid = ?', [operacaoUuid]);
       return parse(row as Row);
@@ -86,6 +87,20 @@ export function createQueueRepo(db: LocalDb, userUuid: string) {
      */
     async requeueInterrupted(): Promise<number> {
       return (await db.runAsync("UPDATE fila_operacao SET estado = 'pendente', atualizada_em = ? WHERE usuario_uuid = ? AND estado = 'enviando'", [now(), userUuid])).changes;
+    },
+
+    /** O servidor não respondeu esta operação no lote: ela volta a pendente para a próxima rodada. */
+    async retryUnanswered(operacaoUuid: string): Promise<void> {
+      await db.runAsync("UPDATE fila_operacao SET estado = 'pendente', atualizada_em = ? WHERE operacao_uuid = ? AND usuario_uuid = ? AND estado = 'enviando'", [now(), operacaoUuid, userUuid]);
+    },
+
+    /** Operações da sessão que ainda não foram aplicadas (pendentes, enviando ou em revisão). */
+    async openForSession(sessionUuid: string): Promise<number> {
+      return (await db.getFirstAsync<{ total: number }>("SELECT COUNT(*) AS total FROM fila_operacao WHERE usuario_uuid = ? AND sessao_uuid = ? AND estado <> 'aplicada'", [userUuid, sessionUuid]))?.total ?? 0;
+    },
+
+    async hasApplied(sessionUuid: string): Promise<boolean> {
+      return ((await db.getFirstAsync<{ total: number }>("SELECT COUNT(*) AS total FROM fila_operacao WHERE usuario_uuid = ? AND sessao_uuid = ? AND estado = 'aplicada'", [userUuid, sessionUuid]))?.total ?? 0) > 0;
     },
 
     /** Reenvia uma operação revisada pelo usuário. */

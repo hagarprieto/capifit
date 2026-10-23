@@ -110,6 +110,19 @@ describe('migrações', () => {
     failing.close();
   });
 
+  it('um banco na versão 1 com dados sobe para a atual sem perder nada', async () => {
+    const old = createMemoryDb();
+    await old.execAsync(`${MIGRATIONS[0]}
+PRAGMA user_version = 1`);
+    await old.runAsync("INSERT INTO fila_operacao (operacao_uuid, usuario_uuid, entidade, entidade_uuid, tipo, payload, criada_em, atualizada_em) VALUES ('op-1', 'u', 'sessao_serie', 's', 'atualizar', '{}', 'x', 'x')");
+
+    await migrate(old);
+
+    expect(await old.getAllAsync<{ operacao_uuid: string; sessao_uuid: string | null }>('SELECT operacao_uuid, sessao_uuid FROM fila_operacao')).toEqual([{ operacao_uuid: 'op-1', sessao_uuid: null }]);
+    expect((await old.getFirstAsync<{ user_version: number }>('PRAGMA user_version'))?.user_version).toBe(LATEST_VERSION);
+    old.close();
+  });
+
   it('banco mais novo que o app não é alterado e avisa', async () => {
     const newer = createMemoryDb();
     await newer.execAsync(`CREATE TABLE guardado (x INTEGER); PRAGMA user_version = ${LATEST_VERSION + 1}`);

@@ -84,6 +84,11 @@ export const MIGRATIONS: string[] = [
     PRIMARY KEY (usuario_uuid, chave)
   );
   `,
+  // v2: cada operação da fila sabe a qual sessão pertence (para saber quando a sessão foi toda confirmada).
+  `
+  ALTER TABLE fila_operacao ADD COLUMN sessao_uuid TEXT;
+  CREATE INDEX idx_fila_sessao ON fila_operacao (usuario_uuid, sessao_uuid, estado);
+  `,
 ];
 
 export const LATEST_VERSION = MIGRATIONS.length;

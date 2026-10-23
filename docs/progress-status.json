@@ -46,7 +46,8 @@
     "E05-03": "in-progress",
     "E04-03": "in-progress",
     "E09-03": "in-progress",
-    "E08-01": "in-progress"
+    "E08-01": "in-progress",
+    "E08-03": "in-progress"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
@@ -96,7 +97,8 @@
     "E05-03": "Início pronto e testado em Jest (226 testes): treino em andamento, próxima ficha do programa ativo, sem programa, semana com marcação dos dias, treinos e tempo da semana, última sessão, offline e falha ao carregar com tentar de novo. Falta o resultado do CI e validar em aparelho. Convite de coach fica para a Fase 3.",
     "E04-03": "Quatro abas (Início, Treinos, Evolução, Perfil) com barra própria e botão Voltar ao treino enquanto há sessão aberta; testado em Jest (233 testes) e o app empacota para Android. Falta o resultado do CI e validar em aparelho (inclusive o gesto de voltar do Android). A aba Evolução recebeu o conteúdo na E09-03.",
     "E09-03": "Aba Evolução pronta e testada em Jest (241 testes): período de 4 ou 12 semanas, indicadores, frequência por semana, histórico paginado que abre o resumo da sessão, estado vazio e falha com tentar de novo. Falta o resultado do CI e validar em aparelho. Gráfico por exercício fica na E13-01.",
-    "E08-01": "Esquema (sessão, exercícios, séries, pausas, fila e cache), migrações com volta atrás, repositórios por usuário e abertura do banco prontos; 24 testes em SQLite de verdade (265 no total). Falta o resultado do CI e rodar o adaptador do expo-sqlite num aparelho (por ora só validado pelos tipos). Nenhuma tela usa o banco ainda: vem com E08-02, E08-03 e E07-11."
+    "E08-01": "Esquema (sessão, exercícios, séries, pausas, fila e cache), migrações com volta atrás, repositórios por usuário e abertura do banco prontos; 24 testes em SQLite de verdade (265 no total). Falta o resultado do CI e rodar o adaptador do expo-sqlite num aparelho (por ora só validado pelos tipos). Nenhuma tela usa o banco ainda: vem com E08-02, E08-03 e E07-11.",
+    "E08-03": "Fila de operações com envio em lotes ao /sync/push pronta e testada em Jest (279 testes, com SQLite de verdade): UUIDs de sessão, exercícios e séries gerados no aparelho, ordem e sequência do cliente, aplicada/conflito/rejeitada, sem rede, lote recusado, operação sem resposta, envio único e retomada após fechamento. Migration local 2 (sessão da operação). Falta o resultado do CI. Nenhuma tela usa a fila ainda: o executor gravar local primeiro vem na sequência."
   },
   "externas": {
     "revisor": "pending",
