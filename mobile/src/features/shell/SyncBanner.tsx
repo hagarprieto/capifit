@@ -23,7 +23,12 @@ export function SyncBanner({ compact = false }: { compact?: boolean }) {
       <SyncStatus state={state} />
       {compact ? null : (
         <>
-          {state === 'offline' ? <Notice kind="info" message={t(waiting > 0 ? 'sync.avisoOfflinePendente' : 'sync.avisoOffline', { quantidade: waiting })} /> : null}
+          {state === 'offline' ? (
+            <>
+              <Notice kind="info" message={t(waiting > 0 ? 'sync.avisoOfflinePendente' : 'sync.avisoOffline', { quantidade: waiting })} />
+              {waiting > 0 && retry ? <Button label={t('sync.tentar')} variant="secondary" onPress={retry} /> : null}
+            </>
+          ) : null}
           {state === 'pending' ? (
             <>
               <Notice kind="warning" message={t('sync.avisoFalha')} />

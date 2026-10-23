@@ -101,6 +101,7 @@ describe('com a fila de verdade', () => {
 
     expect(await screen.findByText('offline:2:0')).toBeTruthy();
     expect(screen.getByText('Sem conexão. 2 registro(s) salvo(s) neste dispositivo vão sincronizar quando a conexão voltar.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeTruthy(); // dá para tentar sem esperar
     db.close();
   });
 
@@ -174,6 +175,34 @@ describe('com a fila de verdade', () => {
     expect(await screen.findByText('pending:1:0')).toBeTruthy();
     expect(screen.getByText('Não conseguimos sincronizar agora. Seus dados estão salvos neste dispositivo.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeTruthy();
+    db.close();
+  });
+});
+
+describe('nova tentativa automática', () => {
+  afterEach(() => jest.useRealTimers());
+
+  it('enquanto houver registro esperando, tenta enviar de novo a cada 30 s (a conexão pode ter voltado)', async () => {
+    jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] });
+    const { db, queue } = await mount();
+    mockAuth.api.post.mockRejectedValue(networkError());
+    await queue.enqueue(op(1));
+    await act(async () => {
+      await seen.local?.engine?.flush();
+    });
+    await screen.findByText('offline:1:0');
+    expect(mockAuth.api.post).toHaveBeenCalledTimes(1);
+    mockAuth.api.post.mockImplementation(async (_p: string, body: { operacoes: { operacao_uuid: string }[] }) => ({
+      data: { server_time: 'x', resultados: body.operacoes.map((o) => ({ operacao_uuid: o.operacao_uuid, resultado: 'aplicada' })) },
+    }));
+
+    await act(async () => {
+      jest.advanceTimersByTime(30_000);
+    });
+    jest.useRealTimers();
+
+    expect(await screen.findByText('synced:0:0')).toBeTruthy();
+    expect(mockAuth.api.post).toHaveBeenCalledTimes(2);
     db.close();
   });
 });

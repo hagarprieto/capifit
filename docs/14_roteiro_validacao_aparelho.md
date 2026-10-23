@@ -1,12 +1,12 @@
 # CapiFit — Documento 14: Roteiro de validação do app em aparelho
 
-**Versão:** 1.0 (22/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04 e E06-05
+**Versão:** 2.0 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08 e E07-11
 **Por que existe:** os testes automáticos (Jest, tipos, lint) já passam no CI, mas só um aparelho de verdade mostra teclado, rolagem, tema, notificação, vibração, leitor de tela e desempenho. Este roteiro transforma "falta validar em aparelho" em uma lista que você executa e marca.
 
 ## 0. Como usar
 
 1. Faça a **preparação (§1)** uma vez. Leva cerca de 30 minutos na primeira vez.
-2. Execute os roteiros **R0 a R6 (§2)** num **Android** e num **iPhone** (veja a matriz mínima em §1.4). Para cada passo, confira o **Esperado**.
+2. Execute os roteiros **R0 a R11 (§2)** num **Android** e num **iPhone** (veja a matriz mínima em §1.4). Para cada passo, confira o **Esperado**.
 3. Marque cada teste no **quadro de resultados (§3)**: **P** (passou), **F** (falhou), **N/A** (não se aplica neste aparelho) e, se falhou, anote o que viu (§4).
 4. Uma história só vira **concluída** quando todos os testes **obrigatórios (🔴)** dela passam em **pelo menos um Android e um iPhone** (§5). Os desejáveis (🟡) viram pendência, não bloqueio.
 
@@ -120,10 +120,10 @@ Legenda: 🔴 obrigatório · 🟡 desejável. **Reprova se** descreve o que con
 | V-01.1 🔴 | Boas-vindas → **Criar conta**. Toque em Criar conta **sem preencher nada**. | Erros por campo, em texto ("Erro: …"), e **nada é enviado**. | Envia assim mesmo ou erro só em cor. |
 | V-01.2 🔴 | Preencha nome, e-mail **inválido** (`abc`), senha de 5 caracteres, sem marcar os aceites. | Cada erro aparece no campo certo (e-mail, senha mínima de 10, aceite, 18+). | Algum erro faltando ou no campo errado. |
 | V-01.3 🔴 | Observe os **teclados**: e-mail abre teclado de e-mail (sem maiúscula automática); senha oculta com **Mostrar/Ocultar**. | Correto nos dois campos; o gerenciador de senhas do aparelho oferece salvar (se ativo). | Teclado errado, senha visível sem pedir. |
-| V-01.4 🔴 | Cadastre com dados válidos (marque os dois aceites). | Entra na área logada ("Olá, <nome>"). | Erro inesperado ou volta para a tela de entrada. |
-| V-01.5 🔴 | **Sair**. Entre com a senha **errada**, depois com e-mail inexistente. | Nos dois casos a **mesma** mensagem: "E-mail ou senha incorretos." | Mensagens diferentes (revelam se o e-mail existe). |
+| V-01.4 🔴 | Cadastre com dados válidos (marque os dois aceites). | Entra na área logada: Início com "Olá, <nome>! Bora treinar?" e as quatro abas embaixo. | Erro inesperado ou volta para a tela de entrada. |
+| V-01.5 🔴 | Aba **Perfil** → **Sair**. Entre com a senha **errada**, depois com e-mail inexistente. | Nos dois casos a **mesma** mensagem: "E-mail ou senha incorretos." | Mensagens diferentes (revelam se o e-mail existe). |
 | V-01.6 🔴 | Entre com a senha certa. Feche o app **deslizando para fora** e reabra. | Abre **direto** na área logada, sem pedir login (sessão restaurada). | Pede login de novo, ou mostra a tela de entrada por um instante antes. |
-| V-01.7 🔴 | Ative o **modo avião**, feche e reabra o app. | Abre logado, com o aviso "Sem conexão: você pode treinar normalmente." | Trava, ou desloga por falta de rede. |
+| V-01.7 🔴 | Ative o **modo avião**, feche e reabra o app. | Abre logado, com o indicador "Offline — salvo neste dispositivo" e o aviso "Sem conexão. Seus registros ficam neste dispositivo e sincronizam depois." | Trava, ou desloga por falta de rede. |
 | V-01.8 🔴 | **Recuperar senha**: Esqueci minha senha → e-mail cadastrado → Enviar link. Repita com um e-mail que **não existe**. | **A mesma** mensagem nos dois casos ("Se existir uma conta…"). | Mensagens diferentes. |
 | V-01.9 🔴 | Abra `backend\storage\mail\` e copie o `token=` do e-mail mais novo. Abra o link de redefinição (veja abaixo) e defina uma nova senha. Entre com a nova. | Senha alterada; a antiga deixa de funcionar. | Link não abre o app ou erro inesperado. |
 | V-01.10 🔴 | Abra o **mesmo link de novo** (token já usado). | "Link inválido ou expirado. Peça um novo link." | Aceita de novo. |
@@ -145,10 +145,10 @@ Pré-requisito: logado, API no ar, exercícios publicados (§1.2).
 | V-02.4 🔴 | Toque em **Concluir** com reps vazio. | Erro "Informe as repetições…", nada registrado. | Registra série incompleta. |
 | V-02.5 🔴 | **Corrigir** a série 1: mude as reps para `11` e conclua de novo. | Registra o valor novo; não recomeça o descanso. | Duplica a série ou perde o valor. |
 | V-02.6 🔴 | **+ série**, depois **+ exercício** (Prancha isométrica). Vá com **Próximo/Anterior**. | A prancha pede **tempo em segundos** (não carga e reps). Navegação mantém os valores. | Campo errado para a prancha, perda de dados ao navegar. |
-| V-02.7 🔴 | **Modo avião** → conclua uma série. Depois desligue e tente de novo. | Aviso "Não foi possível registrar…", **os valores digitados permanecem**; ao voltar a rede, concluir funciona. | Perde o que digitou, ou registra duas vezes. |
+| V-02.7 🔴 | **Modo avião** → conclua uma série (treino já aberto). Depois desligue o modo avião. | A série **é concluída normalmente** e o indicador mostra "Offline — salvo neste dispositivo". Ao voltar a rede o indicador passa por "Pendente" e termina em "Sincronizado" (detalhes em R10). | Erro ao concluir, perde o que digitou, ou registra duas vezes. |
 | V-02.8 🔴 | **Finalizar treino** com séries pendentes. Cancele, depois confirme. | O diálogo diz quantas séries ficaram pendentes; Cancelar não faz nada; Finalizar abre o resumo. | Finaliza sem perguntar. |
 | V-02.9 🔴 | Inicie **outro** treino avulso e adicione o mesmo supino. | As séries já vêm sugeridas com o que você fez no treino anterior, e aparece "Última vez: 40 kg · …". | Sugestão em branco ou errada. |
-| V-02.10 🔴 | Com um treino aberto, volte ao Início. | O botão vira **Continuar treino em andamento**. | Permite iniciar um segundo treino aberto. |
+| V-02.10 🔴 | Com um treino aberto, volte ao Início. | Aparece o cartão **TREINO EM ANDAMENTO** com "N de M séries concluídas" e o botão **Continuar treino**; "Iniciar treino avulso" some. | Permite iniciar um segundo treino aberto. |
 | V-02.11 🔴 | Use **só uma mão** (polegar) para registrar 3 séries seguidas. | Alcança os botões; alvos de toque confortáveis (sem tocar errado). | Botões pequenos demais ou fora do alcance. |
 | V-02.12 🟡 | Registre uma série de **peso corporal** (flexão) e uma **assistida** (barra fixa assistida). | Peso corporal: só reps (carga opcional); assistida: reps e carga de assistência. | Campo obrigatório indevido. |
 
@@ -174,14 +174,14 @@ Pré-requisito: logado, API no ar, exercícios publicados (§1.2).
 | V-04.1 🔴 | Faça um treino com **supino** (3 séries criadas; conclua 2: `40×10` e `42,5×8`) e **prancha** (3 séries criadas; conclua 1 de 45 s). Deixe as outras 3 pendentes e finalize. | "Treino concluído!"; **Séries concluídas: 3 de 6**; **Exercícios executados: 2**; **Volume: 740 kg** (`40×10 = 400` mais `42,5×8 = 340`; a prancha não entra no volume). | Números diferentes dos seus cálculos. |
 | V-04.2 🔴 | Leia a linha pequena sob o volume. | Explica "carga × repetições… sem aquecimento… não é uma nota do treino". | Sem explicação do cálculo. |
 | V-04.3 🔴 | **Ver registros** / **Ocultar registros**. | Lista as séries feitas, por exercício; as pendentes não aparecem. | Mostra séries não feitas. |
-| V-04.4 🔴 | **Voltar ao início**; depois use o botão voltar do sistema. | Não volta para o resumo. O Início mostra "Iniciar treino avulso" de novo. | Volta ao resumo ou ao executor. |
+| V-04.4 🔴 | **Voltar ao início**; depois use o botão voltar do sistema. | Não volta para o resumo. O Início mostra "Iniciar treino avulso" de novo e a semana já conta este treino. | Volta ao resumo ou ao executor. |
 | V-04.5 🟡 | Finalize um treino só de peso corporal. | Sem linha de volume. | Mostra "Volume: 0 kg". |
 
 ### R5 — Meus treinos e editor de programa (E06-03, E06-04, E06-05)
 
 | ID | Passos | Esperado | Reprova se |
 |---|---|---|---|
-| V-05.1 🔴 | Início → **Meus treinos** (conta nova). | Aba Ativo vazia com "Nenhum programa ativo" e **Criar programa**. As abas mostram contagem. | Erro ou tela vazia sem orientação. |
+| V-05.1 🔴 | Aba **Treinos** (conta nova). | Aba Ativo vazia com "Nenhum programa ativo" e **Criar programa**. As abas mostram contagem. | Erro ou tela vazia sem orientação. |
 | V-05.2 🔴 | **Criar programa**: sem nome → erro; depois "Hipertrofia 4x". | Cria e abre o detalhe; o programa aparece em **Rascunhos (1)** com a origem "Criado por você" (símbolo + texto). | Cria duplicado ou sem origem visível. |
 | V-05.3 🔴 | Detalhe → **Editar programa**. **+ Ficha** duas vezes. Renomeie a primeira para "Peito e tríceps". | Aparecem "Treino A"/"Treino B"; o aviso muda para **Alterações não salvas**. | Aviso não muda. |
 | V-05.4 🔴 | Na ficha: **+ Exercício** → Supino reto com barra; **+ Exercício** → Prancha isométrica. | Resumos legíveis: `3 × 8–12 · descanso 1:30` e `3 × 45 s · descanso 1:30`. | Resumo vazio ou errado. |
@@ -212,6 +212,84 @@ Ative **TalkBack** (Android: Configurações → Acessibilidade) ou **VoiceOver*
 | V-06.5 🟡 | Fonte 200 % no executor e no editor. | Layout aguenta; nada cortado; botões acessíveis. | Cortes, sobreposição. |
 | V-06.6 🟡 | Teste de contraste a olho nu, ao sol/brilho baixo, nos dois temas. | Texto secundário e valores sugeridos ainda legíveis. | Valor sugerido ilegível. |
 
+### R7 — Início e abas (E05-03, E04-03, E04-04)
+
+| ID | Passos | Esperado | Reprova se |
+|---|---|---|---|
+| V-07.1 🔴 | Logado, olhe a barra inferior e toque em cada aba. | Quatro abas com **texto sempre visível**: Início, Treinos, Evolução, Perfil. A ativa se destaca (negrito, cor e traço) e cada uma abre uma tela com conteúdo. | Aba sem texto, ativa indistinguível, ou aba que não abre. |
+| V-07.2 🔴 | Conta **sem programa ativo**: abra o Início. | "Você ainda não tem um programa ativo", **Criar programa** e **Iniciar treino avulso**; "Sua semana" com 7 dias (Seg a Dom), o de hoje com anel; "0 treinos" e "0 min"; texto explicando que a semana conta ao terminar o primeiro treino. | Tela vazia, ou número sem unidade. |
+| V-07.3 🔴 | Com **programa ativo** e nenhum treino feito: Início. | Cartão **PROGRAMA ATIVO** com a origem ("Criado por você"), título, "Próximo: Treino A", "N exercícios", **Iniciar Treino A** e **Ver a ficha**. | Próximo errado, ou sem origem. |
+| V-07.4 🔴 | Conclua o Treino A e volte ao Início. | Passa a mostrar **"Próximo: Treino B"** (a ficha seguinte; depois da última volta à primeira). O dia de hoje fica **preenchido** na semana, "Treinos na semana: 1", o tempo e "Última sessão: dd/mm · N min". | Rotação errada, ou dia não marcado. |
+| V-07.5 🔴 | Com treino em andamento, troque de aba (volte do executor e vá a Treinos, Evolução, Perfil). | Em **todas** as abas aparece o botão **Voltar ao treino** acima da barra; ele leva ao executor. No Início também há o cartão TREINO EM ANDAMENTO. | Botão sumindo em alguma aba, ou levando a outro treino. |
+| V-07.6 🟡 | Digite carga e repetições numa série **sem concluir**, volte ao Início e use **Voltar ao treino**. | As séries **já concluídas continuam concluídas**. Anote o que acontece com o valor digitado e não concluído (esperado hoje: volta à sugestão; o UX-02 pede retorno "ao ponto exato", então isto é uma observação para decidirmos). | Série concluída perdida. |
+| V-07.7 🔴 | Android: use o botão/gesto de **voltar** dentro das abas, e confira a barra com **navegação por gestos** e com botões. | Voltar sai do app ou volta à aba inicial de forma previsível; a barra **não fica por trás** da barra de gestos nem com folga estranha. | Barra cortada ou sobreposta. |
+| V-07.8 🔴 | Aba **Perfil**. | Nome da conta, **Verificação do tema** e **Sair**. | Falta algum deles. |
+| V-07.9 🔴 | Leitor de tela no Início: percorra a semana. | Cada dia é lido com o estado ("Terça: treino concluído", "Quinta (hoje): sem treino"); os números dizem a unidade ("Tempo de treino na semana: 54 min"). | Dia lido só como "círculo"/"✓". |
+| V-07.10 🟡 | Fonte 200 % e tema claro/escuro no Início e nas abas. | Nada cortado; barra legível; indicador de sincronização legível. | Corte ou texto invisível. |
+
+### R8 — Evolução e histórico (E09-03)
+
+| ID | Passos | Esperado | Reprova se |
+|---|---|---|---|
+| V-08.1 🔴 | Conta **sem treino concluído**: aba Evolução. | Indicadores zerados com unidade e o estado "Nenhum treino concluído ainda"; nada de erro. | Erro, ou espaço vazio sem explicação. |
+| V-08.2 🔴 | Faça 2 ou 3 treinos com valores conhecidos (anote carga × repetições) e abra a Evolução (4 semanas). | **Treinos**, **Tempo de treino**, **Séries** e **Volume** conferem com a sua conta (volume = soma carga × repetições, sem aquecimento). A semana atual aparece com a quantidade certa. | Número diferente do calculado. |
+| V-08.3 🔴 | Troque para **12 semanas** e volte a **4 semanas**. | O período muda, a lista de semanas aumenta e os números continuam coerentes. | Número que diminui ao ampliar o período. |
+| V-08.4 🔴 | Leia a explicação sob o volume. | Diz que é um número de acompanhamento, **não uma nota do treino**. Não há meta, ranking nem comparação. | Texto punitivo ou comparativo. |
+| V-08.5 🔴 | Histórico: confira a ordem e toque numa sessão. | Mais recente primeiro, com título, data, duração e nº de séries; tocar abre o **resumo** daquela sessão com os registros. | Ordem errada, ou abre outra sessão. |
+| V-08.6 🟡 | Com mais de 20 treinos (pode semear no banco de teste), vá ao fim da lista. | Botão **Carregar mais** traz as próximas sem repetir. | Repetição ou lista que trava. |
+| V-08.7 🔴 | **Modo avião** → abra a Evolução. | Aviso "Não foi possível carregar a evolução agora…" e **Tentar de novo**; ao religar a rede funciona. | Spinner infinito, ou tela quebrada. |
+| V-08.8 🔴 | Leitor de tela: percorra as semanas e o histórico. | "Semana de 19/10: 3 treinos"; cada sessão é um botão lido com nome, data, duração e séries. | Barras sem leitura. |
+
+### R9 — Programa ativo, ficha e metas (E06-08, E07-04, D-14)
+
+Pré-requisito: um programa **publicado** com pelo menos duas fichas, em que um exercício tenha meta (ex.: supino 8–12 repetições, carga-alvo 60 kg, 3 séries + 1 de aquecimento).
+
+| ID | Passos | Esperado | Reprova se |
+|---|---|---|---|
+| V-09.1 🔴 | Treinos → programa publicado → **Ativar**. | Confirma, o programa vai para **Ativo** e o Início passa a mostrá-lo. | Ativa sem confirmar, ou não aparece no Início. |
+| V-09.2 🔴 | Ative **outro** programa publicado. | O diálogo diz que o atual deixa de ser o ativo (não é apagado); depois o anterior aparece em publicados. | Apaga ou perde o anterior. |
+| V-09.3 🔴 | **Arquivar** um programa. | Pede confirmação explicando o efeito; sai de Ativo/Publicados e aparece em **Arquivados**. | Arquiva sem perguntar. |
+| V-09.4 🔴 | Programa publicado → **Abrir a ficha**. | A prescrição é legível: exercícios, séries, repetições, carga-alvo, descanso e o tipo de série (aquecimento). | Dados faltando ou ilegíveis. |
+| V-09.5 🔴 | Na ficha, **Iniciar treino desta ficha**. | O executor abre com os exercícios e as séries **da ficha**; não cria um segundo treino se já houver um aberto (oferece continuar, avisando se é de outra origem). | Dois treinos abertos. |
+| V-09.6 🔴 | No executor da ficha, confira o supino **sem histórico**. | Aparece "Meta: 8–12 repetições · 60 kg". A série de **trabalho** vem com **60 kg** e **8** repetições (o mínimo da faixa); o **aquecimento não herda os 60 kg**. | Carga de aquecimento igual à de trabalho, ou repetições fora da faixa. |
+| V-09.7 🔴 | Faça o supino com **15** repetições, termine e inicie a mesma ficha de novo. | A sugestão parte do último treino, mas **dentro da faixa**: repetições 12 (não 15). A carga-alvo continua mandando. | Sugere 15, ou ignora a faixa. |
+| V-09.8 🟡 | Tente iniciar uma ficha de versão em **rascunho**. | Não deixa treinar (só versão publicada). | Inicia. |
+
+### R10 — Offline completo (E08-01, E08-02, E08-03, E08-07, E07-08, E07-11)
+
+Este é o roteiro que mais importa antes de confiar no app na academia. Pré-requisito: programa ativo e API acessível. Para conferir o que chegou ao servidor, use a aba Evolução ou o histórico (e, se quiser, o banco: `SELECT * FROM sessoes_treino ORDER BY id DESC LIMIT 3`).
+
+| ID | Passos | Esperado | Reprova se |
+|---|---|---|---|
+| V-10.1 🔴 | **Com rede**, abra o Início (isso guarda o programa no aparelho). Ative o **modo avião**, **feche o app deslizando** e reabra. | Abre logado; o Início mostra o programa e "Próximo: …", com o aviso "Sem conexão: mostrando o programa salvo neste aparelho em dd/mm" e o indicador **Offline — salvo neste dispositivo**. | Início vazio, erro, ou desloga. |
+| V-10.2 🔴 | Ainda em avião: **Iniciar** a próxima ficha. | O executor abre com as séries da ficha e os valores sugeridos (metas e último treino salvos). | Erro "não foi possível iniciar". |
+| V-10.3 🔴 | Conclua 3 séries (uma com vírgula, ex.: `42,5`). | Cada uma vira concluída na hora, **sem mensagem de erro**; o indicador continua Offline. | Erro ao concluir, ou série não fica concluída. |
+| V-10.4 🔴 | Ainda em avião, **feche o app à força** (deslizar para fora) e reabra. | O Início mostra **TREINO EM ANDAMENTO** com o progresso; **Continuar treino** abre o executor com as 3 séries **ainda concluídas**. | Treino sumiu, séries perdidas, ou deixa iniciar outro treino. |
+| V-10.5 🔴 | **Pausar treino**, espere 1 min, **Retomar treino**. | O aviso "Treino pausado…" aparece e some; sem erro. | Erro, ou a pausa não some. |
+| V-10.6 🔴 | **+ série** e conclua-a; depois **Finalizar treino** (confirme). | Abre o resumo com os números certos (séries, exercícios, volume). | Número errado, ou erro. |
+| V-10.7 🔴 | Desative o modo avião e **fique no app** (ou saia e volte a ele). | O indicador passa por **Pendente de sincronização** e termina em **Sincronizado** em até ~30 s (o app tenta enviar sozinho a cada 30 s enquanto houver registro esperando; **Tentar novamente** tenta na hora). | Fica pendente para sempre, ou mostra erro sem saída. |
+| V-10.8 🔴 | Abra a Evolução / o histórico. | O treino está lá **uma única vez**, com a **duração sem o tempo de pausa** e as séries/valores que você registrou. | Duplicado, valor diferente, ou duração contando a pausa. |
+| V-10.9 🔴 | Repita um treino offline, mas **ligue e desligue o modo avião várias vezes** durante o envio. | No fim há **um** treino no histórico, sem séries repetidas. | Treino ou séries em duplicidade. |
+| V-10.10 🔴 | Em avião, no executor, toque em **+ exercício** e busque. | Aviso claro de que precisa de conexão; **o treino e os registros continuam intactos**. | Perde o treino, trava, ou fecha o app. |
+| V-10.11 🟡 | Treino iniciado **com rede**; corte a rede no meio (avião) e continue registrando; religue ao fim. | Continua sem erro e sincroniza no fim, sem duplicar. | Erro ao registrar, ou duplicidade. |
+| V-10.12 🟡 | Em avião, **Descartar treino** (confirme) e religue a rede. | O treino cancelado **não aparece** no histórico nem na semana. | Aparece como concluído. |
+
+### R11 — Conflitos e sair da conta (E08-05, E08-06, E08-09)
+
+Os testes V-11.1 a V-11.3 precisam de **dois aparelhos** (ou um aparelho e um emulador) na mesma conta, porque o conflito só existe quando **outro dispositivo** gravou valores diferentes na mesma série. Por isso são 🟡. Os demais são 🔴 e funcionam com um só.
+
+| ID | Passos | Esperado | Reprova se |
+|---|---|---|---|
+| V-11.1 🟡 | Aparelho A, **offline**: registre uma série (60 kg × 10) de um treino que o servidor já conhece. Aparelho B, **online**, na mesma série: registre outro valor (55 kg × 8) **depois**. Religue o A. | O A mostra **Conflito — revisar** e o aviso com a quantidade; **Revisar registros** lista a série com **os dois lados** ("Neste dispositivo: 60 kg × 10" / "No servidor: 55 kg × 8"). | Sobrescreve em silêncio, ou não avisa. |
+| V-11.2 🟡 | **Manter o meu**. | A operação some da revisão, o indicador volta a Sincronizado e o servidor passa a ter 60 × 10. | Continua em conflito para sempre. |
+| V-11.3 🟡 | Refaça o conflito e escolha **Usar o do servidor**. | A série local passa a 55 × 8 e o indicador volta a Sincronizado. | Mantém o valor antigo. |
+| V-11.4 🔴 | Em avião, registre uma série e vá a Perfil → **Sair**. | **Não sai.** Painel "Antes de sair" com a contagem de registros ainda no aparelho e as opções **Tentar enviar agora**, **Sair e manter no aparelho**, **Sair e apagar do aparelho** e **Cancelar**. | Sai sem avisar, ou perde o registro. |
+| V-11.5 🔴 | **Sair e manter no aparelho**. Religue a rede e **entre de novo com a mesma conta**. | Entra, o envio acontece sozinho e o treino aparece no histórico. | O registro some. |
+| V-11.6 🔴 | Repita a pendência e escolha **Sair e apagar do aparelho**. | Pede confirmação explicando que é definitivo. Ao entrar de novo, o treino **não existe**. | Apaga sem confirmar. |
+| V-11.7 🔴 | Deixe pendências de uma conta e **entre com outra conta** no mesmo aparelho. | A outra conta **não vê nem envia** os registros da primeira. | Mistura de contas. |
+| V-11.8 🔴 | Com tudo sincronizado, toque em **Sair**. | Sai direto, sem painel. | Pergunta sem necessidade, ou não sai. |
+| V-11.9 🟡 | Depois de sincronizar um treino feito offline, reabra-o (histórico → resumo). | Os números conferem com o que o servidor calculou (duração com a pausa descontada). | Divergência entre o aparelho e o servidor. |
+
 ---
 
 ## 3. Quadro de resultados
@@ -229,6 +307,11 @@ Copie e preencha (uma cópia por aparelho). **P**/**F**/**N/A** e uma observaç�
 | V-04.1 … V-04.4 |  |  |  |
 | V-05.1 … V-05.12 |  |  |  |
 | V-06.1 … V-06.4 |  |  |  |
+| V-07.1 … V-07.9 |  |  |  |
+| V-08.1 … V-08.8 |  |  |  |
+| V-09.1 … V-09.7 |  |  |  |
+| V-10.1 … V-10.10 |  |  | testar em avião de verdade |
+| V-11.4 … V-11.8 |  |  |  |
 
 ---
 
@@ -256,6 +339,19 @@ Não coloque senhas, tokens nem e-mails reais no relato.
 | E06-03 (Meus treinos) | V-05.1, V-05.2, V-06.4 |
 | E06-04 (editor de programa e ficha) | V-05.3, V-05.4, V-05.7 a V-05.12 |
 | E06-05 (configurar exercício) | V-05.5, V-05.6 |
+| E05-03 (Início) | V-07.2 a V-07.5, V-07.9 |
+| E04-03 (abas e voltar ao treino) | V-07.1, V-07.5, V-07.7, V-07.8 |
+| E04-04 (SyncStatus, semana, números) | V-07.9, V-10.1, V-10.7 |
+| E09-03 (Evolução e histórico) | V-08.1 a V-08.5, V-08.7, V-08.8 |
+| E06-08 (ativar, trocar, arquivar) | V-09.1 a V-09.3 |
+| E07-04 (ficha e iniciar) e metas D-14 | V-09.4 a V-09.7 |
+| E08-01, E08-02, E08-03 (banco, cache, fila) | V-10.1 a V-10.3, V-10.7 a V-10.10 |
+| E07-11 (recuperar o treino) | V-10.4 |
+| E07-08 (pausar, retomar, descartar) | V-10.5 |
+| E08-07 (estado de sincronização) | V-10.1, V-10.7 |
+| E08-05 (conflitos) | V-11.1 a V-11.3 (precisam de dois aparelhos; sem eles a história fica "em andamento") |
+| E08-06 (reconciliação) | V-10.8, V-11.9 |
+| E08-09 (sair da conta) | V-11.4 a V-11.8 |
 
 Regra: **todos os 🔴 da história em um Android e em um iPhone**. Se faltar um dos dois SO, a história continua "em andamento" com a nota do que falta. Falhas viram defeitos (§4) e a história volta a ser marcada depois da correção e de uma nova rodada só dos testes que falharam.
 
@@ -283,3 +379,4 @@ adb logcat *:E ReactNativeJS:V
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0 | 22/10/2026 | Primeira versão: preparação, 6 roteiros, quadro de resultados e critério de conclusão para as histórias do app já entregues. |
+| 2.0 | 23/10/2026 | Cinco roteiros novos (R7 Início e abas, R8 Evolução, R9 programa ativo e metas, R10 offline completo, R11 conflitos e sair da conta); textos atualizados onde as telas mudaram (Sair no Perfil, Treinos como aba, executor offline, cartão de treino em andamento); quadro e critérios estendidos. |

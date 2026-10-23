@@ -36,6 +36,9 @@ type LocalData = {
   erase: (() => Promise<void>) | null;
 };
 
+/** Intervalo entre tentativas de envio enquanto houver registros esperando. */
+const RETRY_MS = 30_000;
+
 const IDLE: LocalData = { ready: true, today: null, workout: null, engine: null, queue: null, review: null, erase: null };
 const LocalDataContext = createContext<LocalData>(IDLE);
 
@@ -127,15 +130,27 @@ export function LocalDataProvider({ children }: { children: ReactNode }) {
   }, [userId, api]);
 
   const engine = opened?.userId === userId ? opened?.data.engine : null;
+  const queue = opened?.userId === userId ? opened?.data.queue : null;
   useEffect(() => {
-    if (!engine) {
+    if (!engine || !queue) {
       return;
     }
     const flush = () => void engine.flush().catch(() => undefined);
     flush();
     const subscription = AppState.addEventListener('change', (state) => state === 'active' && flush());
-    return () => subscription.remove();
-  }, [engine]);
+    // Sem sinal de rede disponível, a única forma de saber que a conexão voltou é tentar: enquanto houver registros
+    // esperando, tenta de novo a cada 30 s (o envio só fala com o servidor se houver fila).
+    const timer = setInterval(() => {
+      queue
+        .counts()
+        .then((counts) => counts.pendente + counts.enviando > 0 && flush())
+        .catch(() => undefined);
+    }, RETRY_MS);
+    return () => {
+      subscription.remove();
+      clearInterval(timer);
+    };
+  }, [engine, queue]);
 
   const value = useMemo<LocalData>(() => {
     if (userId === null) {
