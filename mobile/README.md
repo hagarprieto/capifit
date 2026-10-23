@@ -29,6 +29,14 @@ npm run mock:api       # servidor mock do contrato em http://localhost:4010 (Pri
 - **Sessão:** tokens ficam só no armazenamento seguro do aparelho (`expo-secure-store`: Keychain/Keystore), nunca em log nem em estado de tela. `src/auth/authCore.ts` renova com uma chamada por vez; o app restaura a sessão ao abrir, inclusive sem rede (o treino não depende da conexão). O identificador do aparelho é criado uma vez e sobrevive ao logout.
 - **Rotas por sessão:** `src/app/_layout.tsx` usa `Stack.Protected`: sem sessão só as telas de entrada (`boas-vindas`, `entrar`, `cadastrar`, `recuperar`); com sessão a área logada. O link do e-mail abre `redefinir-senha?token=…` (esquema `capifit://`). O guard só esconde telas: a autorização é do servidor.
 
+## Banco local (E08-01)
+
+- **O que é:** SQLite do aparelho (`expo-sqlite`) em `src/data/local`. Guarda a sessão de treino (exercícios, séries e pausas no mesmo formato da API), a **fila de operações** a enviar (`/sync/push`) e um cache JSON por chave. Tudo é separado por usuário: dois usuários no mesmo aparelho nunca se enxergam.
+- **Migrações:** `migrations.ts`, versão em `PRAGMA user_version`. Cada passo roda em transação com a troca da versão; se falhar, volta atrás. **Nunca edite uma migração publicada**, acrescente outra ao fim. Banco mais novo que o app (volta de versão) não é alterado: lança `DatabaseTooNewError` para não apagar dados de treino.
+- **Repositórios:** `sessionsRepo` (salvar a sessão inteira de uma vez, abrir a em andamento, histórico, atualizar série, concluir, marcar como confirmada), `queueRepo` (ordem por `sequencia`, `operacao_uuid` estável, enviando/aplicada, rejeitada e conflito ficam para revisão, retomar o que ficou "enviando" se o app fechou) e `cacheRepo`.
+- **Abrir:** `openLocalDb()` (`open.ts`) abre uma vez, liga chaves estrangeiras e migra. Os repositórios só dependem da interface `LocalDb`; nos testes ela vem do `node:sqlite` em memória (`memoryDb.ts`, nunca vai para o pacote do app), então as consultas são testadas em SQLite de verdade. O CI usa Node 22 por isso.
+- **Fora desta entrega:** nada do app usa o banco ainda. O cache do treino do dia (E08-02), a fila funcionando com envio e conflitos (E08-03) e a recuperação da sessão ao reabrir (E07-11) vêm a seguir. O adaptador do `expo-sqlite` (`fromExpo`) só foi validado pelos tipos: falta rodar num aparelho.
+
 ## Abas (E04-03)
 
 - **Estrutura:** `src/app/(tabs)` tem as quatro abas fixas do Doc 03 §3.1: Início, Treinos (`/programas`), Evolução e Perfil. Telas de detalhe, edição e execução ficam no stack da raiz, por cima das abas (a barra some nelas). A barra é própria (`features/shell/AppTabBar.tsx`), com texto sempre visível e alvo de toque mínimo.
