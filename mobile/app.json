@@ -27,7 +27,8 @@
       "expo-font",
       "expo-splash-screen",
       "expo-secure-store",
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-asset"
     ],
     "scheme": "capifit",
     "backgroundColor": "#0D1117",

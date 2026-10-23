@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
+import { LocalDataProvider } from '@/data/LocalDataProvider';
 import { ThemeProvider, useTheme } from '@/design-system/ThemeProvider';
 
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -68,7 +69,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <ThemedStack fontsReady={fontsLoaded || fontError !== null} />
+        <LocalDataProvider>
+          <ThemedStack fontsReady={fontsLoaded || fontError !== null} />
+        </LocalDataProvider>
       </AuthProvider>
     </ThemeProvider>
   );

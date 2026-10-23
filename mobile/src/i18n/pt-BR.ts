@@ -148,6 +148,7 @@ export const ptBR = {
   'inicio.tempoSemanaFalado': 'Tempo de treino na semana: {tempo}',
   'inicio.ultima': 'Última sessão: {data} · {duracao}',
   'inicio.nenhumaSessao': 'Você ainda não concluiu nenhum treino. A semana começa a contar quando terminar o primeiro.',
+  'inicio.dadosSalvos': 'Sem conexão: mostrando o programa salvo neste aparelho em {data}. Ele atualiza quando a conexão voltar.',
   'inicio.erroResumo': 'Não foi possível atualizar o resumo agora. Verifique a conexão.',
   'home.iniciarAvulso': 'Iniciar treino avulso',
   'home.continuar': 'Continuar treino em andamento',

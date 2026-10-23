@@ -17,6 +17,9 @@ jest.mock('expo-router', () => ({
 const mockAuth = { user: { id: 'u1', nome: 'Ana' }, offline: false, signOut: jest.fn(), api: {} };
 jest.mock('@/auth/AuthProvider', () => ({ useAuth: () => mockAuth }));
 
+let mockLocal: { ready: boolean; today: unknown } = { ready: true, today: null };
+jest.mock('@/data/LocalDataProvider', () => ({ useLocalData: () => mockLocal }));
+
 // Quinta-feira, 22/10/2026, 12h (horário local do aparelho).
 const NOW = new Date(2026, 9, 22, 12, 0, 0);
 
@@ -61,6 +64,7 @@ async function show(api: WorkoutApi, programs: ProgramsApi) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockAuth.offline = false;
+  mockLocal = { ready: true, today: null };
 });
 
 describe('regras da semana', () => {
@@ -194,6 +198,25 @@ describe('HomeScreen', () => {
     expect(await screen.findByText('Não foi possível iniciar o treino agora. Tente de novo.')).toBeTruthy();
     await act(async () => undefined);
     expect(screen.getByRole('button', { name: 'Iniciar treino avulso' })).toBeTruthy();
+  });
+
+  it('sem rede mostra o programa salvo no aparelho e avisa de quando é', async () => {
+    const stored = { active: ACTIVE, lastRecords: {}, savedAt: new Date(2026, 9, 20, 9).toISOString() };
+    mockLocal = { ready: true, today: { read: jest.fn().mockResolvedValue(stored), save: jest.fn(), clear: jest.fn() } };
+    const offline = { active: jest.fn().mockRejectedValue(new ApiError({ status: 0, code: 'NETWORK_ERROR', message: '' })) } as unknown as ProgramsApi;
+    await show(workoutApi(), offline);
+
+    expect(await screen.findByText('Sem conexão: mostrando o programa salvo neste aparelho em 20/10. Ele atualiza quando a conexão voltar.')).toBeTruthy();
+    expect(screen.getByText('Próximo: Treino A')).toBeTruthy();
+  });
+
+  it('espera o banco local abrir antes de buscar', async () => {
+    mockLocal = { ready: false, today: null };
+    const api = workoutApi();
+    await show(api, programsApi(null));
+
+    expect(await screen.findByText('Carregando o início…')).toBeTruthy();
+    expect(api.openSessionSummary).not.toHaveBeenCalled();
   });
 
   it('offline avisa e mostra o estado de sincronização', async () => {

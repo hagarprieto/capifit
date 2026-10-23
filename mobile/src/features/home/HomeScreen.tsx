@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { useAuth } from '@/auth/AuthProvider';
+import { loadActiveWithCache } from '@/data/cache/todayWorkout';
+import { useLocalData } from '@/data/LocalDataProvider';
 import { Button } from '@/design-system/Button';
 import { Notice } from '@/design-system/Notice';
 import { OriginBadge } from '@/design-system/OriginBadge';
@@ -16,7 +18,7 @@ import { t } from '@/i18n';
 
 import { formatDuration, formatShortDate, nextFicha, weekDays, weekStats, type SessionSummary } from './home';
 
-type Data = { open: SessionSummary | null; active: ActiveProgram | null; completed: SessionSummary[]; failed: boolean };
+type Data = { open: SessionSummary | null; active: ActiveProgram | null; completed: SessionSummary[]; failed: boolean; savedAt: string | null };
 
 /**
  * TEL-010: Início. Mostra, por prioridade, o treino em andamento, a próxima ficha do programa ativo ou o convite para
@@ -30,27 +32,32 @@ export function HomeScreen({ api, programsApi: programsOverride, now }: { api?: 
   const { user, offline } = auth;
   const workoutApi = useMemo(() => api ?? createWorkoutApi(auth.api), [api, auth.api]);
   const programsApi = useMemo(() => programsOverride ?? createProgramsApi(auth.api), [programsOverride, auth.api]);
+  const { ready, today } = useLocalData();
   const [data, setData] = useState<Data | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [starting, setStarting] = useState<'ficha' | 'avulso' | null>(null);
   const [startFailed, setStartFailed] = useState(false);
 
   useEffect(() => {
+    if (!ready) {
+      return; // espera o banco local abrir (rápido) para já ler o programa salvo se estiver sem rede
+    }
     let cancelled = false;
-    Promise.allSettled([workoutApi.openSessionSummary(), programsApi.active(), workoutApi.recentCompleted()]).then(([open, active, completed]) => {
+    Promise.allSettled([workoutApi.openSessionSummary(), loadActiveWithCache({ programsApi, workoutApi, today }), workoutApi.recentCompleted()]).then(([open, active, completed]) => {
       if (!cancelled) {
         setData({
           open: open.status === 'fulfilled' ? open.value : null,
-          active: active.status === 'fulfilled' ? active.value : null,
+          active: active.status === 'fulfilled' ? active.value.active : null,
           completed: completed.status === 'fulfilled' ? completed.value : [],
           failed: [open, active, completed].some((r) => r.status === 'rejected'),
+          savedAt: active.status === 'fulfilled' && active.value.fromCache ? active.value.savedAt : null,
         });
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [workoutApi, programsApi, attempt]);
+  }, [workoutApi, programsApi, today, ready, attempt]);
 
   // Ao voltar de outra tela (treino concluído, programa ativado…), atualiza sem piscar o carregamento.
   const first = useRef(true);
@@ -104,6 +111,7 @@ export function HomeScreen({ api, programsApi: programsOverride, now }: { api?: 
           <Button label={t('treino.tentarDeNovo')} variant="secondary" onPress={() => { setData(null); setAttempt((n) => n + 1); }} />
         </>
       ) : null}
+      {data?.savedAt ? <Notice kind="info" message={t('inicio.dadosSalvos', { data: formatShortDate(data.savedAt) })} /> : null}
       {startFailed ? <Notice kind="error" message={t('home.erroIniciar')} /> : null}
 
       {data === null ? (
