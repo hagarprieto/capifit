@@ -147,6 +147,13 @@ export function ProgramDetailScreen({ api }: { api?: ProgramsApi }) {
                   {t('programas.exercicioSeries', { nome: item.exercicio.nome, series: item.series.length })}
                 </Text>
               ))}
+              {version?.estado === 'publicado' ? (
+                <Button
+                  label={t('programas.abrirFicha', { nome: ficha.titulo })}
+                  variant="secondary"
+                  onPress={() => router.push({ pathname: '/programas/[uuid]/ficha/[fichaId]', params: { uuid: program.id, fichaId: ficha.id } })}
+                />
+              ) : null}
             </View>
           ))}
         </View>

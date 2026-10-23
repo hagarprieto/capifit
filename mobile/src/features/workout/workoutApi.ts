@@ -18,26 +18,45 @@ const nowIso = () => new Date().toISOString();
 export function createWorkoutApi(api: ApiClient) {
   const exercises = createExercisesApi(api);
 
+  async function openSummary(): Promise<Schemas['SessaoResumo'] | null> {
+    const result = await api.get<Schemas['SessaoResumo'][]>('/me/sessoes', { query: { status: 'em_andamento', limit: 1 } });
+    return result.data[0] ?? null;
+  }
+
+  async function startSession(extra: { ficha_uuid?: string }): Promise<string> {
+    const sessionUuid = newUuid();
+    try {
+      await api.post('/me/sessoes', { sessao_uuid: sessionUuid, iniciada_em: nowIso(), ...extra }, { idempotencyKey: true });
+      return sessionUuid;
+    } catch (error) {
+      const open = isApiError(error) && error.code === 'SESSION_ALREADY_OPEN' ? error.details.sessao_uuid : null;
+      if (typeof open === 'string') {
+        return open;
+      }
+      throw error;
+    }
+  }
+
   return {
+    /** Resumo da sessão em andamento (com a ficha de origem, se for programada), ou `null`. */
+    openSessionSummary: openSummary,
+
     /** UUID da sessão em andamento, se houver. */
     async openSession(): Promise<string | null> {
-      const result = await api.get<Schemas['SessaoResumo'][]>('/me/sessoes', { query: { status: 'em_andamento', limit: 1 } });
-      return result.data[0]?.id ?? null;
+      return (await openSummary())?.id ?? null;
     },
 
     /** Inicia um treino avulso. Se já houver um aberto, devolve o dele (o servidor aceita só um por vez). */
     async startFreeWorkout(): Promise<string> {
-      const sessionUuid = newUuid();
-      try {
-        await api.post('/me/sessoes', { sessao_uuid: sessionUuid, iniciada_em: nowIso() }, { idempotencyKey: true });
-        return sessionUuid;
-      } catch (error) {
-        const open = isApiError(error) && error.code === 'SESSION_ALREADY_OPEN' ? error.details.sessao_uuid : null;
-        if (typeof open === 'string') {
-          return open;
-        }
-        throw error;
-      }
+      return startSession({});
+    },
+
+    /**
+     * Inicia um treino a partir de uma ficha de versão publicada: o servidor copia exercícios e séries prescritas.
+     * Se já houver um treino aberto, devolve o dele (quem chama decide se avisa; a tela de ficha já checa antes).
+     */
+    async startProgrammedWorkout(fichaUuid: string): Promise<string> {
+      return startSession({ ficha_uuid: fichaUuid });
     },
 
     async getSession(sessionUuid: string): Promise<Session> {

@@ -236,6 +236,14 @@ export const ptBR = {
   'programas.arquivarConfirma': 'Arquivar',
   'programas.arquivadoAviso': 'Programa arquivado: fica guardado com o histórico, sem ações.',
   'programas.erroAcao': 'Não foi possível concluir agora. Tente de novo.',
+  'programas.abrirFicha': 'Abrir a ficha {nome}',
+
+  'ficha.carregando': 'Carregando a ficha…',
+  'ficha.erroCarregar': 'Não foi possível abrir a ficha. Verifique a conexão e tente de novo.',
+  'ficha.iniciar': 'Iniciar {nome}',
+  'ficha.continuar': 'Continuar este treino',
+  'ficha.outroTreinoAberto': 'Você já tem um treino em andamento ({titulo}). Termine ou continue esse antes de iniciar outro.',
+  'ficha.erroIniciar': 'Não foi possível iniciar o treino agora. Tente de novo.',
   'programas.editar': 'Editar programa',
 
   'editor.titulo': 'Editar programa',
