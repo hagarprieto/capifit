@@ -124,6 +124,14 @@ export function createWorkoutApi(api: ApiClient) {
       return result.data;
     },
 
+    /**
+     * Remove uma série do treino em andamento (ex.: "+ série" tocado sem querer). Só sai uma série pendente ou extra; uma
+     * série da prescrição já realizada fica (histórico). Repetir é seguro.
+     */
+    async removeSeries(sessionUuid: string, seriesId: string): Promise<void> {
+      await api.delete(`/me/sessoes/${sessionUuid}/series/${seriesId}`);
+    },
+
     /** Acrescenta um exercício do catálogo ao treino (depois do último). Recebe o resumo para poder gravá-lo também no aparelho. */
     async addExercise(sessionUuid: string, exercise: ExerciseSummary): Promise<SessionItem> {
       const result = await api.post<SessionItem>(`/me/sessoes/${sessionUuid}/exercicios`, { uuid: newUuid(), exercicio_uuid: exercise.id });

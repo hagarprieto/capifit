@@ -233,6 +233,24 @@ export function createSessionsRepo(db: LocalDb, userUuid: string) {
       return created;
     },
 
+    /** Pode remover? Uma série é removível se está pendente ou se foi criada durante o treino (não vem da prescrição). `null` = não existe aqui. */
+    async isSeriesRemovable(seriesUuid: string): Promise<boolean | null> {
+      const row = await db.getFirstAsync<{ status: string; serie_prescrita_uuid: string | null }>(
+        `SELECT ss.status, ss.serie_prescrita_uuid FROM sessao_serie ss JOIN sessao_exercicio se ON se.uuid = ss.sessao_exercicio_uuid JOIN sessao s ON s.uuid = se.sessao_uuid
+          WHERE ss.uuid = ? AND s.usuario_uuid = ?`,
+        [seriesUuid, userUuid],
+      );
+      return row ? row.status !== 'realizada' || row.serie_prescrita_uuid === null : null;
+    },
+
+    /** Apaga a série da cópia local (só se for removível). */
+    async removeSeries(seriesUuid: string): Promise<boolean> {
+      if ((await this.isSeriesRemovable(seriesUuid)) !== true) {
+        return false;
+      }
+      return (await db.runAsync('DELETE FROM sessao_serie WHERE uuid = ?', [seriesUuid])).changes > 0;
+    },
+
     /** A pausa em aberto da sessão, se houver. */
     async openPause(sessionUuid: string): Promise<{ id: string; iniciada_em: string } | null> {
       const row = await db.getFirstAsync<{ uuid: string; iniciada_em: string }>(

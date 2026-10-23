@@ -2689,6 +2689,46 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '429':
           $ref: '#/components/responses/RateLimited'
+    delete:
+      tags:
+        - Sessoes
+      operationId: serieDelete
+      summary: Remover série do treino em andamento
+      description: >-
+        Remove uma série ainda pendente, ou uma série extra criada durante o treino (ex.: "+ série" tocado sem querer).
+        Uma série da prescrição que já foi realizada não pode ser removida (422). Idempotente: se a série já não existe
+        responde 204. 409 `SESSION_CLOSED` se a sessão estiver encerrada.
+      x-papeis:
+        - aluno
+      x-fase: '1'
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: serie_uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Removida (ou já não existia).
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /me/sessoes/{uuid}/series:
     post:
       tags:

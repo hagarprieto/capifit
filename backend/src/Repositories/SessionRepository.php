@@ -338,7 +338,7 @@ final class SessionRepository
     {
         return $this->db->fetchOne(
             'SELECT ss.id, ss.uuid, ss.sessao_exercicio_id, ss.ordem, ss.tipo, ss.carga_kg, ss.repeticoes, ss.duracao_segundos, ss.rir_real,
-                    ss.status, ss.concluida_em, ss.revision, ss.atualizado_cliente_em, ss.dispositivo_id, e.modalidade
+                    ss.status, ss.concluida_em, ss.revision, ss.atualizado_cliente_em, ss.dispositivo_id, ss.serie_prescrita_id, e.modalidade
                FROM sessoes_series ss
                JOIN sessoes_exercicios se ON se.id = ss.sessao_exercicio_id
                JOIN exercicios e ON e.id = se.exercicio_id
@@ -347,6 +347,11 @@ final class SessionRepository
             $sessionId,
             $uuid,
         );
+    }
+
+    public function deleteSeries(int $seriesId): void
+    {
+        $this->db->execute('DELETE FROM sessoes_series WHERE id = ?', 'i', $seriesId);
     }
 
     public function nextSeriesOrder(int $sessionExerciseId): int

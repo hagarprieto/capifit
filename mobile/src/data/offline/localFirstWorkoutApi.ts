@@ -93,6 +93,23 @@ export function createLocalFirstWorkoutApi({ remote, sessions, queue, engine, to
     flushLater();
   }
 
+  /** Tira a série do que ainda não foi enviado: a criação dela na fila, ou ela dentro do snapshot do treino ainda não enviado. */
+  async function removeUnsent(sessionUuid: string, seriesId: string): Promise<boolean> {
+    if (await queue.hasPending('sessao_serie', seriesId, 'criar')) {
+      await queue.removePendingForEntity(seriesId);
+      return true;
+    }
+    const create = await queue.pendingSessionCreate(sessionUuid);
+    const exercises = (create?.payload.exercicios ?? null) as { series: { uuid: string }[] }[] | null;
+    if (create && exercises?.some((item) => item.series.some((series) => series.uuid === seriesId))) {
+      const trimmed = exercises.map((item) => ({ ...item, series: item.series.filter((series) => series.uuid !== seriesId) }));
+      await queue.updatePendingPayload(create.operacao_uuid, { ...create.payload, exercicios: trimmed });
+      await queue.removePendingForEntity(seriesId);
+      return true;
+    }
+    return false;
+  }
+
   async function pauseLocally(sessionUuid: string): Promise<Schemas['Pausa']> {
     const existing = await sessions.openPause(sessionUuid);
     if (existing) {
@@ -336,6 +353,26 @@ export function createLocalFirstWorkoutApi({ remote, sessions, queue, engine, to
         }
         throw error;
       }
+    },
+
+    async removeSeries(sessionUuid: string, seriesId: string) {
+      const removable = await sessions.isSeriesRemovable(seriesId);
+      if (removable === false) {
+        throw new Error('Esta série não pode ser removida.');
+      }
+      if (removable === true) {
+        if (await queue.hasInFlight(seriesId)) {
+          throw new Error('A série está sendo enviada agora; tente de novo em instantes.');
+        }
+        // Ainda não chegou ao servidor: basta desfazer o que está na fila (funciona sem rede).
+        if (await removeUnsent(sessionUuid, seriesId)) {
+          await sessions.removeSeries(seriesId);
+          return;
+        }
+      }
+      // O servidor já conhece a série: remover exige conexão.
+      await remote.removeSeries(sessionUuid, seriesId);
+      await sessions.removeSeries(seriesId).catch(() => undefined);
     },
 
     async pause(sessionUuid: string) {

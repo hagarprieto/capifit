@@ -962,7 +962,11 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Remover série do treino em andamento
+         * @description Remove uma série ainda pendente, ou uma série extra criada durante o treino (ex.: "+ série" tocado sem querer). Uma série da prescrição que já foi realizada não pode ser removida (422). Idempotente: se a série já não existe responde 204. 409 `SESSION_CLOSED` se a sessão estiver encerrada.
+         */
+        delete: operations["serieDelete"];
         options?: never;
         head?: never;
         /**
@@ -4251,6 +4255,33 @@ export interface operations {
                         meta?: components["schemas"]["Meta"];
                     };
                 };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    serieDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                uuid: string;
+                serie_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removida (ou já não existia). */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthenticated"];

@@ -64,6 +64,20 @@ final class SessionController
         ));
     }
 
+    public function removeSeries(ServerRequestInterface $request): ResponseInterface
+    {
+        $user = $this->user($request);
+        $uuid = $this->param($request, 'uuid');
+        $seriesUuid = $this->param($request, 'serie_uuid');
+        $this->db->transaction(function () use ($user, $uuid, $seriesUuid): bool {
+            $this->sessions->removeSeries($user, $uuid, $seriesUuid);
+
+            return true;
+        });
+
+        return ApiResponse::noContent();
+    }
+
     public function addSeries(ServerRequestInterface $request): ResponseInterface
     {
         $user = $this->user($request);

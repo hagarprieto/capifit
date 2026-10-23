@@ -101,6 +101,7 @@ final class Kernel
             ->add('GET', '/me/sessoes/{uuid}', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->show($r))
             ->add('PATCH', '/me/sessoes/{uuid}', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->update($r))
             ->add('PATCH', '/me/sessoes/{uuid}/series/{serie_uuid}', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->updateSeries($r))
+            ->add('DELETE', '/me/sessoes/{uuid}/series/{serie_uuid}', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->removeSeries($r))
             ->add('POST', '/me/sessoes/{uuid}/series', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->addSeries($r))
             ->add('POST', '/me/sessoes/{uuid}/exercicios', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->addExercise($r))
             ->add('POST', '/me/sessoes/{uuid}/concluir', fn (ServerRequestInterface $r): ResponseInterface => $this->sessionController()->complete($r))

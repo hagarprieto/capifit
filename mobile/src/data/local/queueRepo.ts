@@ -133,6 +133,34 @@ export function createQueueRepo(db: LocalDb, userUuid: string) {
       return created;
     },
 
+    /** Há, para esta entidade, uma operação desse tipo que ainda NÃO foi enviada? */
+    async hasPending(entidade: QueueEntity, entidadeUuid: string, tipo: QueueType): Promise<boolean> {
+      const row = await db.getFirstAsync<{ total: number }>("SELECT COUNT(*) AS total FROM fila_operacao WHERE usuario_uuid = ? AND entidade = ? AND entidade_uuid = ? AND tipo = ? AND estado = 'pendente'", [userUuid, entidade, entidadeUuid, tipo]);
+      return (row?.total ?? 0) > 0;
+    },
+
+    /** Há operação desta entidade a caminho do servidor agora (enviando)? Não dá para desfazer sem saber o resultado. */
+    async hasInFlight(entidadeUuid: string): Promise<boolean> {
+      const row = await db.getFirstAsync<{ total: number }>("SELECT COUNT(*) AS total FROM fila_operacao WHERE usuario_uuid = ? AND entidade_uuid = ? AND estado = 'enviando'", [userUuid, entidadeUuid]);
+      return (row?.total ?? 0) > 0;
+    },
+
+    /** A criação do treino que ainda não foi enviada, se houver. */
+    async pendingSessionCreate(sessionUuid: string): Promise<QueuedOperation | null> {
+      const row = await db.getFirstAsync<Row>("SELECT * FROM fila_operacao WHERE usuario_uuid = ? AND sessao_uuid = ? AND entidade = 'sessao_treino' AND tipo = 'criar' AND estado = 'pendente'", [userUuid, sessionUuid]);
+      return row ? parse(row) : null;
+    },
+
+    /** Troca o conteúdo de uma operação que ainda não foi enviada. */
+    async updatePendingPayload(operacaoUuid: string, payload: Record<string, unknown>): Promise<boolean> {
+      return (await db.runAsync("UPDATE fila_operacao SET payload = ?, atualizada_em = ? WHERE operacao_uuid = ? AND usuario_uuid = ? AND estado = 'pendente'", [JSON.stringify(payload), now(), operacaoUuid, userUuid])).changes > 0;
+    },
+
+    /** Tira da fila as operações ainda não enviadas de uma entidade (o usuário desistiu dela antes de ela chegar ao servidor). */
+    async removePendingForEntity(entidadeUuid: string): Promise<number> {
+      return (await db.runAsync("DELETE FROM fila_operacao WHERE usuario_uuid = ? AND entidade_uuid = ? AND estado = 'pendente'", [userUuid, entidadeUuid])).changes;
+    },
+
     /** Tira da fila todas as operações de uma sessão (o treino foi descartado neste aparelho). */
     async removeForSession(sessionUuid: string): Promise<number> {
       return (await db.runAsync('DELETE FROM fila_operacao WHERE usuario_uuid = ? AND sessao_uuid = ?', [userUuid, sessionUuid])).changes;

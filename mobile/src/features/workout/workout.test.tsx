@@ -74,6 +74,7 @@ function fakeApi(over: Partial<WorkoutApi> = {}): WorkoutApi {
     lastRecords: jest.fn().mockResolvedValue({ 'ex-supino': last }),
     completeSeries: jest.fn().mockImplementation(async (_s: string, id: string, values: object) => serie(id, Number(id.slice(1)), { status: 'realizada', ...values })),
     addSeries: jest.fn().mockImplementation(async () => serie('s-novo', 4)),
+    removeSeries: jest.fn().mockResolvedValue(undefined),
     addExercise: jest.fn().mockResolvedValue({ id: 'item-novo' }),
     replaceExercise: jest.fn().mockResolvedValue({ id: 'item-troca' }),
     finish: jest.fn().mockResolvedValue(undefined),
@@ -191,6 +192,45 @@ describe('WorkoutScreen', () => {
     expect(screen.getByText('Prancha')).toBeTruthy();
     expect(screen.getByLabelText('Tempo em segundos, série 1 de Prancha')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Próximo' }).props.accessibilityState.disabled).toBe(true);
+  });
+
+  it('remover série tira a última série pendente (adição acidental) sem pedir confirmação', async () => {
+    const api = fakeApi();
+    await ready(api);
+    await fireEvent.press(screen.getByRole('button', { name: '+ série' }));
+    await screen.findByLabelText('Carga em kg, série 4 de Supino reto');
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Remover série' }));
+
+    await waitFor(() => expect(api.removeSeries).toHaveBeenCalledWith('sessao-1', 's-novo'));
+    await waitFor(() => expect(screen.queryByLabelText('Carga em kg, série 4 de Supino reto')).toBeNull());
+    expect(screen.getByLabelText('Carga em kg, série 3 de Supino reto')).toBeTruthy();
+  });
+
+  it('remover uma série já concluída pede confirmação antes de apagar', async () => {
+    const api = fakeApi();
+    await ready(api);
+    await fireEvent.press(screen.getByRole('button', { name: /Concluir série 1 de Supino reto/ }));
+    await screen.findByLabelText(/Série 1 de Supino reto concluída/);
+    await fireEvent.press(screen.getByRole('button', { name: /Concluir série 2 de Supino reto/ }));
+    await fireEvent.press(screen.getByRole('button', { name: /Concluir série 3 de Supino reto/ }));
+    await screen.findByLabelText(/Série 3 de Supino reto concluída/);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Remover série' }));
+    expect(api.removeSeries).not.toHaveBeenCalled();
+    await fireEvent.press(await screen.findByRole('button', { name: 'Remover' }));
+
+    await waitFor(() => expect(api.removeSeries).toHaveBeenCalledWith('sessao-1', 's3'));
+  });
+
+  it('falha ao remover avisa e mantém a série', async () => {
+    const api = fakeApi({ removeSeries: jest.fn().mockRejectedValue(new Error('rede')) });
+    await ready(api);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Remover série' }));
+
+    expect(await screen.findByText(/Sem conexão. Para remover/)).toBeTruthy();
+    expect(screen.getByLabelText('Carga em kg, série 3 de Supino reto')).toBeTruthy();
   });
 
   it('finalizar com séries pendentes pede confirmação, conta as pendentes e abre o resumo', async () => {

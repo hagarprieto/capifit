@@ -753,6 +753,25 @@ final class SessionService
     }
 
     /**
+     * Remove uma série do treino em andamento (ex.: "+ série" tocado sem querer). Só sai o que NÃO é um registro da
+     * prescrição: uma série ainda pendente, ou uma série extra criada durante o treino. Uma série prescrita que já foi
+     * realizada não some (ela é histórico do que foi feito: use "corrigir"). Repetir a remoção é seguro: se a série já não
+     * existe, responde como se tivesse removido (o app reenvia depois de uma resposta perdida).
+     */
+    public function removeSeries(AuthenticatedUser $user, string $uuid, string $seriesUuid): void
+    {
+        $session = $this->openOwned($user, $uuid, true);
+        $series = Uuid::isValid($seriesUuid) ? $this->sessions->findSeriesForUpdate((int) $session['id'], strtolower($seriesUuid)) : null;
+        if ($series === null) {
+            return;
+        }
+        if ((string) $series['status'] === 'realizada' && $series['serie_prescrita_id'] !== null) {
+            throw new ApiException(ErrorCode::ValidationError, null, ['fields' => ['serie' => ['Uma série da prescrição que já foi realizada não pode ser removida; corrija os valores.']]]);
+        }
+        $this->sessions->deleteSeries((int) $series['id']);
+    }
+
+    /**
      * @param array<string, mixed> $input
      * @return array<string, mixed>
      */

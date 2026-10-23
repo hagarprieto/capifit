@@ -91,6 +91,7 @@ async function setup(options: { cached?: boolean } = {}) {
     programTargets: jest.fn().mockResolvedValue({}),
     completeSeries: jest.fn().mockRejectedValue(networkError()),
     addSeries: jest.fn().mockRejectedValue(networkError()),
+    removeSeries: jest.fn().mockRejectedValue(networkError()),
     finish: jest.fn().mockRejectedValue(networkError()),
     pause: jest.fn().mockRejectedValue(networkError()),
     resume: jest.fn().mockRejectedValue(networkError()),
@@ -203,6 +204,63 @@ describe('registrar e finalizar no aparelho', () => {
     const last = (await env.queue.pending()).at(-1);
     expect(last).toMatchObject({ entidade: 'sessao_serie', tipo: 'criar', entidade_uuid: extra.id });
     expect(last?.payload).toEqual({ sessao_uuid: id, uuid: extra.id, sessao_exercicio_uuid: item.id });
+    env.db.close();
+  });
+
+  it('remover uma série extra que ainda não foi enviada desfaz a criação na fila (sem rede)', async () => {
+    const env = await setup();
+    const id = await env.api.startProgrammedWorkout(uuid(101));
+    const item = (await env.api.getSession(id)).exercicios[0];
+    const extra = await env.api.addSeries(id, item.id);
+
+    await env.api.removeSeries(id, extra.id);
+
+    expect((await env.api.getSession(id)).exercicios[0].series).toHaveLength(2);
+    expect((await env.queue.pending()).map((o) => o.entidade_uuid)).not.toContain(extra.id);
+    expect(env.remote.removeSeries).not.toHaveBeenCalled();
+    env.db.close();
+  });
+
+  it('remover uma série do treino que ainda não foi enviado tira a série do pedido de criação', async () => {
+    const env = await setup();
+    const id = await env.api.startProgrammedWorkout(uuid(101));
+    const [, second] = (await env.api.getSession(id)).exercicios[0].series;
+
+    await env.api.removeSeries(id, second.id);
+
+    expect((await env.api.getSession(id)).exercicios[0].series).toHaveLength(1);
+    const [created] = await env.queue.pending();
+    const sent = (created.payload.exercicios as { series: { uuid: string }[] }[]).flatMap((item) => item.series.map((s) => s.uuid));
+    expect(sent).not.toContain(second.id);
+    expect(env.remote.removeSeries).not.toHaveBeenCalled();
+    env.db.close();
+  });
+
+  it('série da prescrição já realizada não pode ser removida', async () => {
+    const env = await setup();
+    const id = await env.api.startProgrammedWorkout(uuid(101));
+    const [first] = (await env.api.getSession(id)).exercicios[0].series;
+    await env.api.completeSeries(id, first.id, { carga_kg: 60, repeticoes: 10 });
+
+    await expect(env.api.removeSeries(id, first.id)).rejects.toThrow();
+
+    expect((await env.api.getSession(id)).exercicios[0].series).toHaveLength(2);
+    env.db.close();
+  });
+
+  it('série que o servidor já conhece só é removida com conexão', async () => {
+    const env = await setup();
+    const id = await env.api.startProgrammedWorkout(uuid(101));
+    const extra = await env.api.addSeries(id, (await env.api.getSession(id)).exercicios[0].id);
+    await env.queue.removePendingForEntity(extra.id); // como se o envio já tivesse confirmado
+
+    await expect(env.api.removeSeries(id, extra.id)).rejects.toBeTruthy(); // sem rede
+    expect((await env.api.getSession(id)).exercicios[0].series).toHaveLength(3);
+
+    env.remote.removeSeries.mockResolvedValue(undefined);
+    await env.api.removeSeries(id, extra.id);
+    expect(env.remote.removeSeries).toHaveBeenLastCalledWith(id, extra.id);
+    expect((await env.api.getSession(id)).exercicios[0].series).toHaveLength(2);
     env.db.close();
   });
 

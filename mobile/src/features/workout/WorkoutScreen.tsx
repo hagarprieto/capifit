@@ -41,6 +41,7 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
   const workout = useWorkout(String(uuid), api);
   const [confirming, setConfirming] = useState(false);
   const [discarding, setDiscarding] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const rest = useRestTimer();
   const [autoRest, setAutoRest] = useState(true);
 
@@ -76,6 +77,10 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
 
   const current = workout.items[workout.index];
   const pending = workout.totals.total - workout.totals.done;
+  // A última série que pode sair: pendente, ou extra. Uma série da prescrição já realizada fica (use Corrigir).
+  const removablePosition = current ? current.rows.map((row) => !(row.done && row.series.serie_prescrita_id != null)).lastIndexOf(true) : -1;
+  const removable = current && removablePosition >= 0 ? current.rows[removablePosition] : undefined;
+  const removableNumber = removablePosition + 1;
 
   /** Concluir uma série nova inicia o descanso (se estiver habilitado); corrigir uma série não reinicia. */
   async function completeAndRest(seriesId: string) {
@@ -182,6 +187,7 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Button variant="text" label={t('treino.maisSerie')} onPress={() => void workout.addSeries(current.item.id)} />
+            {removable ? <Button variant="text" label={t('treino.removerSerie')} onPress={() => (removable.done ? setRemoving(true) : void workout.removeSeries(current.item.id, removable.series.id))} /> : null}
             <Button variant="text" label={t('treino.adicionarExercicio')} onPress={addExercise} />
           </View>
           <Button
@@ -215,6 +221,21 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
         loading={workout.finishing}
         onCancel={() => setDiscarding(false)}
         onConfirm={() => void confirmDiscard()}
+      />
+
+      <ConfirmDialog
+        visible={removing}
+        title={t('treino.removerSerieTitulo')}
+        message={t('treino.removerSerieTexto', { numero: removableNumber })}
+        confirmLabel={t('treino.removerSerieConfirma')}
+        destructive
+        onCancel={() => setRemoving(false)}
+        onConfirm={() => {
+          setRemoving(false);
+          if (current && removable) {
+            void workout.removeSeries(current.item.id, removable.series.id);
+          }
+        }}
       />
 
       <ConfirmDialog

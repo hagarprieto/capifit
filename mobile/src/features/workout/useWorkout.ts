@@ -168,6 +168,25 @@ export function useWorkout(sessionUuid: string, injected?: WorkoutApi) {
     }
   }, [workoutApi, sessionUuid]);
 
+  /** Tira uma série do treino (adição acidental). Uma série da prescrição já realizada não sai: corrija os valores. */
+  const removeSeries = useCallback(async (itemId: string, seriesId: string): Promise<boolean> => {
+    setNotice(null);
+    try {
+      await workoutApi.removeSeries(sessionUuid, seriesId);
+      setLoad((current) =>
+        current.kind !== 'ready'
+          ? current
+          : { kind: 'ready', session: { ...current.session, exercicios: current.session.exercicios.map((item) => (item.id === itemId ? { ...item, series: item.series.filter((s) => s.id !== seriesId) } : item)) } },
+      );
+      setEdits(({ [seriesId]: _dropped, ...rest }) => rest);
+      setCorrecting(({ [seriesId]: _dropped, ...rest }) => rest);
+      return true;
+    } catch (error) {
+      setNotice(isApiError(error) && error.code === 'SESSION_CLOSED' ? t('treino.erro.encerrado') : isApiError(error) ? t('treino.erro.remover') : t('treino.erro.removerSemConexao'));
+      return false;
+    }
+  }, [workoutApi, sessionUuid]);
+
   const finish = useCallback(async (): Promise<boolean> => {
     setFinishing(true);
     setNotice(null);
@@ -244,6 +263,7 @@ export function useWorkout(sessionUuid: string, injected?: WorkoutApi) {
     complete,
     correct,
     addSeries,
+    removeSeries,
     finish,
   };
 }
