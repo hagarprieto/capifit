@@ -14,7 +14,14 @@ export type FlushOutcome =
   | { status: 'offline'; applied: number }
   | { status: 'blocked'; applied: number; code: string };
 
-type Deps = { api: ApiClient; queue: QueueRepo; sessions: SessionsRepo; deviceUuid: string };
+type Deps = {
+  api: ApiClient;
+  queue: QueueRepo;
+  sessions: SessionsRepo;
+  deviceUuid: string;
+  /** Chamado ao fim de um envio completo com os treinos que acabaram de ficar confirmados pelo servidor. */
+  onConfirmed?: (sessionUuids: string[]) => void;
+};
 
 /**
  * Envia a fila ao servidor (`POST /sync/push`) em lotes, na ordem em que as operações foram criadas. Regras:
@@ -23,7 +30,7 @@ type Deps = { api: ApiClient; queue: QueueRepo; sessions: SessionsRepo; deviceUu
  * - sem rede, erro 5xx ou limite de requisições: o lote volta a "pendente" e o envio para, para tentar depois;
  * - só um envio por vez: chamadas simultâneas esperam o que já está em andamento.
  */
-export function createSyncEngine({ api, queue, sessions, deviceUuid }: Deps) {
+export function createSyncEngine({ api, queue, sessions, deviceUuid, onConfirmed }: Deps) {
   let running: Promise<FlushOutcome> | null = null;
   let reachable: boolean | null = null;
   const listeners = new Set<() => void>();
@@ -98,12 +105,21 @@ export function createSyncEngine({ api, queue, sessions, deviceUuid }: Deps) {
     }
 
     // Uma sessão só vira "confirmada" quando nada dela está esperando, em revisão ou com erro.
+    const confirmed: string[] = [];
     for (const sessionUuid of await sessions.unsyncedIds()) {
       if ((await queue.openForSession(sessionUuid)) === 0 && (await queue.hasApplied(sessionUuid))) {
         await sessions.markSynced(sessionUuid);
+        confirmed.push(sessionUuid);
       }
     }
     await queue.purgeApplied();
+    if (confirmed.length > 0) {
+      try {
+        onConfirmed?.(confirmed);
+      } catch {
+        // a reconciliação é um complemento: nunca atrapalha o envio
+      }
+    }
     return { status: 'done', applied, needsReview: (await queue.needsReview()).length };
   }
 

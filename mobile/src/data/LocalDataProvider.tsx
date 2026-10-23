@@ -12,6 +12,9 @@ import { openLocalDb } from './local/open';
 import { createQueueRepo, type QueueRepo } from './local/queueRepo';
 import { createSessionsRepo } from './local/sessionsRepo';
 import { createLocalFirstWorkoutApi } from './offline/localFirstWorkoutApi';
+import { createProgramsApi } from '@/features/programs/programsApi';
+
+import { createReconciler } from './sync/reconcile';
 import { createReview, type Review } from './sync/review';
 import { createSyncEngine, type SyncEngine } from './sync/syncEngine';
 import { deriveSyncState, NO_COUNTS, type QueueCounts } from './sync/syncState';
@@ -105,8 +108,10 @@ export function LocalDataProvider({ children }: { children: ReactNode }) {
         const sessions = createSessionsRepo(db, userId);
         const queue = createQueueRepo(db, userId);
         const today = createTodayCache(createCacheRepo(db, userId));
-        const engine = createSyncEngine({ api, queue, sessions, deviceUuid });
-        const workout = createLocalFirstWorkoutApi({ remote: createWorkoutApi(api), sessions, queue, engine, today });
+        const remote = createWorkoutApi(api);
+        const reconciler = createReconciler({ remote, programsApi: createProgramsApi(api), sessions, queue, today });
+        const engine = createSyncEngine({ api, queue, sessions, deviceUuid, onConfirmed: (ids) => void reconciler.run(ids) });
+        const workout = createLocalFirstWorkoutApi({ remote, sessions, queue, engine, today });
         if (!cancelled) {
           setOpened({ userId, data: { today, workout, engine, queue, review: createReview({ queue, sessions, engine }), erase: () => purgeUserData(db, userId) } });
         }
