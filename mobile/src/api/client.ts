@@ -31,6 +31,8 @@ export type ApiClientOptions = {
   refreshAccessToken?: () => Promise<string | null>;
   /** Chamado quando a sessão não pode mais ser renovada: o app volta para a tela de entrada. */
   onSessionExpired?: () => void;
+  /** Avisa o resultado de cada tentativa de falar com o servidor: `true` se houve resposta (mesmo de erro), `false` se a conexão falhou. */
+  onReachable?: (reachable: boolean) => void;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
 };
@@ -96,13 +98,16 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     opts.signal?.addEventListener('abort', () => controller.abort(), { once: true });
     try {
-      return await doFetch(buildUrl(options.baseUrl, path, opts.query), {
+      const response = await doFetch(buildUrl(options.baseUrl, path, opts.query), {
         method,
         headers,
         body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
         signal: controller.signal,
       });
+      options.onReachable?.(true);
+      return response;
     } catch {
+      options.onReachable?.(false);
       throw new ApiError({ status: 0, code: 'NETWORK_ERROR', message: '' });
     } finally {
       clearTimeout(timer);

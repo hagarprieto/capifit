@@ -81,6 +81,19 @@ describe('createApiClient', () => {
     await expect(broken.client.get('/me')).rejects.toMatchObject({ status: 502, code: 'INVALID_RESPONSE' });
   });
 
+  it('avisa se o servidor respondeu (mesmo com erro) ou se a conexão falhou', async () => {
+    const reachable = jest.fn();
+    const ok = setup([json(200, { data: {} }), json(500, { error: { code: 'INTERNAL_ERROR', message: 'x' } })], { onReachable: reachable });
+
+    await ok.client.get('/a');
+    await expect(ok.client.get('/b')).rejects.toBeInstanceOf(ApiError);
+    expect(reachable.mock.calls).toEqual([[true], [true]]); // erro do servidor ainda é "o servidor respondeu"
+
+    const down = createApiClient({ baseUrl: 'https://api.exemplo.invalid', getAccessToken: () => null, fetchImpl: (jest.fn().mockRejectedValue(new TypeError('Network request failed')) as unknown) as typeof fetch, onReachable: reachable });
+    await expect(down.get('/c')).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+    expect(reachable).toHaveBeenLastCalledWith(false);
+  });
+
   it('falha de rede vira NETWORK_ERROR', async () => {
     const fetchImpl = jest.fn().mockRejectedValue(new TypeError('Network request failed'));
     const client = createApiClient({ baseUrl: 'https://x.invalid', getAccessToken: () => null, fetchImpl: fetchImpl as unknown as typeof fetch });

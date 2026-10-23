@@ -1,6 +1,6 @@
 # CapiFit — Documento 14: Roteiro de validação do app em aparelho
 
-**Versão:** 2.8 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07, E07-10, E06-09, E06-07, E04-06 e E09-04
+**Versão:** 2.9 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07, E07-10, E06-09, E06-07, E04-06 e E09-04
 **Por que existe:** os testes automáticos (Jest, tipos, lint) já passam no CI, mas só um aparelho de verdade mostra teclado, rolagem, tema, notificação, vibração, leitor de tela e desempenho. Este roteiro transforma "falta validar em aparelho" em uma lista que você executa e marca.
 
 ## 0. Como usar
@@ -73,6 +73,8 @@ $adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 ```
 
 Com isso, use `EXPO_PUBLIC_API_URL=http://localhost:8080` no `mobile\.env` e, em `mobile\`, `npm run android` (abre o Expo Go no aparelho conectado). Refaça os dois `adb reverse` sempre que reconectar o cabo.
+
+**Como simular "sem rede" com o cabo USB:** o celular fala com a API pelo túnel do cabo (`adb reverse`), então o **modo avião não corta a conexão com a API**. Para os testes offline (V-01.7, V-02.7, V-05.14, R10, R11), **pare a API** no computador (e suba de novo para "voltar a rede"). Se o teste for por Wi-Fi, o modo avião funciona como descrito. Se o cabo cair, o `adb devices` mostra "offline" e o app vai exibir "Sem conexão" por um motivo que não é do app: reconecte o cabo antes de concluir qualquer teste.
 
 **Expo Go ou build de desenvolvimento?** O Expo Go basta para quase tudo. Duas exceções:
 - **Link do e-mail de recuperação** (`capifit://…`): no Expo Go o esquema é outro (veja R1). Em build de desenvolvimento o esquema `capifit://` funciona de verdade.
@@ -447,6 +449,7 @@ adb logcat *:E ReactNativeJS:V
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0 | 22/10/2026 | Primeira versão: preparação, 6 roteiros, quadro de resultados e critério de conclusão para as histórias do app já entregues. |
+| 2.9 | 23/10/2026 | Como simular "sem rede" com o cabo USB; V-01.7 validado em aparelho. |
 | 2.8 | 23/10/2026 | Primeira rodada em aparelho (Motorola edge 60 pro, Android 16, Expo Go 58.0.5): nota sobre notificações no Expo Go. |
 | 2.7 | 23/10/2026 | Testes V-08.9 e V-08.10 (explicação do volume, E09-04). |
 | 2.6 | 23/10/2026 | Testes V-00.6 e V-00.7 (estados padrão, E04-06). |

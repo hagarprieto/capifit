@@ -117,6 +117,31 @@ describe('AuthProvider', () => {
     expect(await loadSession()).toBeNull();
   });
 
+  it('o aviso de conexão acompanha a última chamada ao servidor: cai com uma falha de rede e volta com uma resposta', async () => {
+    await saveSession(session());
+    let down = false;
+    const fetchImpl = jest.fn().mockImplementation(async () => {
+      if (down) {
+        throw new TypeError('Network request failed');
+      }
+      return reply(200, { data: { ok: true } });
+    });
+    await mount(fetchImpl);
+    await waitFor(() => expect(screen.getByText('signedIn|Ana|online')).toBeTruthy());
+
+    down = true;
+    await act(async () => {
+      await auth().api.get('/me/sessoes').catch(() => undefined);
+    });
+    await waitFor(() => expect(screen.getByText('signedIn|Ana|offline')).toBeTruthy());
+
+    down = false;
+    await act(async () => {
+      await auth().api.get('/me/sessoes');
+    });
+    await waitFor(() => expect(screen.getByText('signedIn|Ana|online')).toBeTruthy());
+  });
+
   it('sem rede na abertura, entra com a sessão guardada e marca o modo offline', async () => {
     await saveSession(session({ accessExpiresAt: 0 }));
     await mount(jest.fn().mockRejectedValue(new TypeError('Network request failed')));
@@ -178,7 +203,8 @@ describe('AuthProvider', () => {
       await auth().signOut();
     });
 
-    await waitFor(() => expect(screen.getByText('signedOut|-|online')).toBeTruthy());
+    // A sessão sai mesmo sem rede; o aviso de conexão reflete que a última chamada (o logout) falhou.
+    await waitFor(() => expect(screen.getByText('signedOut|-|offline')).toBeTruthy());
     expect(await loadSession()).toBeNull();
   });
 

@@ -25,6 +25,21 @@ jest.mock('@/auth/AuthProvider', () => ({ useAuth: () => mockAuth }));
 let mockOpen: () => Promise<unknown>;
 jest.mock('../local/open', () => ({ openLocalDb: () => mockOpen() }));
 
+/** Emula o cliente real: falha de conexão marca offline; resposta do servidor marca online. */
+function failing(error: unknown) {
+  return async () => {
+    mockAuth.offline = true;
+    throw error;
+  };
+}
+function serving<A extends unknown[], R>(impl: (...args: A) => Promise<R>) {
+  return async (...args: A) => {
+    const result = await impl(...args);
+    mockAuth.offline = false;
+    return result;
+  };
+}
+
 const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
 describe('estado de sincronização', () => {
@@ -93,7 +108,7 @@ describe('com a fila de verdade', () => {
     const { db, queue } = await mount();
     await queue.enqueue(op(1));
     await queue.enqueue(op(2));
-    mockAuth.api.post.mockRejectedValue(networkError());
+    mockAuth.api.post.mockImplementation(failing(networkError()));
 
     await act(async () => {
       await seen.local?.engine?.flush();
@@ -108,14 +123,14 @@ describe('com a fila de verdade', () => {
   it('a conexão volta e a fila é enviada: sincronizado de novo', async () => {
     const { db, queue } = await mount();
     await queue.enqueue(op(1));
-    mockAuth.api.post.mockRejectedValueOnce(networkError());
+    mockAuth.api.post.mockImplementationOnce(failing(networkError()));
     await act(async () => {
       await seen.local?.engine?.flush();
     });
     await screen.findByText('offline:1:0');
-    mockAuth.api.post.mockImplementation(async (_p: string, body: { operacoes: { operacao_uuid: string }[] }) => ({
+    mockAuth.api.post.mockImplementation(serving(async (_p: string, body: { operacoes: { operacao_uuid: string }[] }) => ({
       data: { server_time: 'x', resultados: body.operacoes.map((o) => ({ operacao_uuid: o.operacao_uuid, resultado: 'aplicada' })) },
-    }));
+    })));
 
     await act(async () => {
       await seen.local?.engine?.flush();
@@ -128,7 +143,7 @@ describe('com a fila de verdade', () => {
   it('operação rejeitada pelo servidor vira "Conflito — revisar" com o aviso', async () => {
     const { db, queue } = await mount();
     await queue.enqueue(op(1));
-    mockAuth.api.post.mockResolvedValue({ data: { server_time: 'x', resultados: [{ operacao_uuid: uuid(901), resultado: 'conflito', erro: { code: 'SESSION_CLOSED', message: 'x' } }] } });
+    mockAuth.api.post.mockImplementation(serving(async () => ({ data: { server_time: 'x', resultados: [{ operacao_uuid: uuid(901), resultado: 'conflito', erro: { code: 'SESSION_CLOSED', message: 'x' } }] } })));
 
     await act(async () => {
       await seen.local?.engine?.flush();
@@ -145,9 +160,9 @@ describe('com a fila de verdade', () => {
     const { db, queue } = await mount();
     expect(await screen.findByText('offline:0:0')).toBeTruthy();
     await queue.enqueue(op(1));
-    mockAuth.api.post.mockImplementation(async (_p: string, body: { operacoes: { operacao_uuid: string }[] }) => ({
+    mockAuth.api.post.mockImplementation(serving(async (_p: string, body: { operacoes: { operacao_uuid: string }[] }) => ({
       data: { server_time: 'x', resultados: body.operacoes.map((o) => ({ operacao_uuid: o.operacao_uuid, resultado: 'aplicada' })) },
-    }));
+    })));
 
     await act(async () => {
       await seen.local?.engine?.flush();
@@ -159,9 +174,9 @@ describe('com a fila de verdade', () => {
 
   it('com conexão e registros ainda sendo enviados: pendente, com o aviso e o botão para tentar de novo', async () => {
     const { db, queue } = await mount();
-    mockAuth.api.post.mockImplementation(async (_p: string, body: { operacoes: { operacao_uuid: string }[] }) => ({
+    mockAuth.api.post.mockImplementation(serving(async (_p: string, body: { operacoes: { operacao_uuid: string }[] }) => ({
       data: { server_time: 'x', resultados: body.operacoes.map((o) => ({ operacao_uuid: o.operacao_uuid, resultado: 'aplicada' })) },
-    }));
+    })));
     await queue.enqueue(op(1));
     await act(async () => {
       await seen.local?.engine?.flush(); // um envio bem-sucedido: sabemos que há conexão
@@ -185,16 +200,16 @@ describe('nova tentativa automática', () => {
   it('enquanto houver registro esperando, tenta enviar de novo a cada 30 s (a conexão pode ter voltado)', async () => {
     jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] });
     const { db, queue } = await mount();
-    mockAuth.api.post.mockRejectedValue(networkError());
+    mockAuth.api.post.mockImplementation(failing(networkError()));
     await queue.enqueue(op(1));
     await act(async () => {
       await seen.local?.engine?.flush();
     });
     await screen.findByText('offline:1:0');
     expect(mockAuth.api.post).toHaveBeenCalledTimes(1);
-    mockAuth.api.post.mockImplementation(async (_p: string, body: { operacoes: { operacao_uuid: string }[] }) => ({
+    mockAuth.api.post.mockImplementation(serving(async (_p: string, body: { operacoes: { operacao_uuid: string }[] }) => ({
       data: { server_time: 'x', resultados: body.operacoes.map((o) => ({ operacao_uuid: o.operacao_uuid, resultado: 'aplicada' })) },
-    }));
+    })));
 
     await act(async () => {
       jest.advanceTimersByTime(30_000);
@@ -210,7 +225,7 @@ describe('nova tentativa automática', () => {
 describe('SyncBanner compacto', () => {
   it('mostra só o indicador, sem os avisos', async () => {
     const { db, queue } = await mount(true);
-    mockAuth.api.post.mockRejectedValue(networkError());
+    mockAuth.api.post.mockImplementation(failing(networkError()));
     await queue.enqueue(op(1));
     await act(async () => {
       await seen.local?.engine?.flush();

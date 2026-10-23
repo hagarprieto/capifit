@@ -26,7 +26,7 @@ export type AuthCore = {
  * Núcleo sem React da autenticação: guarda a sessão em memória, renova o token com UMA chamada por vez (o refresh
  * token é de uso único; várias chamadas com 401 ao mesmo tempo esperam a mesma renovação) e entrega o cliente de API.
  */
-export function createAuthCore(options: { baseUrl: string; fetchImpl?: typeof fetch; onSession: (session: StoredSession | null) => void }): AuthCore {
+export function createAuthCore(options: { baseUrl: string; fetchImpl?: typeof fetch; onSession: (session: StoredSession | null) => void; onReachable?: (reachable: boolean) => void }): AuthCore {
   let current: StoredSession | null = null;
   let refreshing: Promise<string | null> | null = null;
 
@@ -75,6 +75,7 @@ export function createAuthCore(options: { baseUrl: string; fetchImpl?: typeof fe
     fetchImpl: options.fetchImpl,
     getAccessToken: () => current?.accessToken ?? null,
     refreshAccessToken: renew,
+    onReachable: options.onReachable,
   });
 
   return {

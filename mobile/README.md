@@ -64,6 +64,10 @@ npm run mock:api       # servidor mock do contrato em http://localhost:4010 (Pri
 - **Explicação do volume (E09-04):** sob o volume, tanto na Evolução quanto no resumo da sessão, a frase curta fica sempre visível e **Como calculamos o volume** abre o detalhe: a conta (carga × repetições das séries de trabalho feitas, com exemplo), o que não entra (aquecimento, tempo, assistidos, séries sem carga), por que comparar só o mesmo exercício (a carga vale como registrada: por halter, total, máquina) e que não é nota nem meta. Período sem nenhuma série com carga mostra "—" no volume, com texto falado claro, em vez de "0 kg". Os estados vazios da Evolução e do histórico já existiam (E09-03). Componente: `features/workout/VolumeExplainer.tsx`.
 - **Fora desta entrega:** gráfico por exercício e tendências (E13-01) e leitura offline do histórico (E08).
 
+## Aviso de conexão acompanha a rede de verdade
+
+- O cliente de API (`api/client.ts`) avisa (`onReachable`) o resultado de cada tentativa de falar com o servidor: resposta, mesmo de erro, = "online"; falha de conexão = "offline". O `AuthProvider` usa isso para o `offline` que alimenta o indicador de sincronização, então o app passa a mostrar "Offline — salvo neste dispositivo" assim que uma chamada falha por rede e volta a "Sincronizado" na primeira resposta — e não só no momento de abrir o app. Achado na validação em aparelho: com a API fora do ar e o token ainda válido, o Início mostrava "Sincronizado" ao lado de "Não foi possível atualizar o resumo".
+
 ## Notificação de descanso no Expo Go
 
 - `expo-notifications` é carregado só quando preciso e dentro de `try/catch` (`features/rest/notifications.ts`). No Expo Go 58 a parte nativa `ExpoTopicSubscriptionModule` não existe; antes, importar o módulo no topo do arquivo derrubava o app inteiro ao abrir (achado na primeira validação em aparelho). Sem o módulo, o aviso de fim de descanso não é agendado e o descanso segue só dentro do app. O aviso com a tela bloqueada só pode ser validado em build de desenvolvimento.

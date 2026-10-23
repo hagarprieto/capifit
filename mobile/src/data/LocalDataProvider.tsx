@@ -67,7 +67,6 @@ export function useSyncStatus(): SyncStatusView {
   const { engine, queue } = useLocalData();
   const { offline: authOffline } = useAuth();
   const [counts, setCounts] = useState<QueueCounts>(NO_COUNTS);
-  const [reachable, setReachable] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!engine || !queue) {
@@ -75,7 +74,6 @@ export function useSyncStatus(): SyncStatusView {
     }
     let cancelled = false;
     const refresh = () => {
-      setReachable(engine.isReachable());
       queue.counts().then((next) => !cancelled && setCounts(next)).catch(() => undefined);
     };
     refresh();
@@ -86,9 +84,8 @@ export function useSyncStatus(): SyncStatusView {
     };
   }, [engine, queue]);
 
-  // Um envio que falou com o servidor vale mais que a informação de quando o app abriu.
-  const offline = reachable === null ? authOffline : !reachable;
-  const derived = deriveSyncState(engine && queue ? counts : NO_COUNTS, offline);
+  // `authOffline` acompanha a última tentativa real de falar com o servidor (qualquer chamada do app, inclusive o envio da fila).
+  const derived = deriveSyncState(engine && queue ? counts : NO_COUNTS, authOffline);
   return { ...derived, retry: engine ? () => void engine.flush().catch(() => undefined) : undefined };
 }
 

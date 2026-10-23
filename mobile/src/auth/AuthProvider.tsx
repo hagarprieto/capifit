@@ -53,6 +53,8 @@ export function AuthProvider({ children, baseUrl = config.apiBaseUrl, fetchImpl 
         setUser(session?.user ?? null);
         setStatus(session === null ? 'signedOut' : 'signedIn');
       },
+      // O estado "sem conexão" acompanha a última tentativa real de falar com o servidor, não só a abertura do app.
+      onReachable: (reachable) => setOffline(!reachable),
     }),
   );
   const { api } = core;
