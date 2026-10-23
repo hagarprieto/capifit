@@ -16,6 +16,7 @@ Registro vivo das rodadas do roteiro do Documento 14. **P** = passou, **F** = fa
 | D2 | Início sem a API | Indicador "Sincronizado" ao lado de "Não foi possível atualizar o resumo" | O estado "sem conexão" só era definido ao abrir o app | O cliente de rede avisa o resultado de cada chamada (`b99614e`) |
 | D4 | Concluir a primeira série | Tela vermelha "Cannot find native module ExpoTopicSubscriptionModule" ao iniciar o descanso (a série já tinha sido registrada) | O Metro trata erro de carga de módulo como fatal e engole a exceção: o `try/catch` em volta do `require` da correção D1 não funcionava | Testa a existência do módulo nativo ANTES de carregar `expo-notifications` |
 | D5 | Fim do descanso (V-03.4) | Tela vermelha "Cannot read property 'split' of null" quando o relógio do descanso chegou a zero | Ao fim, o cartão troca o relógio (Text tabular) pela mensagem de fim na mesma posição; `fontVariant` passava de lista a `undefined`, o nativo manda `null` e o React Native quebra em `processFontVariant` | `fontVariant` passa a ser sempre uma lista (`proportional-nums` quando não é tabular); teste de contrato em `design-system/text.test.tsx` |
+| D6 | Executor (todas as séries) | Os campos eram caixas vazias, sem texto visível dizendo o que digitar (carga, repetições, tempo); na prancha, uma caixa só, sem indicar que é em segundos | Só existiam rótulos para o leitor de tela; faltava rótulo visível | Cabeçalho das colunas alinhado aos campos, com nome e unidade ("Carga / kg (total)", "Reps", "Tempo / segundos", "por lado"); testes de visibilidade e de acessibilidade |
 | D3 | Iniciar treino avulso | Tela "Carregando o treino…" para sempre e erro "Maximum update depth exceeded" | `reload` era recriado a cada renderização e entrava como dependência de `useFocusEffect`, que recarregava o treino sem parar | `reload` estável; os testes passaram a usar um `useFocusEffect` que se comporta como o real, e o teste trava sem a correção |
 
 Por que os testes automáticos não pegaram D4 e D5: os testes simulam as telas, não o código nativo nem o empacotador. Por isso a regra agora fica registrada em testes de contrato (a existência do módulo nativo antes do `require`; o `fontVariant` nunca indefinido).
@@ -39,7 +40,10 @@ Por que os testes automáticos não pegaram D3: o `useFocusEffect` era simulado 
 | V-02.3 | **P** (parcial) | Série concluída e descanso iniciado sem erro (depois de D3 e D4); falta conferir a vírgula e a sugestão da série seguinte |
 | V-03.1 | **P** | O descanso começa ao concluir a série |
 | V-03.4 | **F → corrigido** | Ao chegar a zero, tela vermelha (D5); a repetir |
-| V-02.4 em diante | — | Em andamento |
+| V-02.3 (vírgula) | **P** | "42,5" foi aceito e exibido com vírgula |
+| V-02.5 | **P** | Série corrigida para 11 repetições |
+| V-02c.1 (barra) | **P** | Legenda "Carga em kg (total)" e coluna "Carga / kg (total)" |
+| V-02.4, V-02.6 em diante | — | Em andamento |
 
 ### Observações para decidir depois
 

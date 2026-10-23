@@ -7,7 +7,7 @@ import { ConfirmDialog } from '@/design-system/ConfirmDialog';
 import { EmptyState } from '@/design-system/EmptyState';
 import { Notice } from '@/design-system/Notice';
 import { Screen } from '@/design-system/Screen';
-import { SetRow } from '@/design-system/SetRow';
+import { SetColumnsHeader, SetRow } from '@/design-system/SetRow';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
 import { ErrorState, LoadingState } from '@/design-system/States';
@@ -141,6 +141,7 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
           </View>
 
           <View style={{ gap: theme.space[2] }}>
+            <SetColumnsHeader modality={current.modality} loadUnit={current.loadUnit} perSide={current.unilateral} />
             {current.rows.map((row, position) => (
               <SetRow
                 key={row.series.id}

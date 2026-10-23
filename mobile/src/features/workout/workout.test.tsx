@@ -254,6 +254,56 @@ describe('WorkoutScreen: rótulos de carga por convenção e unilaterais', () =>
   });
 });
 
+// O cabeçalho é escondido do leitor de tela de propósito (os campos já têm rótulo completo), então as consultas incluem elementos ocultos.
+const HIDDEN = { includeHiddenElements: true };
+
+describe('WorkoutScreen: nome e unidade de cada coluna visíveis (achado em aparelho)', () => {
+  const withExercise = (exercicio: Record<string, unknown>): Session => {
+    const base = makeSession();
+    return { ...base, exercicios: [{ ...base.exercicios[0], exercicio: { ...base.exercicios[0].exercicio, ...exercicio } }] } as Session;
+  };
+  const open = async (session: Session) => {
+    await show(<WorkoutScreen api={fakeApi({ getSession: jest.fn().mockResolvedValue(session) })} />);
+    await screen.findByText(session.exercicios[0].exercicio.nome);
+  };
+
+  it('exercício de carga e repetições: "Carga / kg" e "Reps" acima dos campos', async () => {
+    await ready(fakeApi());
+
+    expect(screen.getByText('Carga', HIDDEN)).toBeTruthy();
+    expect(screen.getByText('kg', HIDDEN)).toBeTruthy();
+    expect(screen.getByText('Reps', HIDDEN)).toBeTruthy();
+  });
+
+  it('exercício de tempo (prancha): "Tempo / segundos", sem coluna de carga nem de repetições', async () => {
+    await open(withExercise({ nome: 'Prancha isométrica', modalidade: 'tempo' }));
+
+    expect(screen.getByText('Tempo', HIDDEN)).toBeTruthy();
+    expect(screen.getByText('segundos', HIDDEN)).toBeTruthy();
+    expect(screen.queryByText('Carga', HIDDEN)).toBeNull();
+    expect(screen.queryByText('Reps', HIDDEN)).toBeNull();
+  });
+
+  it('halter unilateral: a unidade e "por lado" aparecem nas colunas', async () => {
+    await open(withExercise({ nome: 'Remada com halter', convencao_carga: 'por_halter', unilateral: true }));
+
+    expect(screen.getByText('Carga', HIDDEN)).toBeTruthy();
+    expect(screen.getAllByText('kg por halter', HIDDEN).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('por lado', HIDDEN).length).toBeGreaterThan(0);
+  });
+
+  it('o cabeçalho é só visual: não duplica a leitura dos campos para o leitor de tela', async () => {
+    await ready(fakeApi());
+
+    let node = screen.getByText('Carga', HIDDEN).parent;
+    while (node && node.props.importantForAccessibility === undefined) {
+      node = node.parent;
+    }
+    expect(node?.props.importantForAccessibility).toBe('no-hide-descendants');
+    expect(screen.getByLabelText('Carga em kg, série 1 de Supino reto')).toBeTruthy();
+  });
+});
+
 describe('WorkoutScreen: substituir exercício', () => {
   it('leva à escolha do substituto com o exercício atual', async () => {
     await ready(fakeApi());

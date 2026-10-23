@@ -33,6 +33,42 @@ type Props = {
   onCorrect: () => void;
 };
 
+/**
+ * Cabeçalho das colunas das séries (achado na validação em aparelho: os campos eram caixas vazias, sem dizer o que digitar).
+ * Fica alinhado com os campos da `SetRow` e mostra o nome e a UNIDADE de cada coluna: "Carga / kg por halter", "Reps /
+ * por lado", "Tempo / segundos". É só visual: cada campo já tem um rótulo completo para o leitor de tela.
+ */
+export function SetColumnsHeader({ modality, loadUnit = 'kg', perSide = false }: { modality: Props['modality']; loadUnit?: string; perSide?: boolean }) {
+  const { theme } = useTheme();
+  const { space, size } = theme;
+  const column = (title: string, unit: string | null) => (
+    <View style={{ width: size.setField.width, alignItems: 'center' }}>
+      <Text variant="caption" color="secondary" style={{ fontWeight: '700', textAlign: 'center' }}>
+        {title}
+      </Text>
+      {unit ? (
+        <Text variant="caption" color="secondary" style={{ textAlign: 'center' }}>
+          {unit}
+        </Text>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ flexDirection: 'row', alignItems: 'flex-end', gap: space[1] }}>
+      <View style={{ width: 56 }} />
+      {modality === 'tempo' ? (
+        column(t('treino.colTempo'), perSide ? `${t('treino.colSegundos')} ${t('treino.colPorLado')}` : t('treino.colSegundos'))
+      ) : (
+        <>
+          {column(t('treino.colCarga'), loadUnit)}
+          {column(t('treino.colReps'), perSide ? t('treino.colPorLado') : null)}
+        </>
+      )}
+    </View>
+  );
+}
+
 /** Linha de série do executor (Doc 08 §8): Série · Carga · Reps · Concluir. Concluída: valores fixos e opção de corrigir. */
 export function SetRow({ numero, exercicio, modality, loadUnit = 'kg', perSide = false, extra = false, carga, reps, duracao, prefilled, done, saving, errors, summary, onChange, onComplete, onCorrect }: Props) {
   const { theme } = useTheme();
