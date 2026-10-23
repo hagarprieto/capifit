@@ -61,7 +61,8 @@
     "E06-09": "in-progress",
     "E04-01": "in-progress",
     "E04-02": "in-progress",
-    "E04-04": "in-progress"
+    "E04-04": "in-progress",
+    "E06-07": "in-progress"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
@@ -124,7 +125,8 @@
     "E07-07": "Substituir exercício no executor e acrescentar exercício com fallback sem rede, prontos e testados (401 testes no app e contrato com a API real): o original mantém o que foi registrado, as séries pendentes passam ao substituto e o exercício previsto é preservado, como no servidor. Treino avulso e adicionar exercício já existiam. CI verde na main (e53410f). Falta validar em aparelho (roteiro R2b). A busca no catálogo continua exigindo conexão.",
     "E07-10": "Rótulos de carga por convenção e unilaterais prontos e testados (407 testes no app, 262 na API): a API passou a informar convencao_carga e unilateral em todo exercício (contrato OpenAPI atualizado), o executor mostra a legenda e rótulos de acessibilidade com a unidade certa e \"por lado\", e o resumo usa a mesma unidade. CI verde na main (e53410f). Falta validar em aparelho (roteiro R2c).",
     "E06-09": "Cópia de programa pronta e testada em Jest (412 testes): botão no detalhe (em destaque para programa do coach, com aviso de que não pode ser editado), confirmação que diz que o original não muda, abre a cópia criada, erros de rede e genérico. A API já existia (E06-01). CI verde na main (e53410f). Falta validar em aparelho (V-05.16/17).",
-    "E04-01": "Tema claro/escuro por tokens gerados, fonte Inter e tipografia com limite de escala prontos e testados (contraste conferido no CI). Falta validar em aparelho (R0: tema, fonte 200 %)."
+    "E04-01": "Tema claro/escuro por tokens gerados, fonte Inter e tipografia com limite de escala prontos e testados (contraste conferido no CI). Falta validar em aparelho (R0: tema, fonte 200 %).",
+    "E06-07": "Rascunho local do editor pronto e testado em Jest (424 testes, com banco de verdade): guarda sozinho no aparelho, recupera ao reabrir, rascunho antigo (programa mudou no servidor) pergunta em vez de aplicar, descartar com confirmação, salvar apaga o rascunho, sair avisa que fica guardado e não perde a última alteração. Falta o CI e validar em aparelho (V-05.19 a V-05.23)."
   },
   "externas": {
     "revisor": "pending",

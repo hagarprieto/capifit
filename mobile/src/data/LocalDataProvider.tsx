@@ -6,6 +6,7 @@ import type { SyncState } from '@/design-system/StatusAndStats';
 import { getDeviceId } from '@/auth/tokenStore';
 import { createWorkoutApi, type WorkoutApi } from '@/features/workout/workoutApi';
 
+import { createDraftStore, type DraftStore } from './cache/editorDrafts';
 import { createTodayCache, type TodayCache } from './cache/todayWorkout';
 import { createCacheRepo, purgeUserData } from './local/cacheRepo';
 import { openLocalDb } from './local/open';
@@ -34,12 +35,14 @@ type LocalData = {
   review: Review | null;
   /** Apaga do aparelho TUDO do usuário atual (treinos, fila e cache); `null` sem banco local. */
   erase: (() => Promise<void>) | null;
+  /** Rascunhos do editor de programa guardados no aparelho; `null` sem banco local. */
+  drafts: DraftStore | null;
 };
 
 /** Intervalo entre tentativas de envio enquanto houver registros esperando. */
 const RETRY_MS = 30_000;
 
-const IDLE: LocalData = { ready: true, today: null, workout: null, engine: null, queue: null, review: null, erase: null };
+const IDLE: LocalData = { ready: true, today: null, workout: null, engine: null, queue: null, review: null, drafts: null, erase: null };
 const LocalDataContext = createContext<LocalData>(IDLE);
 
 export function useLocalData(): LocalData {
@@ -110,17 +113,19 @@ export function LocalDataProvider({ children }: { children: ReactNode }) {
         const deviceUuid = await getDeviceId();
         const sessions = createSessionsRepo(db, userId);
         const queue = createQueueRepo(db, userId);
-        const today = createTodayCache(createCacheRepo(db, userId));
+        const cacheRepo = createCacheRepo(db, userId);
+        const today = createTodayCache(cacheRepo);
+        const drafts = createDraftStore(cacheRepo);
         const remote = createWorkoutApi(api);
         const reconciler = createReconciler({ remote, programsApi: createProgramsApi(api), sessions, queue, today });
         const engine = createSyncEngine({ api, queue, sessions, deviceUuid, onConfirmed: (ids) => void reconciler.run(ids) });
         const workout = createLocalFirstWorkoutApi({ remote, sessions, queue, engine, today });
         if (!cancelled) {
-          setOpened({ userId, data: { today, workout, engine, queue, review: createReview({ queue, sessions, engine }), erase: () => purgeUserData(db, userId) } });
+          setOpened({ userId, data: { today, workout, engine, queue, review: createReview({ queue, sessions, engine }), erase: () => purgeUserData(db, userId), drafts } });
         }
       } catch {
         if (!cancelled) {
-          setOpened({ userId, data: { today: null, workout: null, engine: null, queue: null, review: null, erase: null } });
+          setOpened({ userId, data: { today: null, workout: null, engine: null, queue: null, review: null, drafts: null, erase: null } });
         }
       }
     })();
@@ -156,7 +161,7 @@ export function LocalDataProvider({ children }: { children: ReactNode }) {
     if (userId === null) {
       return IDLE;
     }
-    return opened?.userId === userId ? { ready: true, ...opened.data } : { ready: false, today: null, workout: null, engine: null, queue: null, review: null, erase: null };
+    return opened?.userId === userId ? { ready: true, ...opened.data } : { ready: false, today: null, workout: null, engine: null, queue: null, review: null, drafts: null, erase: null };
   }, [userId, opened]);
 
   return <LocalDataContext.Provider value={value}>{children}</LocalDataContext.Provider>;

@@ -1,7 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState, type Dispatch, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type Dispatch, type ReactNode } from 'react';
 
 import { isApiError } from '@/api/errors';
 import { useAuth } from '@/auth/AuthProvider';
+import type { EditorDraft } from '@/data/cache/editorDrafts';
+import { useLocalData } from '@/data/LocalDataProvider';
 import type { MessageKey } from '@/i18n';
 
 import { createProgramsApi, type Program, type ProgramsApi } from '../programsApi';
@@ -9,6 +11,16 @@ import { fromVersion, isDirty, publishIssues, saveIssues, toPayload, type Editor
 import { editorReducer, type EditorAction } from './reducer';
 
 export type EditorStatus = 'loading' | 'error' | 'blocked' | 'ready';
+
+/**
+ * Rascunho do aparelho que apareceu ao abrir o editor:
+ * - `restored`: era do mesmo ponto do servidor e já foi aplicado (a pessoa pode descartar);
+ * - `stale`: o programa mudou no servidor depois do rascunho: NADA foi aplicado e a pessoa escolhe, porque salvar por
+ *   cima apagaria a mudança feita em outro lugar.
+ */
+export type DraftRestore = { kind: 'restored'; savedAt: string } | { kind: 'stale'; draft: EditorDraft } | null;
+
+const AUTOSAVE_MS = 500;
 
 type EditorContextValue = {
   status: EditorStatus;
@@ -26,6 +38,17 @@ type EditorContextValue = {
   save: () => Promise<boolean>;
   publish: () => Promise<boolean>;
   reload: () => void;
+  /** Há onde guardar rascunho neste aparelho (banco local aberto). */
+  canKeepDraft: boolean;
+  restore: DraftRestore;
+  /** Esconde o aviso de rascunho restaurado (o rascunho continua guardado até salvar ou descartar). */
+  dismissRestore: () => void;
+  /** Descarta as alterações não salvas e volta à versão do servidor. */
+  discardChanges: () => Promise<void>;
+  /** Rascunho antigo: aplica por cima do que está no servidor (escolha explícita). */
+  applyStaleDraft: () => void;
+  /** Rascunho antigo: descarta e fica com a versão do servidor. */
+  dropStaleDraft: () => Promise<void>;
 };
 
 const EditorContext = createContext<EditorContextValue | null>(null);
@@ -40,6 +63,7 @@ const EMPTY: EditorState = { fichas: [] };
  */
 export function ProgramEditorProvider({ programId, api, children }: { programId: string; api?: ProgramsApi; children: ReactNode }) {
   const auth = useAuth();
+  const { drafts } = useLocalData();
   const programsApi = useMemo(() => api ?? createProgramsApi(auth.api), [api, auth.api]);
 
   const [status, setStatus] = useState<EditorStatus>('loading');
@@ -53,6 +77,8 @@ export function ProgramEditorProvider({ programId, api, children }: { programId:
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<MessageKey | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [restore, setRestore] = useState<DraftRestore>(null);
+  const flush = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,6 +105,23 @@ export function ProgramEditorProvider({ programId, api, children }: { programId:
         dispatch({ type: 'replace', state });
         setSavedMeta(text);
         setMeta(text);
+        setRestore(null);
+        const draft = drafts ? await drafts.get(programId).catch(() => null) : null;
+        if (cancelled) {
+          return;
+        }
+        if (draft) {
+          const sameAsServer = !isDirty(draft.editor, state) && draft.meta.titulo.trim() === text.titulo && draft.meta.objetivo.trim() === text.objetivo;
+          if (sameAsServer) {
+            void drafts?.remove(programId).catch(() => undefined);
+          } else if (draft.versionNumber === version.numero && draft.baseRevision === version.revision) {
+            dispatch({ type: 'replace', state: draft.editor });
+            setMeta(draft.meta);
+            setRestore({ kind: 'restored', savedAt: draft.savedAt });
+          } else {
+            setRestore({ kind: 'stale', draft });
+          }
+        }
         setStatus('ready');
       } catch {
         if (!cancelled) {
@@ -89,9 +132,39 @@ export function ProgramEditorProvider({ programId, api, children }: { programId:
     return () => {
       cancelled = true;
     };
-  }, [programsApi, programId, attempt]);
+  }, [programsApi, programId, attempt, drafts]);
 
   const dirty = status === 'ready' && (isDirty(editor, saved) || meta.titulo.trim() !== savedMeta.titulo || meta.objetivo.trim() !== savedMeta.objetivo);
+
+  // Guarda o rascunho no aparelho a cada alteração (com uma pequena espera) e o apaga quando não há mais nada a guardar.
+  // Enquanto houver um rascunho antigo esperando decisão, não mexe nele.
+  useEffect(() => {
+    if (!drafts || status !== 'ready' || program === null || restore?.kind === 'stale') {
+      return;
+    }
+    const programUuid = program.id;
+    const run = () => {
+      if (dirty) {
+        drafts.save({ programId: programUuid, versionNumber, baseRevision: revision, editor, meta, savedAt: new Date().toISOString() }).catch(() => undefined);
+      } else {
+        drafts.remove(programUuid).catch(() => undefined);
+      }
+    };
+    flush.current = run;
+    const timer = setTimeout(() => {
+      flush.current = null;
+      run();
+    }, AUTOSAVE_MS);
+    return () => clearTimeout(timer);
+  }, [drafts, status, program, dirty, editor, meta, versionNumber, revision, restore]);
+
+  // Saiu da tela antes da espera acabar (voltar do sistema): guarda agora, para não perder o último toque.
+  useEffect(
+    () => () => {
+      flush.current?.();
+    },
+    [],
+  );
 
   const save = useCallback(async (): Promise<boolean> => {
     if (program === null) {
@@ -125,6 +198,7 @@ export function ProgramEditorProvider({ programId, api, children }: { programId:
         setRevision(version.revision);
         setSaved(editor);
       }
+      setRestore(null);
       return true;
     } catch (error) {
       if (isApiError(error) && error.code === 'REVISION_CONFLICT') {
@@ -173,9 +247,39 @@ export function ProgramEditorProvider({ programId, api, children }: { programId:
     setAttempt((n) => n + 1);
   }, []);
 
+  const dismissRestore = useCallback(() => setRestore(null), []);
+
+  const discardChanges = useCallback(async () => {
+    flush.current = null;
+    if (drafts && program) {
+      await drafts.remove(program.id).catch(() => undefined);
+    }
+    setRestore(null);
+    reload();
+  }, [drafts, program, reload]);
+
+  const applyStaleDraft = useCallback(() => {
+    if (restore?.kind !== 'stale') {
+      return;
+    }
+    dispatch({ type: 'replace', state: restore.draft.editor });
+    setMeta(restore.draft.meta);
+    setRestore({ kind: 'restored', savedAt: restore.draft.savedAt });
+  }, [restore]);
+
+  const dropStaleDraft = useCallback(async () => {
+    if (drafts && program) {
+      await drafts.remove(program.id).catch(() => undefined);
+    }
+    setRestore(null);
+  }, [drafts, program]);
+
   const value = useMemo<EditorContextValue>(
-    () => ({ status, program, versionNumber, dirty, editor, dispatch, meta, setMeta, saving, notice, clearNotice: () => setNotice(null), save, publish, reload }),
-    [status, program, versionNumber, dirty, editor, meta, saving, notice, save, publish, reload],
+    () => ({
+      status, program, versionNumber, dirty, editor, dispatch, meta, setMeta, saving, notice, clearNotice: () => setNotice(null), save, publish, reload,
+      canKeepDraft: drafts !== null, restore, dismissRestore, discardChanges, applyStaleDraft, dropStaleDraft,
+    }),
+    [status, program, versionNumber, dirty, editor, meta, saving, notice, save, publish, reload, drafts, restore, dismissRestore, discardChanges, applyStaleDraft, dropStaleDraft],
   );
 
   return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;

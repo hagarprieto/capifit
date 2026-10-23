@@ -1,6 +1,6 @@
 # CapiFit — Documento 14: Roteiro de validação do app em aparelho
 
-**Versão:** 2.4 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07, E07-10 e E06-09
+**Versão:** 2.5 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07, E07-10, E06-09 e E06-07
 **Por que existe:** os testes automáticos (Jest, tipos, lint) já passam no CI, mas só um aparelho de verdade mostra teclado, rolagem, tema, notificação, vibração, leitor de tela e desempenho. Este roteiro transforma "falta validar em aparelho" em uma lista que você executa e marca.
 
 ## 0. Como usar
@@ -224,6 +224,12 @@ Pré-requisito: exercícios publicados de convenções diferentes (§1.2): barra
 | V-05.17 🔴 | Edite a cópia (renomeie, mude um exercício) e volte ao original. | O original **não mudou**. | Alteração vazou para o original. |
 | V-05.18 🟡 | Modo avião → Criar cópia. | Aviso de falta de conexão; nada criado; dá para tentar de novo. | Cria duplicado ou trava. |
 
+| V-05.19 🔴 | No editor, adicione uma ficha e um exercício, **sem salvar**. Use o botão/gesto de **voltar do sistema**, depois **feche o app deslizando** e reabra o editor do mesmo programa. | Aparece "Recuperamos suas alterações não salvas, guardadas neste aparelho em …" e a ficha e o exercício estão lá. Enquanto isso, o editor mostra "guardadas neste aparelho". | Perdeu o que montou, ou voltou sem avisar nada. |
+| V-05.20 🔴 | Com um rascunho recuperado, toque em **Descartar alterações** → Cancelar → de novo → confirmar. | Cancelar não muda nada; confirmar volta à versão do servidor, o aviso some e ao reabrir não há mais rascunho. | Descarta sem perguntar, ou o rascunho volta. |
+| V-05.21 🔴 | Recupere um rascunho e **salve**. Reabra o editor. | "Tudo salvo", sem aviso de rascunho. | Rascunho antigo reaparece. |
+| V-05.22 🟡 | Deixe um rascunho no aparelho; altere o mesmo programa em **outro aparelho** (ou `curl` no PUT da estrutura); reabra o editor no primeiro. | "Rascunho antigo neste aparelho" com **Usar meu rascunho** / **Descartar rascunho**; nada aplicado sozinho. | Aplica sozinho e sobrescreve a mudança do outro aparelho. |
+| V-05.23 🔴 | Com alterações não salvas, toque no **Voltar** da tela. | O diálogo "Sair do editor?" diz que as alterações ficam guardadas no aparelho; "Sair e guardar rascunho" sai e Cancelar continua. | Texto ainda diz que vai perder tudo, ou sai sem avisar. |
+
 > Programas **do coach** e **sugeridos pelo app** não têm como ser criados nesta fase (sem tela de coach nem motor); a regra "coach não edita" tem teste automático e será validada em aparelho quando houver como gerar um.
 
 ### R6 — Acessibilidade transversal
@@ -353,6 +359,7 @@ Copie e preencha (uma cópia por aparelho). **P**/**F**/**N/A** e uma observaç�
 | V-04.1 … V-04.4 |  |  |  |
 | V-05.1 … V-05.12 |  |  |  |
 | V-05.16 … V-05.17 |  |  |  |
+| V-05.19 … V-05.21, V-05.23 |  |  |  |
 | V-06.1 … V-06.4 |  |  |  |
 | V-07.1 … V-07.9 |  |  |  |
 | V-08.1 … V-08.8 |  |  |  |
@@ -390,6 +397,7 @@ Não coloque senhas, tokens nem e-mails reais no relato.
 | E06-04 (editor de programa e ficha) | V-05.3, V-05.4, V-05.7 a V-05.12 |
 | E06-05 (configurar exercício) | V-05.5, V-05.6 |
 | E06-09 (cópia de programa) | V-05.16, V-05.17 |
+| E06-07 (rascunho local e aviso de alterações não salvas) | V-05.19 a V-05.21, V-05.23 |
 | E05-03 (Início) | V-07.2 a V-07.5, V-07.9 |
 | E04-03 (abas e voltar ao treino) | V-07.1, V-07.5, V-07.7, V-07.8 |
 | E04-04 (SyncStatus, semana, números) | V-07.9, V-10.1, V-10.7 |
@@ -431,6 +439,7 @@ adb logcat *:E ReactNativeJS:V
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0 | 22/10/2026 | Primeira versão: preparação, 6 roteiros, quadro de resultados e critério de conclusão para as histórias do app já entregues. |
+| 2.5 | 23/10/2026 | Testes V-05.19 a V-05.23 (rascunho local do editor, E06-07). |
 | 2.4 | 23/10/2026 | Testes V-05.16 a V-05.18 (cópia de programa, E06-09). |
 | 2.3 | 23/10/2026 | R2c (rótulos de carga por convenção e unilaterais, E07-10). |
 | 2.2 | 23/10/2026 | R2b (substituir e acrescentar exercício, E07-07). |

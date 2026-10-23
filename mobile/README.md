@@ -63,6 +63,13 @@ npm run mock:api       # servidor mock do contrato em http://localhost:4010 (Pri
 - **Falhas:** resumo e histórico carregam separados; se algum falhar, aparece o aviso com "Tentar de novo". Ao voltar de outra tela a aba atualiza sozinha. Lógica em `features/progress/progress.ts`.
 - **Fora desta entrega:** gráfico por exercício e tendências (E13-01) e leitura offline do histórico (E08).
 
+## Rascunho local do editor de programa (E06-07, D-03, UX-17)
+
+- **Guarda sozinho:** a cada alteração (com espera de 0,5 s, e ao sair da tela) o editor grava no aparelho o que foi montado e ainda não foi salvo no servidor (`data/cache/editorDrafts.ts`, junto da versão e da revisão do servidor sobre as quais a pessoa trabalhava). Salvar com sucesso, ou voltar a ficar igual ao servidor, apaga o rascunho. Assim, voltar pelo botão do sistema, fechar o app ou ficar sem conexão **não perde** o trabalho — editar a estrutura continua exigindo conexão para salvar e publicar (D-03).
+- **Ao reabrir:** se o programa continua no mesmo ponto do servidor, o rascunho é aplicado e aparece "Recuperamos suas alterações não salvas, guardadas neste aparelho em dd/mm hh:mm", com **Descartar alterações**. Se o programa **mudou no servidor depois** do rascunho (ou a versão é outra), **nada é aplicado sozinho**: aparece "Rascunho antigo neste aparelho" e a pessoa escolhe **Usar meu rascunho** (substitui a versão atual ao salvar) ou **Descartar rascunho**. Isso evita sobrescrever em silêncio uma mudança feita em outro lugar.
+- **Sair:** com alterações, o diálogo diz que elas ficam guardadas no aparelho ("Sair e guardar rascunho"); **Descartar alterações** (com confirmação) volta à versão do servidor. Sem banco local aberto, o editor funciona como antes (mensagem "Sair sem salvar?").
+- **Sair da conta:** o rascunho segue a regra dos demais dados locais (ver E08-09): fica no aparelho se a pessoa escolher manter, e é apagado se escolher apagar.
+
 ## Cópia de programa (E06-09)
 
 - No detalhe de qualquer programa, **Criar cópia** (para programa de coach: **Criar minha cópia para editar**, em destaque, com o aviso de que o original não pode ser editado). Pede confirmação dizendo que o original não muda, cria um programa **novo, seu** (origem "Criado por você", `derivado_de` apontando para o original) com as fichas da versão vigente e abre a cópia. A API é a `POST /programas/{uuid}/copiar` (E06-01), com chave de idempotência (repetir por engano não cria duas). Erro de rede e erro genérico avisam e deixam tentar de novo. É o caminho previsto pela RG-005 para personalizar o que veio de um coach.
