@@ -26,6 +26,7 @@ export function AddExerciseToFichaScreen() {
       </Text>
       <ExerciseSearch
         search={exercises.search}
+        onDetails={(exercise) => router.push({ pathname: '/exercicios/[uuid]', params: { uuid: exercise.id } })}
         onSelect={(exercise) => {
           editor.dispatch({ type: 'addItem', fichaKey: String(fichaKey), exercise: { id: exercise.id, nome: exercise.nome, modalidade: (exercise.modalidade ?? 'reps_carga') as Modality } });
           router.back();

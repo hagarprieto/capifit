@@ -42,7 +42,7 @@ export function ExercisePickerScreen({ api }: { api?: WorkoutApi }) {
       <Text variant="headline" accessibilityRole="header">
         {t('picker.titulo')}
       </Text>
-      <ExerciseSearch search={workoutApi.searchExercises} onSelect={(exercise) => void add(exercise)} busyId={adding} failed={failed} />
+      <ExerciseSearch search={workoutApi.searchExercises} onSelect={(exercise) => void add(exercise)} busyId={adding} failed={failed} onDetails={(exercise) => router.push({ pathname: '/exercicios/[uuid]', params: { uuid: exercise.id } })} />
     </Screen>
   );
 }

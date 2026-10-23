@@ -54,7 +54,8 @@
     "E08-05": "in-progress",
     "E08-09": "in-progress",
     "E08-06": "in-progress",
-    "E07-08": "in-progress"
+    "E07-08": "in-progress",
+    "E06-06": "in-progress"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
@@ -112,7 +113,8 @@
     "E08-05": "Tela de revisão de conflitos pronta e testada em Jest (334 testes, com a fila de verdade): conflito de série com os dois lados, manter o meu (UUID novo e horário novo), usar o do servidor, tentar de novo, descartar com confirmação, descartar o treino, treino confirmado quando a revisão acaba, estados vazio e de erro. Falta o resultado do CI e validar em aparelho com dois aparelhos (conflito real). As regras de última escrita e o conflito entre aparelhos já são decididas pela API (E08-04).",
     "E08-09": "Sair com dados pendentes pronto e testado em Jest (341 testes, com a fila de verdade): envia antes de sair, não sai sozinho se sobrou algo, oferece tentar de novo, revisar, sair mantendo no aparelho e sair apagando (com confirmação); registros recusados também seguram a saída; troca de conta isolada por usuário. Falta o resultado do CI e validar em aparelho (sair em modo avião e entrar de novo).",
     "E08-06": "Reconciliação por snapshot pronta e testada em Jest (351 testes, com a fila de verdade): treino confirmado é relido do servidor e a cópia local passa a ser a dele; treino em andamento ou com operações na fila não é trocado; sem rede nada quebra; programa ativo e últimos registros são atualizados; erro na reconciliação não atrapalha o envio. Falta o resultado do CI e validar em aparelho.",
-    "E07-08": "Pausar, retomar e descartar o treino prontos e testados em Jest (364 testes): botões no executor, aviso de treino pausado, descartar com confirmação, funcionam sem rede pela fila, pausa descontada da duração. Falta o resultado do CI e validar em aparelho. Finalizar com séries pendentes já era a finalização parcial."
+    "E07-08": "Pausar, retomar e descartar o treino prontos e testados em Jest (364 testes): botões no executor, aviso de treino pausado, descartar com confirmação, funcionam sem rede pela fila, pausa descontada da duração. Falta o resultado do CI e validar em aparelho. Finalizar com séries pendentes já era a finalização parcial.",
+    "E06-06": "Biblioteca e detalhe do exercício prontos e testados em Jest (386 testes): busca, filtros por grupo e equipamento, paginação, estados vazio e de erro, detalhe com passos, cuidados, músculos e alternativas, e o fallback textual quando não há mídia aprovada, quando a imagem não carrega ou quando só há vídeo (sem player). Entradas pela aba Treinos, pelo seletor de exercício e pelo executor. O app empacota para Android. Falta o resultado do CI e validar em aparelho (roteiro R12). Player de vídeo é a E10-09; leitura offline da biblioteca não entrou."
   },
   "externas": {
     "revisor": "pending",

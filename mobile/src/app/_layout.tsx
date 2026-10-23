@@ -49,6 +49,8 @@ function ThemedStack({ fontsReady }: { fontsReady: boolean }) {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="tema" />
           <Stack.Screen name="sincronizacao" />
+          <Stack.Screen name="exercicios/index" />
+          <Stack.Screen name="exercicios/[uuid]" />
           <Stack.Screen name="treino/[uuid]/index" />
           <Stack.Screen name="treino/[uuid]/exercicios" />
           <Stack.Screen name="treino/[uuid]/resumo" />

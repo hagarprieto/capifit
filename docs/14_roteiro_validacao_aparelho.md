@@ -1,12 +1,12 @@
 # CapiFit — Documento 14: Roteiro de validação do app em aparelho
 
-**Versão:** 2.0 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08 e E07-11
+**Versão:** 2.1 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11 e E06-06
 **Por que existe:** os testes automáticos (Jest, tipos, lint) já passam no CI, mas só um aparelho de verdade mostra teclado, rolagem, tema, notificação, vibração, leitor de tela e desempenho. Este roteiro transforma "falta validar em aparelho" em uma lista que você executa e marca.
 
 ## 0. Como usar
 
 1. Faça a **preparação (§1)** uma vez. Leva cerca de 30 minutos na primeira vez.
-2. Execute os roteiros **R0 a R11 (§2)** num **Android** e num **iPhone** (veja a matriz mínima em §1.4). Para cada passo, confira o **Esperado**.
+2. Execute os roteiros **R0 a R12 (§2)** num **Android** e num **iPhone** (veja a matriz mínima em §1.4). Para cada passo, confira o **Esperado**.
 3. Marque cada teste no **quadro de resultados (§3)**: **P** (passou), **F** (falhou), **N/A** (não se aplica neste aparelho) e, se falhou, anote o que viu (§4).
 4. Uma história só vira **concluída** quando todos os testes **obrigatórios (🔴)** dela passam em **pelo menos um Android e um iPhone** (§5). Os desejáveis (🟡) viram pendência, não bloqueio.
 
@@ -290,6 +290,23 @@ Os testes V-11.1 a V-11.3 precisam de **dois aparelhos** (ou um aparelho e um em
 | V-11.8 🔴 | Com tudo sincronizado, toque em **Sair**. | Sai direto, sem painel. | Pergunta sem necessidade, ou não sai. |
 | V-11.9 🟡 | Depois de sincronizar um treino feito offline, reabra-o (histórico → resumo). | Os números conferem com o que o servidor calculou (duração com a pausa descontada). | Divergência entre o aparelho e o servidor. |
 
+### R12 — Biblioteca de exercícios (E06-06)
+
+Pré-requisito: exercícios publicados (§1.2). O seed não traz mídia, então a demonstração aparecerá como "indisponível" (é o esperado e é o que se testa em V-12.4).
+
+| ID | Passos | Esperado | Reprova se |
+|---|---|---|---|
+| V-12.1 🔴 | Aba **Treinos** → **Biblioteca de exercícios**. | Lista de exercícios com equipamento e grupo; campo de busca; filtros de **Grupo muscular** e **Equipamento** com a opção "Todos". | Lista vazia sem motivo (confira §1.2), ou tela quebrada. |
+| V-12.2 🔴 | Busque `supino`; depois escolha o filtro de um grupo e de um equipamento. | A lista acompanha (a busca espera um instante depois de digitar); o chip escolhido fica destacado e é lido como "selecionado". | Filtro que não muda a lista, ou seleção só por cor. |
+| V-12.3 🔴 | Busque algo que não existe (`zzzz`). | "Nenhum exercício encontrado" com orientação e **Limpar busca e filtros**, que volta à lista. | Tela vazia sem explicação. |
+| V-12.4 🔴 | Abra um exercício. | Nome e tags; **Demonstração** com o aviso de que não há demonstração e **Como fazer** em passos numerados, **Cuidados** (se houver), músculos e **Alternativas**. Nada de erro por não haver vídeo. | Erro, tela em branco, ou instruções escondidas por falta de vídeo. |
+| V-12.5 🔴 | Toque numa **alternativa**. | Abre o detalhe da alternativa; o botão voltar do sistema volta ao exercício anterior. | Abre o exercício errado, ou perde a navegação. |
+| V-12.6 🔴 | Ao adicionar exercício à ficha (editor) e ao treino (executor), toque em **Detalhes** de um item. | Abre o detalhe **sem** adicionar o exercício; ao voltar, a busca continua e o item só entra se você tocar no nome. | Adiciona sem querer, ou perde a busca. |
+| V-12.7 🔴 | No executor, toque em **Como fazer este exercício**. | Abre o detalhe do exercício atual; ao voltar, o treino está como estava (séries concluídas mantidas). | Perde séries, ou abre outro exercício. |
+| V-12.8 🔴 | **Modo avião** → abra a biblioteca e um detalhe. | Aviso de falta de conexão com **Tentar de novo**; o treino em andamento não é afetado. | Trava, ou derruba o app. |
+| V-12.9 🔴 | Leitor de tela: percorra a lista e um detalhe. | Cada exercício é lido com nome, equipamento e grupo; as seções têm títulos (Demonstração, Como fazer…); os passos são lidos como "Passo 2: …". | Itens sem nome, passos sem ordem. |
+| V-12.10 🟡 | (Só com mídia aprovada no banco de teste) Exercício com imagem aprovada. | A imagem aparece com "Demonstração revisada · versão N"; fonte 200 % não corta a legenda. | Imagem sem legenda de revisão. |
+
 ---
 
 ## 3. Quadro de resultados
@@ -312,6 +329,7 @@ Copie e preencha (uma cópia por aparelho). **P**/**F**/**N/A** e uma observaç�
 | V-09.1 … V-09.7 |  |  |  |
 | V-10.1 … V-10.10 |  |  | testar em avião de verdade |
 | V-11.4 … V-11.8 |  |  |  |
+| V-12.1 … V-12.9 |  |  |  |
 
 ---
 
@@ -352,6 +370,7 @@ Não coloque senhas, tokens nem e-mails reais no relato.
 | E08-05 (conflitos) | V-11.1 a V-11.3 (precisam de dois aparelhos; sem eles a história fica "em andamento") |
 | E08-06 (reconciliação) | V-10.8, V-11.9 |
 | E08-09 (sair da conta) | V-11.4 a V-11.8 |
+| E06-06 (biblioteca e detalhe do exercício) | V-12.1 a V-12.9 |
 
 Regra: **todos os 🔴 da história em um Android e em um iPhone**. Se faltar um dos dois SO, a história continua "em andamento" com a nota do que falta. Falhas viram defeitos (§4) e a história volta a ser marcada depois da correção e de uma nova rodada só dos testes que falharam.
 
@@ -379,4 +398,5 @@ adb logcat *:E ReactNativeJS:V
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0 | 22/10/2026 | Primeira versão: preparação, 6 roteiros, quadro de resultados e critério de conclusão para as histórias do app já entregues. |
+| 2.1 | 23/10/2026 | R12 (biblioteca de exercícios, E06-06) e critérios correspondentes. |
 | 2.0 | 23/10/2026 | Cinco roteiros novos (R7 Início e abas, R8 Evolução, R9 programa ativo e metas, R10 offline completo, R11 conflitos e sair da conta); textos atualizados onde as telas mudaram (Sair no Perfil, Treinos como aba, executor offline, cartão de treino em andamento); quadro e critérios estendidos. |

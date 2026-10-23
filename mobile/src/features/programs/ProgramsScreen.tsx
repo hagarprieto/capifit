@@ -152,6 +152,7 @@ export function ProgramsScreen({ api }: { api?: ProgramsApi }) {
       ) : null}
 
       {load.kind === 'ready' && groups && groups[tab].length > 0 ? <Button label={t('programas.criar')} onPress={create} /> : null}
+      <Button label={t('biblioteca.abrir')} variant="secondary" onPress={() => router.push('/exercicios')} />
     </Screen>
   );
 }

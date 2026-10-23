@@ -129,6 +129,7 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
               {current.item.exercicio.nome}
             </Text>
             <Goal modality={current.modality} targets={current.workTargets} />
+            <Button variant="text" label={t('treino.comoFazer')} onPress={() => router.push({ pathname: '/exercicios/[uuid]', params: { uuid: current.item.exercicio.id } })} />
             <LastTime modality={current.modality} record={current.last} />
           </View>
 

@@ -62,6 +62,14 @@ npm run mock:api       # servidor mock do contrato em http://localhost:4010 (Pri
 - **Falhas:** resumo e histórico carregam separados; se algum falhar, aparece o aviso com "Tentar de novo". Ao voltar de outra tela a aba atualiza sozinha. Lógica em `features/progress/progress.ts`.
 - **Fora desta entrega:** gráfico por exercício e tendências (E13-01) e leitura offline do histórico (E08).
 
+## Biblioteca de exercícios (E06-06, TEL-024/025)
+
+- **Onde fica:** não é uma aba (Doc 02: a biblioteca é acessada em contexto). Entradas: botão "Biblioteca de exercícios" na aba Treinos (`/exercicios`); botão **Detalhes** em cada exercício ao escolher exercício para a ficha ou para o treino; e **Como fazer este exercício** no executor.
+- **Biblioteca:** busca por nome (com pequena espera ao digitar), filtro por grupo muscular e por equipamento, lista paginada ("Carregar mais"), estado vazio com "Limpar busca e filtros" e erro com "Tentar de novo". Se os filtros não carregarem, a lista funciona sem eles. É só leitura e só mostra exercícios publicados.
+- **Detalhe (`/exercicios/[uuid]`):** tags (equipamento, modalidade, dificuldade, unilateral), **Demonstração**, **Como fazer** em passos numerados, **Cuidados**, músculos principais e secundários e **Alternativas** (cada uma abre o detalhe dela).
+- **Fallback textual (UX-10, AC-10):** a demonstração só aparece se a API devolver mídia **aprovada**. Com imagem aprovada, mostra a imagem e "Demonstração revisada · versão N"; se a imagem não carregar, cai no aviso e segue com o texto. Vídeo/animação aprovados avisam que ainda não abrem no app (o player é a E10-09). Sem mídia, avisa que não há demonstração e mostra as instruções. Instruções ausentes viram "ainda estão em revisão". O registro do treino nunca depende da mídia.
+- **Fora desta entrega:** player de vídeo com cache e legendas (E10-09) e leitura da biblioteca sem conexão.
+
 ## Início (TEL-010)
 
 - **O que mostra:** saudação, estado de sincronização (`SyncStatus`), e por prioridade: **treino em andamento** (Continuar), **próxima ficha do programa ativo** (Iniciar / Ver a ficha) ou, sem programa, **Criar programa**; depois "Sua semana" (segunda a domingo no fuso do aparelho, `WeekStrip`), treinos e tempo de treino da semana (`StatTile`) e a última sessão.

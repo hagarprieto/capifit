@@ -21,10 +21,12 @@ type Props<T extends ExerciseOption> = {
   busyId?: string | null;
   /** Falha vinda de quem usa (ex.: não conseguiu adicionar). */
   failed?: boolean;
+  /** Se informado, cada item ganha um botão para ver a explicação do exercício antes de escolher. */
+  onDetails?: (exercise: T) => void;
 };
 
 /** Busca no catálogo por nome (com pequena espera após digitar) e lista tocável. Compartilhada pelo treino e pelo editor. */
-export function ExerciseSearch<T extends ExerciseOption>({ search, onSelect, busyId = null, failed = false }: Props<T>) {
+export function ExerciseSearch<T extends ExerciseOption>({ search, onSelect, busyId = null, failed = false, onDetails }: Props<T>) {
   const { theme } = useTheme();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<T[]>([]);
@@ -64,20 +66,31 @@ export function ExerciseSearch<T extends ExerciseOption>({ search, onSelect, bus
       ) : null}
       <View style={{ gap: theme.space[1] }}>
         {results.map((exercise) => (
-          <Pressable
-            key={exercise.id}
-            accessibilityRole="button"
-            accessibilityLabel={exercise.nome}
-            accessibilityState={{ busy: busyId === exercise.id, disabled: busyId !== null }}
-            disabled={busyId !== null}
-            onPress={() => onSelect(exercise)}
-            style={{ minHeight: theme.size.touchPreferred, justifyContent: 'center', padding: theme.space[2], borderRadius: theme.radius.md, backgroundColor: theme.colors.bg.surface }}
-          >
-            <Text variant="bodyStrong">{exercise.nome}</Text>
-            <Text variant="caption" color="secondary">
-              {busyId === exercise.id ? t('picker.adicionando') : (exercise.equipamento?.nome ?? '')}
-            </Text>
-          </Pressable>
+          <View key={exercise.id} style={{ flexDirection: 'row', alignItems: 'stretch', gap: theme.space[1] }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={exercise.nome}
+              accessibilityState={{ busy: busyId === exercise.id, disabled: busyId !== null }}
+              disabled={busyId !== null}
+              onPress={() => onSelect(exercise)}
+              style={{ flex: 1, minHeight: theme.size.touchPreferred, justifyContent: 'center', padding: theme.space[2], borderRadius: theme.radius.md, backgroundColor: theme.colors.bg.surface }}
+            >
+              <Text variant="bodyStrong">{exercise.nome}</Text>
+              <Text variant="caption" color="secondary">
+                {busyId === exercise.id ? t('picker.adicionando') : (exercise.equipamento?.nome ?? '')}
+              </Text>
+            </Pressable>
+            {onDetails ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('picker.detalhesDe', { nome: exercise.nome })}
+                onPress={() => onDetails(exercise)}
+                style={{ minWidth: theme.size.touchPreferred, minHeight: theme.size.touchPreferred, alignItems: 'center', justifyContent: 'center', paddingHorizontal: theme.space[2], borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.border.subtle }}
+              >
+                <Text variant="bodySmall">{t('picker.detalhes')}</Text>
+              </Pressable>
+            ) : null}
+          </View>
         ))}
       </View>
     </View>
