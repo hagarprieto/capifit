@@ -203,12 +203,4 @@ describe('HomeScreen', () => {
     expect(await screen.findByText('Sem conexão: você pode treinar normalmente.')).toBeTruthy();
     expect(screen.getAllByLabelText('Offline — salvo neste dispositivo').length).toBeGreaterThan(0);
   });
-
-  it('sai ao tocar em Sair', async () => {
-    await show(workoutApi(), programsApi(null));
-
-    await fireEvent.press(await screen.findByRole('button', { name: 'Sair' }));
-
-    expect(mockAuth.signOut).toHaveBeenCalledTimes(1);
-  });
 });

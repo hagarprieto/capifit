@@ -43,7 +43,8 @@
     "E06-05": "in-progress",
     "E06-08": "in-progress",
     "E07-04": "in-progress",
-    "E05-03": "in-progress"
+    "E05-03": "in-progress",
+    "E04-03": "in-progress"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
@@ -90,7 +91,8 @@
     "E06-05": "Tela de configurar exercício pronta e testada em Jest: séries de trabalho, aquecimento opcional, faixa de repetições, carga-alvo, RIR, descanso, observações e duração (exercício de tempo), com validação por campo igual à do servidor e prévia legível. Validado no CI (Jest, tipos, lint). Falta validar em aparelho. Os mesmos parâmetros valem para todas as séries de trabalho; edição série a série fica para depois. Roteiro de validação: Doc 14.",
     "E06-08": "Ativar, trocar e arquivar programa prontos e testados em Jest (192 testes): confirmação antes de trocar o programa em uso, arquivar com explicação do histórico preservado e sem desarquivar, rascunho orienta a publicar, coach ativa mas não edita, erros de rede e genéricos. Validado no CI (Jest, tipos, lint). Falta validar em aparelho (Doc 14 ainda não cobre esta história).",
     "E07-04": "Detalhe da ficha e iniciar/continuar prontos e testados em Jest (201 testes): prescrição legível, iniciar a partir da ficha, continuar quando o treino aberto é da mesma ficha, aviso quando é de outra origem, erros de rede e genéricos, e ficha de rascunho não treina. Validado no CI (Jest, tipos, lint). Falta validar em aparelho. A sugestão pela meta prescrita (D-14) foi feita junto: carga-alvo, faixa de repetições e duração, com o último treino de apoio.",
-    "E05-03": "Início pronto e testado em Jest (226 testes): treino em andamento, próxima ficha do programa ativo, sem programa, semana com marcação dos dias, treinos e tempo da semana, última sessão, offline e falha ao carregar com tentar de novo. Falta o resultado do CI e validar em aparelho. Convite de coach fica para a Fase 3."
+    "E05-03": "Início pronto e testado em Jest (226 testes): treino em andamento, próxima ficha do programa ativo, sem programa, semana com marcação dos dias, treinos e tempo da semana, última sessão, offline e falha ao carregar com tentar de novo. Falta o resultado do CI e validar em aparelho. Convite de coach fica para a Fase 3.",
+    "E04-03": "Quatro abas (Início, Treinos, Evolução, Perfil) com barra própria e botão Voltar ao treino enquanto há sessão aberta; testado em Jest (233 testes) e o app empacota para Android. Falta o resultado do CI e validar em aparelho (inclusive o gesto de voltar do Android). Evolução é espaço reservado até a E09-03."
   },
   "externas": {
     "revisor": "pending",

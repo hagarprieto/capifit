@@ -87,6 +87,14 @@ export const ptBR = {
   'home.verTema': 'Verificação do tema',
   'home.meusTreinos': 'Meus treinos',
 
+  'aba.inicio': 'Início',
+  'aba.treinos': 'Treinos',
+  'aba.evolucao': 'Evolução',
+  'aba.perfil': 'Perfil',
+  'aba.voltarTreino': 'Voltar ao treino',
+  'evolucao.emBreveTitulo': 'Sua evolução aparece aqui',
+  'evolucao.emBreveTexto': 'Histórico, frequência e cargas chegam em uma próxima versão. Seus treinos concluídos já estão sendo guardados.',
+
   'sync.sincronizado': 'Sincronizado',
   'sync.pendente': 'Pendente de sincronização',
   'sync.offline': 'Offline — salvo neste dispositivo',

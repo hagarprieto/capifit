@@ -29,6 +29,12 @@ npm run mock:api       # servidor mock do contrato em http://localhost:4010 (Pri
 - **Sessão:** tokens ficam só no armazenamento seguro do aparelho (`expo-secure-store`: Keychain/Keystore), nunca em log nem em estado de tela. `src/auth/authCore.ts` renova com uma chamada por vez; o app restaura a sessão ao abrir, inclusive sem rede (o treino não depende da conexão). O identificador do aparelho é criado uma vez e sobrevive ao logout.
 - **Rotas por sessão:** `src/app/_layout.tsx` usa `Stack.Protected`: sem sessão só as telas de entrada (`boas-vindas`, `entrar`, `cadastrar`, `recuperar`); com sessão a área logada. O link do e-mail abre `redefinir-senha?token=…` (esquema `capifit://`). O guard só esconde telas: a autorização é do servidor.
 
+## Abas (E04-03)
+
+- **Estrutura:** `src/app/(tabs)` tem as quatro abas fixas do Doc 03 §3.1: Início, Treinos (`/programas`), Evolução e Perfil. Telas de detalhe, edição e execução ficam no stack da raiz, por cima das abas (a barra some nelas). A barra é própria (`features/shell/AppTabBar.tsx`), com texto sempre visível e alvo de toque mínimo.
+- **Voltar ao treino:** enquanto houver sessão aberta, a barra mostra o botão "Voltar ao treino" em qualquer aba (UX-02). A consulta roda ao montar e a cada mudança de aba ou de rota; se falhar, o botão só não aparece.
+- **Evolução e Perfil:** a Evolução é um espaço reservado até a E09-03. O Perfil traz o nome, a verificação do tema e Sair (que saíram do Início).
+
 ## Início (TEL-010)
 
 - **O que mostra:** saudação, estado de sincronização (`SyncStatus`), e por prioridade: **treino em andamento** (Continuar), **próxima ficha do programa ativo** (Iniciar / Ver a ficha) ou, sem programa, **Criar programa**; depois "Sua semana" (segunda a domingo no fuso do aparelho, `WeekStrip`), treinos e tempo de treino da semana (`StatTile`) e a última sessão.

@@ -45,12 +45,11 @@ function ThemedStack({ fontsReady }: { fontsReady: boolean }) {
           <Stack.Screen name="recuperar" />
         </Stack.Protected>
         <Stack.Protected guard={status === 'signedIn'}>
-          <Stack.Screen name="index" />
+          <Stack.Screen name="(tabs)" />
           <Stack.Screen name="tema" />
           <Stack.Screen name="treino/[uuid]/index" />
           <Stack.Screen name="treino/[uuid]/exercicios" />
           <Stack.Screen name="treino/[uuid]/resumo" />
-          <Stack.Screen name="programas/index" />
           <Stack.Screen name="programas/novo" />
           <Stack.Screen name="programas/[uuid]/index" />
           <Stack.Screen name="programas/[uuid]/editar" />

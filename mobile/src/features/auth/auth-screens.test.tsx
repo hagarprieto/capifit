@@ -281,13 +281,11 @@ describe('ResetPasswordScreen', () => {
 });
 
 describe('HomeScreen', () => {
-  it('cumprimenta pelo nome, avisa o modo offline e sai ao tocar em Sair', async () => {
+  it('cumprimenta pelo nome e avisa o modo offline', async () => {
     mockAuth.offline = true;
     await show(<HomeScreen />);
 
     expect(screen.getByText('Olá, Ana! Bora treinar?')).toBeTruthy();
     expect(screen.getByText('Sem conexão: você pode treinar normalmente.')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'Sair' }));
-    expect(mockAuth.signOut).toHaveBeenCalledTimes(1);
   });
 });

@@ -27,7 +27,7 @@ export function HomeScreen({ api, programsApi: programsOverride, now }: { api?: 
   const router = useRouter();
   const { theme } = useTheme();
   const auth = useAuth();
-  const { user, offline, signOut } = auth;
+  const { user, offline } = auth;
   const workoutApi = useMemo(() => api ?? createWorkoutApi(auth.api), [api, auth.api]);
   const programsApi = useMemo(() => programsOverride ?? createProgramsApi(auth.api), [programsOverride, auth.api]);
   const [data, setData] = useState<Data | null>(null);
@@ -176,9 +176,6 @@ export function HomeScreen({ api, programsApi: programsOverride, now }: { api?: 
         ) : null}
       </View>
 
-      <Button label={t('home.meusTreinos')} variant="secondary" onPress={() => router.push('/programas')} />
-      <Button label={t('home.verTema')} variant="text" onPress={() => router.push('/tema')} />
-      <Button label={t('home.sair')} variant="text" onPress={() => void signOut()} />
     </Screen>
   );
 }
