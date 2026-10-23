@@ -15,6 +15,24 @@ export type { ExerciseSummary } from '../exercises/exercisesApi';
 
 const nowIso = () => new Date().toISOString();
 
+/** Metas prescritas de uma versão do programa, por id da série prescrita. */
+export function targetsFromVersion(version: Schemas['Versao']): Record<string, Target> {
+  const targets: Record<string, Target> = {};
+  for (const ficha of version.fichas) {
+    for (const item of ficha.exercicios) {
+      for (const series of item.series) {
+        targets[series.id] = {
+          repsMin: series.reps_min ?? null,
+          repsMax: series.reps_max ?? null,
+          loadKg: series.carga_alvo_kg ?? null,
+          durationSeconds: series.duracao_alvo_segundos ?? null,
+        };
+      }
+    }
+  }
+  return targets;
+}
+
 /** Chamadas do executor de treino. Escritas levam UUID do cliente (reenvio seguro) e série leva o horário do aparelho. */
 export function createWorkoutApi(api: ApiClient) {
   const exercises = createExercisesApi(api);
@@ -89,21 +107,7 @@ export function createWorkoutApi(api: ApiClient) {
      */
     async programTargets(programId: string, versionNumber: number): Promise<Record<string, Target>> {
       try {
-        const version = (await api.get<Schemas['Versao']>(`/programas/${programId}/versoes/${versionNumber}`)).data;
-        const targets: Record<string, Target> = {};
-        for (const ficha of version.fichas) {
-          for (const item of ficha.exercicios) {
-            for (const series of item.series) {
-              targets[series.id] = {
-                repsMin: series.reps_min ?? null,
-                repsMax: series.reps_max ?? null,
-                loadKg: series.carga_alvo_kg ?? null,
-                durationSeconds: series.duracao_alvo_segundos ?? null,
-              };
-            }
-          }
-        }
-        return targets;
+        return targetsFromVersion((await api.get<Schemas['Versao']>(`/programas/${programId}/versoes/${versionNumber}`)).data);
       } catch {
         return {};
       }

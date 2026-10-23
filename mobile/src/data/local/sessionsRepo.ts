@@ -161,6 +161,27 @@ export function createSessionsRepo(db: LocalDb, userUuid: string) {
       return row ? load(row) : null;
     },
 
+    /** `true`/`false` = a sessão existe no aparelho e o servidor já a tem (ou não); `null` = não existe aqui. */
+    async isSynced(uuid: string): Promise<boolean | null> {
+      const row = await db.getFirstAsync<{ sincronizada: number }>('SELECT sincronizada FROM sessao WHERE uuid = ? AND usuario_uuid = ?', [uuid, userUuid]);
+      return row ? row.sincronizada === 1 : null;
+    },
+
+    /** Acrescenta uma série ao exercício da sessão (depois da última), com o UUID já gerado pelo aparelho. */
+    async addSeries(itemUuid: string, seriesUuid: string, type: SessionSeries['tipo'] = 'normal'): Promise<SessionSeries | null> {
+      const owned = await db.getFirstAsync<{ uuid: string }>(
+        'SELECT se.uuid FROM sessao_exercicio se JOIN sessao s ON s.uuid = se.sessao_uuid WHERE se.uuid = ? AND s.usuario_uuid = ?',
+        [itemUuid, userUuid],
+      );
+      if (!owned) {
+        return null;
+      }
+      const last = await db.getFirstAsync<{ ordem: number | null }>('SELECT MAX(ordem) AS ordem FROM sessao_serie WHERE sessao_exercicio_uuid = ?', [itemUuid]);
+      const ordem = (last?.ordem ?? 0) + 1;
+      await db.runAsync("INSERT INTO sessao_serie (uuid, sessao_exercicio_uuid, ordem, tipo, status, revision) VALUES (?, ?, ?, ?, 'pendente', 0)", [seriesUuid, itemUuid, ordem, type]);
+      return { id: seriesUuid, serie_prescrita_id: null, ordem, tipo: type, status: 'pendente', carga_kg: null, repeticoes: null, duracao_segundos: null, rir_real: null, concluida_em: null, revision: 0 };
+    },
+
     /** A sessão em andamento, se houver (só uma por vez). */
     async open(): Promise<Session | null> {
       const row = await db.getFirstAsync<SessionRow>("SELECT * FROM sessao WHERE usuario_uuid = ? AND status = 'em_andamento' ORDER BY iniciada_em DESC LIMIT 1", [userUuid]);

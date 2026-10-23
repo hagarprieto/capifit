@@ -1,13 +1,13 @@
 import { usePathname, useRouter } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/design-system/Button';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
-import { createWorkoutApi, type WorkoutApi } from '@/features/workout/workoutApi';
+import { useWorkoutApi } from '@/features/workout/useWorkoutApi';
+import type { WorkoutApi } from '@/features/workout/workoutApi';
 import { t } from '@/i18n';
 
 /**
@@ -19,8 +19,7 @@ export function AppTabBar({ state, descriptors, emitter, navigateToTab, insets, 
   const { theme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
-  const auth = useAuth();
-  const workoutApi = useMemo(() => api ?? createWorkoutApi(auth.api), [api, auth.api]);
+  const workoutApi = useWorkoutApi(api);
   const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {

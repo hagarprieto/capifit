@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { isApiError } from '@/api/errors';
-import { useAuth } from '@/auth/AuthProvider';
 import { t } from '@/i18n';
 
 import { EMPTY_DRAFT, validateDraft, type Draft, type Modality } from './input';
 import { initialDraft, type LastRecord, type Target } from './prefill';
-import { createWorkoutApi, type Session, type SessionItem, type SessionSeries, type WorkoutApi } from './workoutApi';
+import { useWorkoutApi } from './useWorkoutApi';
+import type { Session, SessionItem, SessionSeries, WorkoutApi } from './workoutApi';
 
 export type RowView = {
   series: SessionSeries;
@@ -30,8 +30,7 @@ type Load = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; session: 
 
 /** Estado do executor: sessão do servidor + o que o usuário digitou e ainda não confirmou (D-14). */
 export function useWorkout(sessionUuid: string, injected?: WorkoutApi) {
-  const { api } = useAuth();
-  const workoutApi = useMemo(() => injected ?? createWorkoutApi(api), [api, injected]);
+  const workoutApi = useWorkoutApi(injected);
 
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [last, setLast] = useState<Record<string, LastRecord>>({});

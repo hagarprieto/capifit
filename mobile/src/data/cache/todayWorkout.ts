@@ -44,7 +44,7 @@ export function createTodayCache(cache: CacheRepo) {
 export type TodayCache = ReturnType<typeof createTodayCache>;
 
 /** Sem rede, servidor fora do ar ou limite de requisições: vale usar a cópia. Erro de contrato ou permissão não. */
-function isTemporary(error: unknown): boolean {
+export function isTemporary(error: unknown): boolean {
   return isApiError(error) && (error.isNetwork || error.status >= 500 || error.status === 429 || error.status === 408);
 }
 

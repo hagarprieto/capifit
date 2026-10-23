@@ -13,7 +13,8 @@ import { StatTile, SyncStatus, WeekStrip } from '@/design-system/StatusAndStats'
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
 import { createProgramsApi, type ActiveProgram, type ProgramsApi } from '@/features/programs/programsApi';
-import { createWorkoutApi, type WorkoutApi } from '@/features/workout/workoutApi';
+import { useWorkoutApi } from '@/features/workout/useWorkoutApi';
+import type { WorkoutApi } from '@/features/workout/workoutApi';
 import { t } from '@/i18n';
 
 import { formatDuration, formatShortDate, nextFicha, weekDays, weekStats, type SessionSummary } from './home';
@@ -30,7 +31,7 @@ export function HomeScreen({ api, programsApi: programsOverride, now }: { api?: 
   const { theme } = useTheme();
   const auth = useAuth();
   const { user, offline } = auth;
-  const workoutApi = useMemo(() => api ?? createWorkoutApi(auth.api), [api, auth.api]);
+  const workoutApi = useWorkoutApi(api);
   const programsApi = useMemo(() => programsOverride ?? createProgramsApi(auth.api), [programsOverride, auth.api]);
   const { ready, today } = useLocalData();
   const [data, setData] = useState<Data | null>(null);

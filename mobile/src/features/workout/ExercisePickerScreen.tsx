@@ -1,21 +1,20 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
-import { useAuth } from '@/auth/AuthProvider';
 import { Screen } from '@/design-system/Screen';
 import { Text } from '@/design-system/Text';
 import { ExerciseSearch } from '@/features/exercises/ExerciseSearch';
 import { t } from '@/i18n';
 
-import { createWorkoutApi, type ExerciseSummary, type WorkoutApi } from './workoutApi';
+import { useWorkoutApi } from './useWorkoutApi';
+import type { ExerciseSummary, WorkoutApi } from './workoutApi';
 
 const DEFAULT_SERIES = 3;
 
 /** Escolha de exercício do catálogo para o treino em andamento: já cria 3 séries para preencher. */
 export function ExercisePickerScreen({ api }: { api?: WorkoutApi }) {
   const router = useRouter();
-  const auth = useAuth();
-  const workoutApi = useMemo(() => api ?? createWorkoutApi(auth.api), [api, auth.api]);
+  const workoutApi = useWorkoutApi(api);
   const { uuid } = useLocalSearchParams<{ uuid: string }>();
   const [adding, setAdding] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);

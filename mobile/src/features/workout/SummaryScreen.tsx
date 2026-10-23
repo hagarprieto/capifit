@@ -1,8 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/design-system/Button';
 import { Notice } from '@/design-system/Notice';
 import { Screen } from '@/design-system/Screen';
@@ -11,7 +10,8 @@ import { useTheme } from '@/design-system/ThemeProvider';
 import { t } from '@/i18n';
 
 import { formatVolume, summarize, type SummarySet } from './summary';
-import { createWorkoutApi, type Session, type WorkoutApi } from './workoutApi';
+import { useWorkoutApi } from './useWorkoutApi';
+import type { Session, WorkoutApi } from './workoutApi';
 
 type Load = { kind: 'loading' } | { kind: 'error' } | { kind: 'open' } | { kind: 'ready'; session: Session };
 
@@ -31,8 +31,7 @@ function setText(set: SummarySet): string {
 export function SummaryScreen({ api }: { api?: WorkoutApi }) {
   const router = useRouter();
   const { theme } = useTheme();
-  const auth = useAuth();
-  const workoutApi = useMemo(() => api ?? createWorkoutApi(auth.api), [api, auth.api]);
+  const workoutApi = useWorkoutApi(api);
   const { uuid } = useLocalSearchParams<{ uuid: string }>();
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [attempt, setAttempt] = useState(0);

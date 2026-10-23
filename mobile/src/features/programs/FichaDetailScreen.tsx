@@ -11,7 +11,8 @@ import { OriginBadge } from '@/design-system/OriginBadge';
 import { Screen } from '@/design-system/Screen';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
-import { createWorkoutApi, type WorkoutApi } from '@/features/workout/workoutApi';
+import { useWorkoutApi } from '@/features/workout/useWorkoutApi';
+import type { WorkoutApi } from '@/features/workout/workoutApi';
 import { t } from '@/i18n';
 
 import { itemSummary } from './editor/FichaEditorScreen';
@@ -30,7 +31,7 @@ export function FichaDetailScreen({ api, workoutApi: workoutOverride }: { api?: 
   const { theme } = useTheme();
   const auth = useAuth();
   const programsApi = useMemo(() => api ?? createProgramsApi(auth.api), [api, auth.api]);
-  const workoutApi = useMemo(() => workoutOverride ?? createWorkoutApi(auth.api), [workoutOverride, auth.api]);
+  const workoutApi = useWorkoutApi(workoutOverride);
   const { uuid, fichaId } = useLocalSearchParams<{ uuid: string; fichaId: string }>();
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [attempt, setAttempt] = useState(0);
