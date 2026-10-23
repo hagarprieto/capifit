@@ -1,0 +1,267 @@
+{
+  "comentario": "GERADO por mobile/src/data/contract/appSyncFixture.test.ts. Não edite: regenere com UPDATE_CONTRACT_FIXTURE=1 npx jest appSyncFixture.",
+  "base_time": "2026-10-22T10:00:00.000Z",
+  "sentinelas": {
+    "ficha": "aaaaaaaa-aaaa-4aaa-8aaa-000000000001",
+    "ficha_exercicio": [
+      "aaaaaaaa-aaaa-4aaa-8aaa-000000000002",
+      "aaaaaaaa-aaaa-4aaa-8aaa-000000000003"
+    ],
+    "serie_prescrita": [
+      [
+        "aaaaaaaa-aaaa-4aaa-8aaa-000000000011",
+        "aaaaaaaa-aaaa-4aaa-8aaa-000000000012"
+      ],
+      [
+        "aaaaaaaa-aaaa-4aaa-8aaa-000000000013",
+        "aaaaaaaa-aaaa-4aaa-8aaa-000000000014"
+      ]
+    ],
+    "exercicio": [
+      "aaaaaaaa-aaaa-4aaa-8aaa-000000000021",
+      "aaaaaaaa-aaaa-4aaa-8aaa-000000000022"
+    ]
+  },
+  "cenarios": {
+    "programado_completo": {
+      "operacoes": [
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000008",
+          "sequencia_cliente": 1,
+          "entidade": "sessao_treino",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000001",
+          "tipo": "criar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000001",
+            "tipo": "programado",
+            "iniciada_em": "2026-10-22T10:00:00.000Z",
+            "ficha_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-000000000001",
+            "exercicios": [
+              {
+                "uuid": "00000000-0000-4000-8000-000000000002",
+                "ficha_exercicio_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-000000000002",
+                "exercicio_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-000000000021",
+                "tipo_item": "prescrito",
+                "ordem": 1,
+                "series": [
+                  {
+                    "uuid": "00000000-0000-4000-8000-000000000003",
+                    "serie_prescrita_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-000000000011",
+                    "ordem": 1,
+                    "tipo": "aquecimento"
+                  },
+                  {
+                    "uuid": "00000000-0000-4000-8000-000000000004",
+                    "serie_prescrita_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-000000000012",
+                    "ordem": 2,
+                    "tipo": "normal"
+                  }
+                ]
+              },
+              {
+                "uuid": "00000000-0000-4000-8000-000000000005",
+                "ficha_exercicio_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-000000000003",
+                "exercicio_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-000000000022",
+                "tipo_item": "prescrito",
+                "ordem": 2,
+                "series": [
+                  {
+                    "uuid": "00000000-0000-4000-8000-000000000006",
+                    "serie_prescrita_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-000000000013",
+                    "ordem": 1,
+                    "tipo": "aquecimento"
+                  },
+                  {
+                    "uuid": "00000000-0000-4000-8000-000000000007",
+                    "serie_prescrita_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-000000000014",
+                    "ordem": 2,
+                    "tipo": "normal"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000009",
+          "sequencia_cliente": 2,
+          "entidade": "sessao_serie",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000003",
+          "tipo": "atualizar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000001",
+            "carga_kg": 20,
+            "repeticoes": 12,
+            "status": "realizada",
+            "concluida_em": "2026-10-22T10:05:00.000Z",
+            "atualizado_cliente_em": "2026-10-22T10:05:00.000Z"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000010",
+          "sequencia_cliente": 3,
+          "entidade": "sessao_serie",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000004",
+          "tipo": "atualizar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000001",
+            "carga_kg": 60,
+            "repeticoes": 10,
+            "status": "realizada",
+            "concluida_em": "2026-10-22T10:07:00.000Z",
+            "atualizado_cliente_em": "2026-10-22T10:07:00.000Z"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000012",
+          "sequencia_cliente": 4,
+          "entidade": "sessao_serie",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000011",
+          "tipo": "criar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000001",
+            "uuid": "00000000-0000-4000-8000-000000000011",
+            "sessao_exercicio_uuid": "00000000-0000-4000-8000-000000000002"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000013",
+          "sequencia_cliente": 5,
+          "entidade": "sessao_serie",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000011",
+          "tipo": "atualizar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000001",
+            "carga_kg": 55,
+            "repeticoes": 8,
+            "status": "realizada",
+            "concluida_em": "2026-10-22T10:12:00.000Z",
+            "atualizado_cliente_em": "2026-10-22T10:12:00.000Z"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000015",
+          "sequencia_cliente": 6,
+          "entidade": "sessao_pausa",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000014",
+          "tipo": "criar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000001",
+            "iniciada_em": "2026-10-22T10:15:00.000Z"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000016",
+          "sequencia_cliente": 7,
+          "entidade": "sessao_pausa",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000014",
+          "tipo": "atualizar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000001",
+            "encerrada_em": "2026-10-22T10:20:00.000Z"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000017",
+          "sequencia_cliente": 8,
+          "entidade": "sessao_serie",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000006",
+          "tipo": "atualizar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000001",
+            "carga_kg": 30,
+            "repeticoes": 12,
+            "status": "realizada",
+            "concluida_em": "2026-10-22T10:25:00.000Z",
+            "atualizado_cliente_em": "2026-10-22T10:25:00.000Z"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000018",
+          "sequencia_cliente": 9,
+          "entidade": "sessao_serie",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000007",
+          "tipo": "atualizar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000001",
+            "carga_kg": 40,
+            "repeticoes": 10,
+            "status": "realizada",
+            "concluida_em": "2026-10-22T10:27:00.000Z",
+            "atualizado_cliente_em": "2026-10-22T10:27:00.000Z"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000019",
+          "sequencia_cliente": 10,
+          "entidade": "sessao_treino",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000001",
+          "tipo": "concluir",
+          "payload": {
+            "encerrada_em": "2026-10-22T10:40:00.000Z"
+          }
+        }
+      ],
+      "esperado": {
+        "tipo": "programado",
+        "status": "concluida",
+        "duracao_ativa_segundos": 2100,
+        "series_total": 5,
+        "series_realizadas": 5,
+        "pausas": 1
+      }
+    },
+    "avulso_descartado": {
+      "operacoes": [
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000021",
+          "sequencia_cliente": 1,
+          "entidade": "sessao_treino",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000020",
+          "tipo": "criar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000020",
+            "tipo": "avulso",
+            "iniciada_em": "2026-10-22T10:00:00.000Z",
+            "exercicios": []
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000023",
+          "sequencia_cliente": 2,
+          "entidade": "sessao_pausa",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000022",
+          "tipo": "criar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000020",
+            "iniciada_em": "2026-10-22T10:03:00.000Z"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000024",
+          "sequencia_cliente": 3,
+          "entidade": "sessao_pausa",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000022",
+          "tipo": "atualizar",
+          "payload": {
+            "sessao_uuid": "00000000-0000-4000-8000-000000000020",
+            "encerrada_em": "2026-10-22T10:04:00.000Z"
+          }
+        },
+        {
+          "operacao_uuid": "00000000-0000-4000-8000-000000000025",
+          "sequencia_cliente": 4,
+          "entidade": "sessao_treino",
+          "entidade_uuid": "00000000-0000-4000-8000-000000000020",
+          "tipo": "cancelar",
+          "payload": {}
+        }
+      ],
+      "esperado": {
+        "tipo": "avulso",
+        "status": "cancelada",
+        "pausas": 1
+      }
+    }
+  }
+}
