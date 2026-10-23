@@ -10,6 +10,7 @@ import { Screen } from '@/design-system/Screen';
 import { SetRow } from '@/design-system/SetRow';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
+import { ErrorState, LoadingState } from '@/design-system/States';
 import { SyncBanner } from '@/features/shell/SyncBanner';
 import { t } from '@/i18n';
 
@@ -61,17 +62,14 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
   if (workout.status === 'loading') {
     return (
       <Screen>
-        <Text color="secondary" accessibilityLiveRegion="polite">
-          {t('treino.carregando')}
-        </Text>
+        <LoadingState message={t('treino.carregando')} />
       </Screen>
     );
   }
   if (workout.status === 'error') {
     return (
       <Screen>
-        <Notice kind="error" message={t('treino.erroCarregar')} />
-        <Button label={t('treino.tentarDeNovo')} onPress={workout.reload} />
+        <ErrorState kind="error" message={t('treino.erroCarregar')} onRetry={workout.reload} primary />
       </Screen>
     );
   }

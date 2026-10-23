@@ -11,6 +11,7 @@ import { OriginBadge } from '@/design-system/OriginBadge';
 import { Screen } from '@/design-system/Screen';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
+import { ErrorState, LoadingState } from '@/design-system/States';
 import { useWorkoutApi } from '@/features/workout/useWorkoutApi';
 import type { WorkoutApi } from '@/features/workout/workoutApi';
 import { t } from '@/i18n';
@@ -69,17 +70,14 @@ export function FichaDetailScreen({ api, workoutApi: workoutOverride }: { api?: 
   if (load.kind === 'loading') {
     return (
       <Screen>
-        <Text color="secondary" accessibilityLiveRegion="polite">
-          {t('ficha.carregando')}
-        </Text>
+        <LoadingState message={t('ficha.carregando')} />
       </Screen>
     );
   }
   if (load.kind === 'error') {
     return (
       <Screen>
-        <Notice kind="error" message={t('ficha.erroCarregar')} />
-        <Button label={t('treino.tentarDeNovo')} onPress={() => { setLoad({ kind: 'loading' }); setAttempt((n) => n + 1); }} />
+        <ErrorState kind="error" message={t('ficha.erroCarregar')} onRetry={() => { setLoad({ kind: 'loading' }); setAttempt((n) => n + 1); }} primary />
         <Button label={t('programas.voltar')} variant="text" onPress={() => router.back()} />
       </Screen>
     );

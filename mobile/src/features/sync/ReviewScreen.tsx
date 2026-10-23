@@ -11,6 +11,7 @@ import { Notice } from '@/design-system/Notice';
 import { Screen } from '@/design-system/Screen';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
+import { LoadingState } from '@/design-system/States';
 import { formatShortDate } from '@/features/home/home';
 import { t, type MessageKey } from '@/i18n';
 
@@ -116,9 +117,7 @@ export function ReviewScreen({ review: injected }: { review?: Review }) {
       {failed ? <Notice kind="warning" message={t('revisao.erro')} /> : null}
 
       {shown === null ? (
-        <Text color="secondary" accessibilityLiveRegion="polite">
-          {t('revisao.carregando')}
-        </Text>
+        <LoadingState message={t('revisao.carregando')} />
       ) : shown.length === 0 ? (
         <EmptyState title={t('revisao.vazioTitulo')} message={t('revisao.vazioTexto')} actionLabel={t('revisao.voltar')} onAction={() => router.back()} />
       ) : (

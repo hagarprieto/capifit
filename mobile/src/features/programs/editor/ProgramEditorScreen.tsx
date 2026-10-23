@@ -9,6 +9,7 @@ import { Screen } from '@/design-system/Screen';
 import { Text } from '@/design-system/Text';
 import { TextField } from '@/design-system/TextField';
 import { useTheme } from '@/design-system/ThemeProvider';
+import { ErrorState, LoadingState, PermissionState } from '@/design-system/States';
 import { t } from '@/i18n';
 
 import { useProgramEditor } from './ProgramEditorProvider';
@@ -37,17 +38,14 @@ export function ProgramEditorScreen() {
   if (editor.status === 'loading') {
     return (
       <Screen>
-        <Text color="secondary" accessibilityLiveRegion="polite">
-          {t('editor.carregando')}
-        </Text>
+        <LoadingState message={t('editor.carregando')} />
       </Screen>
     );
   }
   if (editor.status === 'error') {
     return (
       <Screen>
-        <Notice kind="error" message={t('editor.erroCarregar')} />
-        <Button label={t('treino.tentarDeNovo')} onPress={editor.reload} />
+        <ErrorState kind="error" message={t('editor.erroCarregar')} onRetry={editor.reload} primary />
         <Button label={t('programas.voltar')} variant="text" onPress={() => router.back()} />
       </Screen>
     );
@@ -55,8 +53,7 @@ export function ProgramEditorScreen() {
   if (editor.status === 'blocked') {
     return (
       <Screen>
-        <Notice kind="warning" message={t(editor.program?.status === 'arquivado' ? 'editor.bloqueadoArquivado' : 'editor.bloqueadoCoach')} />
-        <Button label={t('programas.voltar')} onPress={() => router.back()} />
+        <PermissionState message={t(editor.program?.status === 'arquivado' ? 'editor.bloqueadoArquivado' : 'editor.bloqueadoCoach')} actionLabel={t('programas.voltar')} onAction={() => router.back()} />
       </Screen>
     );
   }

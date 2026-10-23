@@ -8,6 +8,7 @@ import { Notice } from '@/design-system/Notice';
 import { Screen } from '@/design-system/Screen';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
+import { ErrorState, LoadingState } from '@/design-system/States';
 import { t, type MessageKey } from '@/i18n';
 
 import { demoOf, instructionSteps, musclesOf } from './demo';
@@ -55,19 +56,17 @@ export function ExerciseDetailScreen({ api }: { api?: ExercisesApi }) {
   if (load.kind === 'loading') {
     return (
       <Screen>
-        <Text color="secondary" accessibilityLiveRegion="polite">
-          {t('exercicio.carregando')}
-        </Text>
+        <LoadingState message={t('exercicio.carregando')} />
       </Screen>
     );
   }
   if (load.kind === 'error') {
     return (
       <Screen>
-        <Notice kind="error" message={t('exercicio.erro')} />
-        <Button
-          label={t('treino.tentarDeNovo')}
-          onPress={() => {
+        <ErrorState
+          primary
+          message={t('exercicio.erro')}
+          onRetry={() => {
             setLoad({ kind: 'loading' });
             setAttempt((n) => n + 1);
           }}

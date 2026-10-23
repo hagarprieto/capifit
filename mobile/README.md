@@ -63,6 +63,12 @@ npm run mock:api       # servidor mock do contrato em http://localhost:4010 (Pri
 - **Falhas:** resumo e histórico carregam separados; se algum falhar, aparece o aviso com "Tentar de novo". Ao voltar de outra tela a aba atualiza sozinha. Lógica em `features/progress/progress.ts`.
 - **Fora desta entrega:** gráfico por exercício e tendências (E13-01) e leitura offline do histórico (E08).
 
+## Estados padrão das telas (E04-06, Doc 03 §9.1)
+
+- `src/design-system/States.tsx` reúne os estados que toda tela de dados precisa: **LoadingState** (indicador + texto anunciado ao leitor de tela, sem bloquear a navegação), **EmptyState** (explicação e próximo passo), **ErrorState** (mensagem clara + "Tentar de novo"; `warning` quando só um bloco falhou, `primary` quando é a tela inteira), **OfflineState** (últimos dados e pendências locais) e **PermissionState** (por que não pode e o que pode fazer). Todas as telas de dados (Início, Treinos, detalhe e editor de programa, ficha, executor, resumo, Evolução, biblioteca, detalhe do exercício e revisão de conflitos) usam estes componentes.
+- **Regra mantida por teste:** `design-system/states.test.tsx` varre `src/features` e falha se alguma tela voltar a montar na mão o "carregando" ou o par "aviso de erro + Tentar de novo". Telas novas devem usar os componentes.
+- O formulário não se perde no erro: as telas de edição mantêm o que foi digitado e só mostram o aviso por cima (o editor também guarda rascunho local, E06-07).
+
 ## Rascunho local do editor de programa (E06-07, D-03, UX-17)
 
 - **Guarda sozinho:** a cada alteração (com espera de 0,5 s, e ao sair da tela) o editor grava no aparelho o que foi montado e ainda não foi salvo no servidor (`data/cache/editorDrafts.ts`, junto da versão e da revisão do servidor sobre as quais a pessoa trabalhava). Salvar com sucesso, ou voltar a ficar igual ao servidor, apaga o rascunho. Assim, voltar pelo botão do sistema, fechar o app ou ficar sem conexão **não perde** o trabalho — editar a estrutura continua exigindo conexão para salvar e publicar (D-03).

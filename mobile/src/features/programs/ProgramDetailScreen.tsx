@@ -11,6 +11,7 @@ import { OriginBadge } from '@/design-system/OriginBadge';
 import { Screen } from '@/design-system/Screen';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
+import { ErrorState, LoadingState } from '@/design-system/States';
 import { t, type MessageKey } from '@/i18n';
 
 import { createProgramsApi, type ActiveProgram, type Program, type ProgramVersion, type ProgramsApi } from './programsApi';
@@ -61,17 +62,14 @@ export function ProgramDetailScreen({ api }: { api?: ProgramsApi }) {
   if (load.kind === 'loading') {
     return (
       <Screen>
-        <Text color="secondary" accessibilityLiveRegion="polite">
-          {t('programas.carregando')}
-        </Text>
+        <LoadingState message={t('programas.carregando')} />
       </Screen>
     );
   }
   if (load.kind === 'error') {
     return (
       <Screen>
-        <Notice kind="error" message={t('programas.erroDetalhe')} />
-        <Button label={t('treino.tentarDeNovo')} onPress={() => { setLoad({ kind: 'loading' }); refresh(); }} />
+        <ErrorState kind="error" message={t('programas.erroDetalhe')} onRetry={() => { setLoad({ kind: 'loading' }); refresh(); }} primary />
         <Button label={t('programas.voltar')} variant="text" onPress={() => router.back()} />
       </Screen>
     );

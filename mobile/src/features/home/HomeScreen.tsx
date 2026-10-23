@@ -13,6 +13,7 @@ import { StatTile, WeekStrip } from '@/design-system/StatusAndStats';
 import { SyncBanner } from '@/features/shell/SyncBanner';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
+import { ErrorState, LoadingState, OfflineState } from '@/design-system/States';
 import { createProgramsApi, type ActiveProgram, type ProgramsApi } from '@/features/programs/programsApi';
 import { useWorkoutApi } from '@/features/workout/useWorkoutApi';
 import type { WorkoutApi } from '@/features/workout/workoutApi';
@@ -108,17 +109,14 @@ export function HomeScreen({ api, programsApi: programsOverride, now }: { api?: 
       <SyncBanner />
       {data?.failed ? (
         <>
-          <Notice kind="warning" message={t('inicio.erroResumo')} />
-          <Button label={t('treino.tentarDeNovo')} variant="secondary" onPress={() => { setData(null); setAttempt((n) => n + 1); }} />
+          <ErrorState kind="warning" message={t('inicio.erroResumo')} onRetry={() => { setData(null); setAttempt((n) => n + 1); }} />
         </>
       ) : null}
-      {data?.savedAt ? <Notice kind="info" message={t('inicio.dadosSalvos', { data: formatShortDate(data.savedAt) })} /> : null}
+      {data?.savedAt ? <OfflineState message={t('inicio.dadosSalvos', { data: formatShortDate(data.savedAt) })} /> : null}
       {startFailed ? <Notice kind="error" message={t('home.erroIniciar')} /> : null}
 
       {data === null ? (
-        <Text color="secondary" accessibilityLiveRegion="polite">
-          {t('inicio.carregando')}
-        </Text>
+        <LoadingState message={t('inicio.carregando')} />
       ) : open ? (
         <View style={card}>
           <Text variant="caption" color="secondary">

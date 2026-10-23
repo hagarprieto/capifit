@@ -1,6 +1,6 @@
 # CapiFit — Documento 14: Roteiro de validação do app em aparelho
 
-**Versão:** 2.5 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07, E07-10, E06-09 e E06-07
+**Versão:** 2.6 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07, E07-10, E06-09, E06-07 e E04-06
 **Por que existe:** os testes automáticos (Jest, tipos, lint) já passam no CI, mas só um aparelho de verdade mostra teclado, rolagem, tema, notificação, vibração, leitor de tela e desempenho. Este roteiro transforma "falta validar em aparelho" em uma lista que você executa e marca.
 
 ## 0. Como usar
@@ -110,6 +110,8 @@ Legenda: 🔴 obrigatório · 🟡 desejável. **Reprova se** descreve o que con
 | V-00.1 🔴 | Abra o app do zero (fechado). Conte o tempo até a tela de entrada aparecer. | Splash curto e a tela de boas-vindas. **Anote o tempo**: é a linha de base de abertura (o Doc 10 §7.6 ainda não fixa meta numérica; ela será definida com estas medições). | Tela branca/preta prolongada, travamento ou fechamento sozinho. |
 | V-00.2 🔴 | Alterne o aparelho entre **tema claro e escuro** (configuração do sistema) com o app aberto e depois reaberto. | O app acompanha; texto legível, nada some, nenhum fundo "estoura". | Texto invisível, contraste ruim, cores trocadas pela metade. |
 | V-00.3 🔴 | Aumente a **fonte do sistema ao máximo** (ou 200 %). Percorra boas-vindas, entrar, cadastrar. | Textos crescem, **nenhum é cortado**, os botões continuam inteiros e tocáveis, a rolagem alcança o fim. | Texto cortado, botão fora da tela ou sobreposto. |
+| V-00.6 🔴 | **Modo avião** → abra, uma a uma, as abas Treinos e Evolução, a Biblioteca de exercícios e o detalhe de um programa. | Em todas: um indicador de carregando com texto, depois um aviso de erro claro e o botão **Tentar de novo**; com a rede de volta, o botão carrega a tela. As telas falam do mesmo jeito. | Spinner infinito, tela em branco, ou erro sem como tentar de novo. |
+| V-00.7 🔴 | Com o leitor de tela ligado, repita o V-00.6. | O "carregando" é anunciado; o erro é anunciado como alerta; **Tentar de novo** é lido como botão. | Estado mudo para o leitor. |
 | V-00.4 🟡 | Gire o aparelho. | Fica em retrato (orientação travada). | O app gira e quebra o layout. |
 | V-00.5 🟡 | Use o app por 10 min em rede ruim (afaste-se do roteador). | Mensagens de erro claras, nada de tela congelada. | Spinner infinito sem saída. |
 
@@ -351,6 +353,7 @@ Copie e preencha (uma cópia por aparelho). **P**/**F**/**N/A** e uma observaç�
 | V-00.1 |  |  | tempo de abertura: ___ s |
 | V-00.2 |  |  |  |
 | V-00.3 |  |  |  |
+| V-00.6, V-00.7 |  |  |  |
 | V-01.1 … V-01.10 |  |  |  |
 | V-02.1 … V-02.11 |  |  |  |
 | V-02b.1 … V-02b.4 |  |  |  |
@@ -401,6 +404,7 @@ Não coloque senhas, tokens nem e-mails reais no relato.
 | E05-03 (Início) | V-07.2 a V-07.5, V-07.9 |
 | E04-03 (abas e voltar ao treino) | V-07.1, V-07.5, V-07.7, V-07.8 |
 | E04-04 (SyncStatus, semana, números) | V-07.9, V-10.1, V-10.7 |
+| E04-06 (estados padrão) | V-00.6, V-00.7 |
 | E09-03 (Evolução e histórico) | V-08.1 a V-08.5, V-08.7, V-08.8 |
 | E06-08 (ativar, trocar, arquivar) | V-09.1 a V-09.3 |
 | E07-04 (ficha e iniciar) e metas D-14 | V-09.4 a V-09.7 |
@@ -439,6 +443,7 @@ adb logcat *:E ReactNativeJS:V
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0 | 22/10/2026 | Primeira versão: preparação, 6 roteiros, quadro de resultados e critério de conclusão para as histórias do app já entregues. |
+| 2.6 | 23/10/2026 | Testes V-00.6 e V-00.7 (estados padrão, E04-06). |
 | 2.5 | 23/10/2026 | Testes V-05.19 a V-05.23 (rascunho local do editor, E06-07). |
 | 2.4 | 23/10/2026 | Testes V-05.16 a V-05.18 (cópia de programa, E06-09). |
 | 2.3 | 23/10/2026 | R2c (rótulos de carga por convenção e unilaterais, E07-10). |

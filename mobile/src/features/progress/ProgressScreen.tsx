@@ -10,6 +10,7 @@ import { Screen } from '@/design-system/Screen';
 import { StatTile } from '@/design-system/StatusAndStats';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
+import { ErrorState, LoadingState } from '@/design-system/States';
 import { formatDuration, formatShortDate } from '@/features/home/home';
 import { formatVolume } from '@/features/workout/summary';
 import { t } from '@/i18n';
@@ -124,15 +125,12 @@ export function ProgressScreen({ api, now }: { api?: ProgressApi; now?: Date }) 
 
       {summary === 'error' || history === 'error' ? (
         <>
-          <Notice kind="warning" message={t('evolucao.erro')} />
-          <Button label={t('treino.tentarDeNovo')} variant="secondary" onPress={retry} />
+          <ErrorState kind="warning" message={t('evolucao.erro')} onRetry={retry} />
         </>
       ) : null}
 
       {summary === null || history === null ? (
-        <Text color="secondary" accessibilityLiveRegion="polite">
-          {t('evolucao.carregando')}
-        </Text>
+        <LoadingState message={t('evolucao.carregando')} />
       ) : null}
 
       {stats ? (

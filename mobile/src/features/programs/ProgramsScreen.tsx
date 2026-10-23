@@ -5,11 +5,11 @@ import { Pressable, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/design-system/Button';
 import { EmptyState } from '@/design-system/EmptyState';
-import { Notice } from '@/design-system/Notice';
 import { Screen } from '@/design-system/Screen';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
 import { WorkoutCard } from '@/design-system/WorkoutCard';
+import { ErrorState, LoadingState } from '@/design-system/States';
 import { t, type MessageKey } from '@/i18n';
 
 import { formatDate, groupPrograms, type ProgramTab } from './grouping';
@@ -122,13 +122,10 @@ export function ProgramsScreen({ api }: { api?: ProgramsApi }) {
       </View>
 
       {load.kind === 'loading' ? (
-        <Text color="secondary" accessibilityLiveRegion="polite">
-          {t('programas.carregando')}
-        </Text>
+        <LoadingState message={t('programas.carregando')} />
       ) : load.kind === 'error' ? (
         <>
-          <Notice kind="error" message={t('programas.erro')} />
-          <Button label={t('treino.tentarDeNovo')} onPress={() => { setLoad({ kind: 'loading' }); setAttempt((n) => n + 1); }} />
+          <ErrorState kind="error" message={t('programas.erro')} onRetry={() => { setLoad({ kind: 'loading' }); setAttempt((n) => n + 1); }} primary />
         </>
       ) : groups && groups[tab].length === 0 ? (
         <EmptyState title={t(EMPTY[tab].title)} message={t(EMPTY[tab].message)} actionLabel={tab === 'arquivados' ? undefined : t('programas.criar')} onAction={create} />

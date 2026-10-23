@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { Button } from '@/design-system/Button';
-import { Notice } from '@/design-system/Notice';
 import { Screen } from '@/design-system/Screen';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
+import { ErrorState, LoadingState } from '@/design-system/States';
 import { t } from '@/i18n';
 
 import { formatVolume, summarize, type SummarySet } from './summary';
@@ -65,17 +65,14 @@ export function SummaryScreen({ api }: { api?: WorkoutApi }) {
   if (load.kind === 'loading') {
     return (
       <Screen>
-        <Text color="secondary" accessibilityLiveRegion="polite">
-          {t('resumo.carregando')}
-        </Text>
+        <LoadingState message={t('resumo.carregando')} />
       </Screen>
     );
   }
   if (load.kind === 'error' || load.kind === 'open') {
     return (
       <Screen>
-        <Notice kind={load.kind === 'open' ? 'warning' : 'error'} message={t(load.kind === 'open' ? 'resumo.naoConcluido' : 'resumo.erro')} />
-        <Button label={t('treino.tentarDeNovo')} onPress={retry} />
+        <ErrorState primary kind={load.kind === 'open' ? 'warning' : 'error'} message={t(load.kind === 'open' ? 'resumo.naoConcluido' : 'resumo.erro')} onRetry={retry} />
         <Button label={t('resumo.voltar')} variant="text" onPress={home} />
       </Screen>
     );

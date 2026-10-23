@@ -9,6 +9,7 @@ import { Screen } from '@/design-system/Screen';
 import { Text } from '@/design-system/Text';
 import { TextField } from '@/design-system/TextField';
 import { useTheme } from '@/design-system/ThemeProvider';
+import { ErrorState, LoadingState } from '@/design-system/States';
 import { t } from '@/i18n';
 
 import { createExercisesApi, type ExercisesApi, type ExerciseSummary, type Taxonomy } from './exercisesApi';
@@ -144,13 +145,10 @@ export function LibraryScreen({ api }: { api?: ExercisesApi }) {
       <Filter title={t('biblioteca.equipamento')} items={equipment} selected={equipmentId} onSelect={setEquipmentId} />
 
       {loading ? (
-        <Text color="secondary" accessibilityLiveRegion="polite">
-          {t('biblioteca.carregando')}
-        </Text>
+        <LoadingState message={t('biblioteca.carregando')} />
       ) : 'error' in current ? (
         <>
-          <Notice kind="error" message={t('biblioteca.erro')} />
-          <Button label={t('treino.tentarDeNovo')} variant="secondary" onPress={() => setAttempt((n) => n + 1)} />
+          <ErrorState kind="error" message={t('biblioteca.erro')} onRetry={() => setAttempt((n) => n + 1)} />
         </>
       ) : current.items.length === 0 ? (
         <View style={{ gap: theme.space[2] }} accessibilityLiveRegion="polite">
