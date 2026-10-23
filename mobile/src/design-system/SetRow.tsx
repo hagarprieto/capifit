@@ -98,14 +98,18 @@ export function SetRow({ numero, exercicio, modality, loadUnit = 'kg', perSide =
 
         <View style={{ flex: 1, alignItems: 'flex-end' }}>
           {done ? (
-            <View
-              accessible
-              accessibilityLabel={t('treino.serieConcluida', { ...params, resumo: summary })}
-              style={{ minWidth: size.touchMin.android, minHeight: size.touchMin.android, borderRadius: radius.pill, backgroundColor: colors.brand.primary, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Text variant="bodyStrong" style={{ color: colors.brand.onPrimary }}>
-                {t('campo.marcado')}
-              </Text>
+            // Concluída: o "OK" e o "Corrigir" ficam NA MESMA linha da série (antes o Corrigir ocupava uma linha inteira por série).
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: space[0] }}>
+              <View
+                accessible
+                accessibilityLabel={t('treino.serieConcluida', { ...params, resumo: summary })}
+                style={{ minWidth: size.touchMin.android, minHeight: size.touchMin.android, borderRadius: radius.pill, backgroundColor: colors.brand.primary, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text variant="bodyStrong" style={{ color: colors.brand.onPrimary }}>
+                  {t('campo.marcado')}
+                </Text>
+              </View>
+              <Button variant="text" label={t('treino.corrigir')} accessibilityLabel={t('treino.corrigirA11y', params)} onPress={onCorrect} />
             </View>
           ) : (
             <Button
@@ -118,7 +122,6 @@ export function SetRow({ numero, exercicio, modality, loadUnit = 'kg', perSide =
         </View>
       </View>
 
-      {done ? <Button variant="text" label={t('treino.corrigir')} accessibilityLabel={t('treino.corrigirA11y', params)} onPress={onCorrect} /> : null}
       {[errors.carga, errors.reps, errors.duracao].filter(Boolean).map((message) => (
         <Text key={message} variant="bodySmall" accessibilityLiveRegion="polite" style={{ color: colors.feedback.error }}>
           {t('campo.erro', { mensagem: message as string })}
