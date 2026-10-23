@@ -63,7 +63,8 @@
     "E04-02": "in-progress",
     "E04-04": "in-progress",
     "E06-07": "in-progress",
-    "E04-06": "in-progress"
+    "E04-06": "in-progress",
+    "E09-04": "in-progress"
   },
   "notas": {
     "E00-01": "Repositório criado e enviado a github.com/hagarprieto/capifit (main e chore/fundacoes-m0). Protocolo de equipe dispensado por ora (trabalho solo).",
@@ -128,7 +129,8 @@
     "E06-09": "Cópia de programa pronta e testada em Jest (412 testes): botão no detalhe (em destaque para programa do coach, com aviso de que não pode ser editado), confirmação que diz que o original não muda, abre a cópia criada, erros de rede e genérico. A API já existia (E06-01). CI verde na main (e53410f). Falta validar em aparelho (V-05.16/17).",
     "E04-01": "Tema claro/escuro por tokens gerados, fonte Inter e tipografia com limite de escala prontos e testados (contraste conferido no CI). Falta validar em aparelho (R0: tema, fonte 200 %).",
     "E06-07": "Rascunho local do editor pronto e testado em Jest (424 testes, com banco de verdade): guarda sozinho no aparelho, recupera ao reabrir, rascunho antigo (programa mudou no servidor) pergunta em vez de aplicar, descartar com confirmação, salvar apaga o rascunho, sair avisa que fica guardado e não perde a última alteração. Falta o CI e validar em aparelho (V-05.19 a V-05.23).",
-    "E04-06": "Estados padrão prontos e usados por todas as telas de dados (carregando, erro com tentar de novo, offline, sem permissão; vazio já existia), com 489 testes no app, incluindo um teste que impede as telas de voltarem a montar esses estados na mão. Falta o CI e validar em aparelho (V-00.6 e V-00.7, com leitor de tela)."
+    "E04-06": "Estados padrão prontos e usados por todas as telas de dados (carregando, erro com tentar de novo, offline, sem permissão; vazio já existia), com 489 testes no app, incluindo um teste que impede as telas de voltarem a montar esses estados na mão. Falta o CI e validar em aparelho (V-00.6 e V-00.7, com leitor de tela).",
+    "E09-04": "Explicação do cálculo do volume pronta e testada (494 testes): botão \"Como calculamos o volume\" na Evolução e no resumo da sessão, volume \"—\" quando não há série com carga. Os estados vazios da Evolução vieram com a E09-03. Falta o CI e validar em aparelho (V-08.9)."
   },
   "externas": {
     "revisor": "pending",

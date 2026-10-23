@@ -1,6 +1,6 @@
 # CapiFit — Documento 14: Roteiro de validação do app em aparelho
 
-**Versão:** 2.6 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07, E07-10, E06-09, E06-07 e E04-06
+**Versão:** 2.7 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07, E07-10, E06-09, E06-07, E04-06 e E09-04
 **Por que existe:** os testes automáticos (Jest, tipos, lint) já passam no CI, mas só um aparelho de verdade mostra teclado, rolagem, tema, notificação, vibração, leitor de tela e desempenho. Este roteiro transforma "falta validar em aparelho" em uma lista que você executa e marca.
 
 ## 0. Como usar
@@ -270,6 +270,8 @@ Ative **TalkBack** (Android: Configurações → Acessibilidade) ou **VoiceOver*
 | V-08.2 🔴 | Faça 2 ou 3 treinos com valores conhecidos (anote carga × repetições) e abra a Evolução (4 semanas). | **Treinos**, **Tempo de treino**, **Séries** e **Volume** conferem com a sua conta (volume = soma carga × repetições, sem aquecimento). A semana atual aparece com a quantidade certa. | Número diferente do calculado. |
 | V-08.3 🔴 | Troque para **12 semanas** e volte a **4 semanas**. | O período muda, a lista de semanas aumenta e os números continuam coerentes. | Número que diminui ao ampliar o período. |
 | V-08.4 🔴 | Leia a explicação sob o volume. | Diz que é um número de acompanhamento, **não uma nota do treino**. Não há meta, ranking nem comparação. | Texto punitivo ou comparativo. |
+| V-08.9 🔴 | Na Evolução e no resumo de um treino, toque em **Como calculamos o volume**. | Abre a explicação (conta com exemplo, o que não entra, comparar só o mesmo exercício, "não é nota"); **Ocultar explicação** fecha; o leitor de tela anuncia o conteúdo ao abrir. | Sem explicação, ou texto que pareça nota ou meta. |
+| V-08.10 🟡 | Um período em que você só fez exercícios sem carga (ex.: prancha, flexão sem peso extra). | O volume aparece como "—" e é lido como "nenhuma série com carga", não "0 kg". | "0 kg" seco. |
 | V-08.5 🔴 | Histórico: confira a ordem e toque numa sessão. | Mais recente primeiro, com título, data, duração e nº de séries; tocar abre o **resumo** daquela sessão com os registros. | Ordem errada, ou abre outra sessão. |
 | V-08.6 🟡 | Com mais de 20 treinos (pode semear no banco de teste), vá ao fim da lista. | Botão **Carregar mais** traz as próximas sem repetir. | Repetição ou lista que trava. |
 | V-08.7 🔴 | **Modo avião** → abra a Evolução. | Aviso "Não foi possível carregar a evolução agora…" e **Tentar de novo**; ao religar a rede funciona. | Spinner infinito, ou tela quebrada. |
@@ -366,6 +368,7 @@ Copie e preencha (uma cópia por aparelho). **P**/**F**/**N/A** e uma observaç�
 | V-06.1 … V-06.4 |  |  |  |
 | V-07.1 … V-07.9 |  |  |  |
 | V-08.1 … V-08.8 |  |  |  |
+| V-08.9 |  |  |  |
 | V-09.1 … V-09.7 |  |  |  |
 | V-10.1 … V-10.10 |  |  | testar em avião de verdade |
 | V-11.4 … V-11.8 |  |  |  |
@@ -406,6 +409,7 @@ Não coloque senhas, tokens nem e-mails reais no relato.
 | E04-04 (SyncStatus, semana, números) | V-07.9, V-10.1, V-10.7 |
 | E04-06 (estados padrão) | V-00.6, V-00.7 |
 | E09-03 (Evolução e histórico) | V-08.1 a V-08.5, V-08.7, V-08.8 |
+| E09-04 (estados vazios e explicação do volume) | V-08.1, V-08.9 |
 | E06-08 (ativar, trocar, arquivar) | V-09.1 a V-09.3 |
 | E07-04 (ficha e iniciar) e metas D-14 | V-09.4 a V-09.7 |
 | E08-01, E08-02, E08-03 (banco, cache, fila) | V-10.1 a V-10.3, V-10.7 a V-10.10 |
@@ -443,6 +447,7 @@ adb logcat *:E ReactNativeJS:V
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0 | 22/10/2026 | Primeira versão: preparação, 6 roteiros, quadro de resultados e critério de conclusão para as histórias do app já entregues. |
+| 2.7 | 23/10/2026 | Testes V-08.9 e V-08.10 (explicação do volume, E09-04). |
 | 2.6 | 23/10/2026 | Testes V-00.6 e V-00.7 (estados padrão, E04-06). |
 | 2.5 | 23/10/2026 | Testes V-05.19 a V-05.23 (rascunho local do editor, E06-07). |
 | 2.4 | 23/10/2026 | Testes V-05.16 a V-05.18 (cópia de programa, E06-09). |

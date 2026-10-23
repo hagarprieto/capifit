@@ -13,6 +13,7 @@ import { useTheme } from '@/design-system/ThemeProvider';
 import { ErrorState, LoadingState } from '@/design-system/States';
 import { formatDuration, formatShortDate } from '@/features/home/home';
 import { formatVolume } from '@/features/workout/summary';
+import { VolumeExplainer } from '@/features/workout/VolumeExplainer';
 import { t } from '@/i18n';
 
 import { barRatio, periodRange, weekLabel, type PeriodWeeks } from './progress';
@@ -141,11 +142,13 @@ export function ProgressScreen({ api, now }: { api?: ProgressApi; now?: Date }) 
           </View>
           <View style={{ flexDirection: 'row', gap: theme.space[2] }}>
             <StatTile value={String(stats.series_realizadas)} label={t('evolucao.series')} spoken={t('evolucao.seriesFalado', { quantidade: stats.series_realizadas })} />
-            <StatTile value={`${formatVolume(stats.volume_kg)} kg`} label={t('evolucao.volume')} spoken={t('evolucao.volumeFalado', { volume: formatVolume(stats.volume_kg) })} />
+            <StatTile
+              value={stats.volume_kg > 0 ? `${formatVolume(stats.volume_kg)} kg` : '—'}
+              label={t('evolucao.volume')}
+              spoken={stats.volume_kg > 0 ? t('evolucao.volumeFalado', { volume: formatVolume(stats.volume_kg) }) : t('evolucao.volumeSemCarga')}
+            />
           </View>
-          <Text variant="caption" color="secondary">
-            {t('resumo.volumeExplicacao')}
-          </Text>
+          <VolumeExplainer />
 
           <View style={card}>
             <Text variant="title" accessibilityRole="header">

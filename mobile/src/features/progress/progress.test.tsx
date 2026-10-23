@@ -88,6 +88,28 @@ describe('ProgressScreen', () => {
     expect(screen.getByText('21/10 · 55 min · 9 séries')).toBeTruthy();
   });
 
+  it('"Como calculamos o volume" abre e fecha a explicação do cálculo', async () => {
+    await show(fakeApi());
+    await screen.findByLabelText('Treinos concluídos no período: 5');
+    expect(screen.queryByText(/Volume = carga × repetições/)).toBeNull();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Como calculamos o volume' }));
+
+    expect(screen.getByText(/Volume = carga × repetições de cada série de trabalho que você fez, somadas\./)).toBeTruthy();
+    expect(screen.getByText(/Não entram: séries de aquecimento, exercícios medidos por tempo, exercícios assistidos/)).toBeTruthy();
+    expect(screen.getByText(/compare o volume do mesmo exercício ao longo do tempo/)).toBeTruthy();
+    expect(screen.getByText('É um número para você acompanhar. Não é uma nota do treino nem uma meta.')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Ocultar explicação' }));
+    expect(screen.queryByText(/Volume = carga × repetições/)).toBeNull();
+  });
+
+  it('treinos sem nenhuma série com carga mostram "—" no volume, com texto falado claro (nada de "0 kg" frio)', async () => {
+    await show(fakeApi({ summary: jest.fn().mockResolvedValue({ ...SUMMARY, volume_kg: 0 }) }));
+
+    expect(await screen.findByLabelText('Volume no período: nenhuma série com carga')).toBeTruthy();
+    expect(screen.queryByText('0 kg')).toBeNull();
+  });
+
   it('trocar para 12 semanas consulta o novo período', async () => {
     const api = fakeApi();
     await show(api);

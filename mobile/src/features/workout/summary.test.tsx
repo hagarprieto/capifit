@@ -139,6 +139,17 @@ describe('SummaryScreen', () => {
     expect(screen.getByText('Série 1: 120 kg (máquina) × 12')).toBeTruthy();
   });
 
+  it('o resumo explica o cálculo do volume sob demanda', async () => {
+    await show({ getSession: jest.fn().mockResolvedValue(makeSession()) });
+    await screen.findByText('Treino concluído!');
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Como calculamos o volume' }));
+
+    expect(screen.getByText(/Exemplo: 40 kg × 10 e 42,5 kg × 8 dão 740 kg\./)).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Ocultar explicação' }));
+    expect(screen.queryByText(/Exemplo: 40 kg × 10/)).toBeNull();
+  });
+
   it('sem carga registrada não mostra volume', async () => {
     await show({ getSession: jest.fn().mockResolvedValue(makeSession({ exercicios: [item('1', 'Flexão', 'reps_peso_corporal', [done(1, { repeticoes: 15 })])] } as Partial<Session>)) });
 

@@ -10,6 +10,7 @@ import { ErrorState, LoadingState } from '@/design-system/States';
 import { t } from '@/i18n';
 
 import { formatVolume, summarize, type SummarySet } from './summary';
+import { VolumeExplainer } from './VolumeExplainer';
 import { useWorkoutApi } from './useWorkoutApi';
 import type { Session, WorkoutApi } from './workoutApi';
 
@@ -93,9 +94,7 @@ export function SummaryScreen({ api }: { api?: WorkoutApi }) {
         {summary.volumeKg > 0 ? (
           <>
             <Text>{t('resumo.volume', { volume: formatVolume(summary.volumeKg) })}</Text>
-            <Text variant="caption" color="secondary">
-              {t('resumo.volumeExplicacao')}
-            </Text>
+            <VolumeExplainer />
           </>
         ) : null}
       </View>
