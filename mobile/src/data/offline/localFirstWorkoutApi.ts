@@ -64,7 +64,7 @@ export function createLocalFirstWorkoutApi({ remote, sessions, queue, engine, to
       entidade_uuid: seriesId,
       sessao_uuid: sessionUuid,
       tipo: 'atualizar',
-      payload: { ...values, status: 'realizada', concluida_em: at, atualizado_cliente_em: at },
+      payload: { sessao_uuid: sessionUuid, ...values, status: 'realizada', concluida_em: at, atualizado_cliente_em: at },
     });
     flushLater();
     const series = (await localSession(sessionUuid)).exercicios.flatMap((item) => item.series).find((s) => s.id === seriesId);
@@ -77,7 +77,7 @@ export function createLocalFirstWorkoutApi({ remote, sessions, queue, engine, to
     if (!created) {
       throw new Error('Exercício não encontrado neste aparelho.');
     }
-    await queue.enqueue({ entidade: 'sessao_serie', entidade_uuid: seriesUuid, sessao_uuid: sessionUuid, tipo: 'criar', payload: { uuid: seriesUuid, sessao_exercicio_uuid: itemId } });
+    await queue.enqueue({ entidade: 'sessao_serie', entidade_uuid: seriesUuid, sessao_uuid: sessionUuid, tipo: 'criar', payload: { sessao_uuid: sessionUuid, uuid: seriesUuid, sessao_exercicio_uuid: itemId } });
     flushLater();
     return created;
   }
@@ -89,6 +89,43 @@ export function createLocalFirstWorkoutApi({ remote, sessions, queue, engine, to
     const active = Math.max(0, Math.round((ended.getTime() - new Date(session.iniciada_em).getTime() - paused) / 1000));
     await sessions.setStatus(sessionUuid, 'concluida', ended.toISOString(), active);
     await queue.enqueue({ entidade: 'sessao_treino', entidade_uuid: sessionUuid, sessao_uuid: sessionUuid, tipo: 'concluir', payload: { encerrada_em: ended.toISOString() } });
+    flushLater();
+  }
+
+  async function pauseLocally(sessionUuid: string): Promise<Schemas['Pausa']> {
+    const existing = await sessions.openPause(sessionUuid);
+    if (existing) {
+      return { id: existing.id, iniciada_em: existing.iniciada_em, encerrada_em: null };
+    }
+    const pauseUuid = newUuid();
+    const at = iso();
+    if (!(await sessions.startPause(sessionUuid, pauseUuid, at))) {
+      throw new Error('Sessão não encontrada neste aparelho.');
+    }
+    await queue.enqueue({ entidade: 'sessao_pausa', entidade_uuid: pauseUuid, sessao_uuid: sessionUuid, tipo: 'criar', payload: { sessao_uuid: sessionUuid, iniciada_em: at } });
+    flushLater();
+    return { id: pauseUuid, iniciada_em: at, encerrada_em: null };
+  }
+
+  async function resumeLocally(sessionUuid: string): Promise<Schemas['Pausa']> {
+    const open = await sessions.openPause(sessionUuid);
+    if (!open) {
+      const last = (await localSession(sessionUuid)).pausas?.at(-1);
+      if (last) {
+        return last;
+      }
+      throw new Error('Não há pausa para retomar.');
+    }
+    const at = iso();
+    await sessions.endPause(open.id, at);
+    await queue.enqueue({ entidade: 'sessao_pausa', entidade_uuid: open.id, sessao_uuid: sessionUuid, tipo: 'atualizar', payload: { sessao_uuid: sessionUuid, encerrada_em: at } });
+    flushLater();
+    return { id: open.id, iniciada_em: open.iniciada_em, encerrada_em: at };
+  }
+
+  async function cancelLocally(sessionUuid: string): Promise<void> {
+    await sessions.setStatus(sessionUuid, 'cancelada', iso(), null);
+    await queue.enqueue({ entidade: 'sessao_treino', entidade_uuid: sessionUuid, sessao_uuid: sessionUuid, tipo: 'cancelar', payload: {} });
     flushLater();
   }
 
@@ -237,6 +274,53 @@ export function createLocalFirstWorkoutApi({ remote, sessions, queue, engine, to
       } catch (error) {
         if (isTemporary(error) && (await sessions.isSynced(sessionUuid)) !== null) {
           return addLocally(sessionUuid, itemId);
+        }
+        throw error;
+      }
+    },
+
+    async pause(sessionUuid: string) {
+      if (await isLocalMode(sessionUuid)) {
+        return pauseLocally(sessionUuid);
+      }
+      try {
+        const pause = await remote.pause(sessionUuid);
+        await sessions.startPause(sessionUuid, pause.id, pause.iniciada_em).catch(() => undefined); // mantém a cópia local em dia
+        return pause;
+      } catch (error) {
+        if (isTemporary(error) && (await sessions.isSynced(sessionUuid)) !== null) {
+          return pauseLocally(sessionUuid);
+        }
+        throw error;
+      }
+    },
+
+    async resume(sessionUuid: string) {
+      if (await isLocalMode(sessionUuid)) {
+        return resumeLocally(sessionUuid);
+      }
+      try {
+        const pause = await remote.resume(sessionUuid);
+        await sessions.endPause(pause.id, pause.encerrada_em ?? iso()).catch(() => undefined);
+        return pause;
+      } catch (error) {
+        if (isTemporary(error) && (await sessions.isSynced(sessionUuid)) !== null) {
+          return resumeLocally(sessionUuid);
+        }
+        throw error;
+      }
+    },
+
+    async cancel(sessionUuid: string) {
+      if (await isLocalMode(sessionUuid)) {
+        return cancelLocally(sessionUuid);
+      }
+      try {
+        await remote.cancel(sessionUuid);
+        await sessions.setStatus(sessionUuid, 'cancelada', iso(), null).catch(() => undefined);
+      } catch (error) {
+        if (isTemporary(error) && (await sessions.isSynced(sessionUuid)) !== null) {
+          return cancelLocally(sessionUuid);
         }
         throw error;
       }

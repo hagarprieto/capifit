@@ -10,6 +10,7 @@ import { migrate } from '../local/migrations';
 import { createQueueRepo } from '../local/queueRepo';
 import { createSessionsRepo } from '../local/sessionsRepo';
 import { createSyncEngine } from '../sync/syncEngine';
+import { serverContractProblems } from '../sync/contract';
 import { createLocalFirstWorkoutApi } from './localFirstWorkoutApi';
 
 type Session = Schemas['Sessao'];
@@ -68,6 +69,12 @@ async function setup(options: { cached?: boolean } = {}) {
   await migrate(db);
   const sessions = createSessionsRepo(db, USER);
   const queue = createQueueRepo(db, USER);
+  // Toda operação que o app cria tem de ser uma que o servidor aceita (campos e obrigatórios do /sync/push).
+  const enqueue = queue.enqueue;
+  queue.enqueue = async (op) => {
+    expect(serverContractProblems(op)).toEqual([]);
+    return enqueue(op);
+  };
   const today = createTodayCache(createCacheRepo(db, USER));
   if (options.cached !== false) {
     await today.save({ active: ACTIVE, lastRecords: { [uuid(501)]: { exercicio_id: uuid(501), sessao_id: uuid(1), data: '2026-10-20T10:00:00.000Z', series: [{ ordem: 1, carga_kg: 55, repeticoes: 10 }] } } });
@@ -85,6 +92,9 @@ async function setup(options: { cached?: boolean } = {}) {
     completeSeries: jest.fn().mockRejectedValue(networkError()),
     addSeries: jest.fn().mockRejectedValue(networkError()),
     finish: jest.fn().mockRejectedValue(networkError()),
+    pause: jest.fn().mockRejectedValue(networkError()),
+    resume: jest.fn().mockRejectedValue(networkError()),
+    cancel: jest.fn().mockRejectedValue(networkError()),
     addExercise: jest.fn(),
     searchExercises: jest.fn(),
   };
@@ -176,7 +186,7 @@ describe('registrar e finalizar no aparelho', () => {
     const ops = await env.queue.pending();
     expect(ops.map((o) => o.tipo)).toEqual(['criar', 'atualizar']);
     expect(ops[1]).toMatchObject({ entidade: 'sessao_serie', entidade_uuid: seriesId, sessao_uuid: id });
-    expect(ops[1].payload).toEqual({ carga_kg: 60, repeticoes: 10, status: 'realizada', concluida_em: '2026-10-22T10:05:00.000Z', atualizado_cliente_em: '2026-10-22T10:05:00.000Z' });
+    expect(ops[1].payload).toEqual({ sessao_uuid: id, carga_kg: 60, repeticoes: 10, status: 'realizada', concluida_em: '2026-10-22T10:05:00.000Z', atualizado_cliente_em: '2026-10-22T10:05:00.000Z' });
     env.db.close();
   });
 
@@ -191,7 +201,7 @@ describe('registrar e finalizar no aparelho', () => {
     expect((await env.api.getSession(id)).exercicios[0].series).toHaveLength(3);
     const last = (await env.queue.pending()).at(-1);
     expect(last).toMatchObject({ entidade: 'sessao_serie', tipo: 'criar', entidade_uuid: extra.id });
-    expect(last?.payload).toEqual({ uuid: extra.id, sessao_exercicio_uuid: item.id });
+    expect(last?.payload).toEqual({ sessao_uuid: id, uuid: extra.id, sessao_exercicio_uuid: item.id });
     env.db.close();
   });
 
@@ -217,6 +227,86 @@ describe('registrar e finalizar no aparelho', () => {
 
     env.remote.recentCompleted.mockResolvedValue([{ id: uuid(800), tipo: 'avulso', status: 'concluida', iniciada_em: '2026-10-20T10:00:00.000Z', encerrada_em: '2026-10-20T11:00:00.000Z' }]);
     expect((await env.api.recentCompleted()).map((s) => s.id)).toEqual([id, uuid(800)]); // com rede, junto com o do servidor
+    env.db.close();
+  });
+});
+
+describe('pausar, retomar e descartar no aparelho', () => {
+  it('pausar e retomar gravam a pausa local e enfileiram com o contrato do servidor', async () => {
+    const env = await setup();
+    const id = await env.api.startProgrammedWorkout(uuid(101));
+    clock = new Date('2026-10-22T10:20:00.000Z');
+
+    const pause = await env.api.pause(id);
+    expect(pause).toMatchObject({ iniciada_em: '2026-10-22T10:20:00.000Z', encerrada_em: null });
+    expect((await env.api.getSession(id)).pausas).toHaveLength(1);
+    expect((await env.api.pause(id)).id).toBe(pause.id); // pausar de novo não cria outra pausa
+
+    clock = new Date('2026-10-22T10:23:00.000Z');
+    const resumed = await env.api.resume(id);
+
+    expect(resumed).toMatchObject({ id: pause.id, encerrada_em: '2026-10-22T10:23:00.000Z' });
+    const ops = await env.queue.pending();
+    expect(ops.map((o) => o.entidade + ':' + o.tipo)).toEqual(['sessao_treino:criar', 'sessao_pausa:criar', 'sessao_pausa:atualizar']);
+    expect(ops[1]).toMatchObject({ entidade_uuid: pause.id });
+    expect(ops[2].payload).toEqual({ sessao_uuid: id, encerrada_em: '2026-10-22T10:23:00.000Z' });
+    env.db.close();
+  });
+
+  it('a pausa é descontada da duração ao finalizar', async () => {
+    const env = await setup();
+    const id = await env.api.startProgrammedWorkout(uuid(101));
+    clock = new Date('2026-10-22T10:20:00.000Z');
+    await env.api.pause(id);
+    clock = new Date('2026-10-22T10:25:00.000Z');
+    await env.api.resume(id);
+    clock = new Date('2026-10-22T10:55:00.000Z');
+
+    await env.api.finish(id);
+
+    expect((await env.api.getSession(id)).duracao_ativa_segundos).toBe(3300 - 300);
+    env.db.close();
+  });
+
+  it('descartar cancela o treino local e enfileira o cancelamento', async () => {
+    const env = await setup();
+    const id = await env.api.startProgrammedWorkout(uuid(101));
+
+    await env.api.cancel(id);
+
+    expect(await env.api.getSession(id)).toMatchObject({ status: 'cancelada' });
+    expect(await env.sessions.open()).toBeNull();
+    expect((await env.queue.pending()).at(-1)).toMatchObject({ entidade: 'sessao_treino', tipo: 'cancelar', payload: {} });
+    expect(env.remote.cancel).not.toHaveBeenCalled();
+    env.db.close();
+  });
+
+  it('treino que o servidor conhece: com rede vai direto; se a conexão cair, salva e enfileira na ordem', async () => {
+    const env = await setup();
+    env.remote.getSession.mockResolvedValueOnce(REMOTE_SESSION);
+    await env.api.getSession(uuid(900));
+    env.remote.pause.mockResolvedValueOnce({ id: uuid(930), iniciada_em: '2026-10-22T10:20:00.000Z', encerrada_em: null });
+
+    await env.api.pause(uuid(900)); // com rede
+    expect(await env.queue.pending()).toEqual([]);
+    expect((await env.sessions.openPause(uuid(900)))?.id).toBe(uuid(930)); // a cópia local acompanha
+
+    const resumed = await env.api.resume(uuid(900)); // a conexão caiu
+    expect(resumed).toMatchObject({ id: uuid(930) });
+    await env.api.cancel(uuid(900)); // continua pela fila, sem passar pelo servidor
+    expect(env.remote.cancel).not.toHaveBeenCalled();
+    expect((await env.queue.pending()).map((o) => o.entidade + ':' + o.tipo)).toEqual(['sessao_pausa:atualizar', 'sessao_treino:cancelar']);
+    env.db.close();
+  });
+
+  it('erro do servidor ao cancelar (treino já encerrado) continua sendo erro', async () => {
+    const env = await setup();
+    env.remote.getSession.mockResolvedValueOnce(REMOTE_SESSION);
+    await env.api.getSession(uuid(900));
+    env.remote.cancel.mockRejectedValue(new ApiError({ status: 409, code: 'SESSION_CLOSED', message: '' }));
+
+    await expect(env.api.cancel(uuid(900))).rejects.toMatchObject({ code: 'SESSION_CLOSED' });
+    expect(await env.queue.pending()).toEqual([]);
     env.db.close();
   });
 });

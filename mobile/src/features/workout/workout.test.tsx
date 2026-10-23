@@ -73,6 +73,9 @@ function fakeApi(over: Partial<WorkoutApi> = {}): WorkoutApi {
     addSeries: jest.fn().mockImplementation(async () => serie('s-novo', 4)),
     addExercise: jest.fn().mockResolvedValue({ id: 'item-novo' }),
     finish: jest.fn().mockResolvedValue(undefined),
+    pause: jest.fn().mockResolvedValue({ id: 'pausa-1', iniciada_em: '2026-10-22T10:20:00.000Z', encerrada_em: null }),
+    resume: jest.fn().mockResolvedValue({ id: 'pausa-1', iniciada_em: '2026-10-22T10:20:00.000Z', encerrada_em: '2026-10-22T10:22:00.000Z' }),
+    cancel: jest.fn().mockResolvedValue(undefined),
     searchExercises: jest.fn().mockResolvedValue([]),
     ...over,
   } as WorkoutApi;
@@ -220,6 +223,60 @@ describe('WorkoutScreen', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Adicionar exercício' }));
 
     expect(mockRouter.push).toHaveBeenCalledWith({ pathname: '/treino/[uuid]/exercicios', params: { uuid: 'sessao-1' } });
+  });
+});
+
+describe('WorkoutScreen: pausar, retomar e descartar', () => {
+  const paused = (): Session => ({ ...makeSession(), pausas: [{ id: 'pausa-1', iniciada_em: '2026-10-22T10:20:00.000Z', encerrada_em: null }] });
+
+  it('pausar mostra o aviso e troca o botão por Retomar; retomar volta ao normal', async () => {
+    const getSession = jest.fn().mockResolvedValueOnce(makeSession()).mockResolvedValueOnce(paused()).mockResolvedValue(makeSession());
+    const api = fakeApi({ getSession });
+    await ready(api);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Pausar treino' }));
+
+    expect(await screen.findByText('Treino pausado. O tempo parado não conta na duração do treino.')).toBeTruthy();
+    expect(api.pause).toHaveBeenCalledWith('sessao-1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Retomar treino' }));
+    await waitFor(() => expect(screen.queryByText('Treino pausado. O tempo parado não conta na duração do treino.')).toBeNull());
+    expect(api.resume).toHaveBeenCalledWith('sessao-1');
+    expect(screen.getByRole('button', { name: 'Pausar treino' })).toBeTruthy();
+  });
+
+  it('falha ao pausar avisa e mantém o treino como estava', async () => {
+    const api = fakeApi({ pause: jest.fn().mockRejectedValue(new ApiError({ status: 0, code: 'NETWORK_ERROR', message: '' })) });
+    await ready(api);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Pausar treino' }));
+
+    expect(await screen.findByText('Não foi possível pausar ou retomar o treino agora. Tente de novo.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Pausar treino' })).toBeTruthy();
+  });
+
+  it('descartar pede confirmação, cancela o treino e volta ao início', async () => {
+    const api = fakeApi();
+    await ready(api);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Descartar treino' }));
+    expect(screen.getByText('Descartar este treino?')).toBeTruthy();
+    expect(api.cancel).not.toHaveBeenCalled();
+    const buttons = screen.getAllByRole('button', { name: 'Descartar treino' });
+    await fireEvent.press(buttons[buttons.length - 1]);
+
+    await waitFor(() => expect(api.cancel).toHaveBeenCalledWith('sessao-1'));
+    expect(mockRouter.replace).toHaveBeenCalledWith('/');
+  });
+
+  it('cancelar na confirmação não descarta nada', async () => {
+    const api = fakeApi();
+    await ready(api);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Descartar treino' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancelar' }));
+
+    expect(api.cancel).not.toHaveBeenCalled();
+    expect(mockRouter.replace).not.toHaveBeenCalled();
   });
 });
 

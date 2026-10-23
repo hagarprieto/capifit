@@ -175,6 +175,39 @@ export function useWorkout(sessionUuid: string, injected?: WorkoutApi) {
     }
   }, [workoutApi, sessionUuid]);
 
+  /** Há uma pausa em aberto: o tempo parado não conta na duração do treino. */
+  const paused = useMemo(() => (session?.pausas ?? []).some((pause) => !pause.encerrada_em), [session]);
+
+  const refreshSession = useCallback(async () => {
+    const next = await workoutApi.getSession(sessionUuid);
+    setLoad({ kind: 'ready', session: next });
+  }, [workoutApi, sessionUuid]);
+
+  const togglePause = useCallback(async () => {
+    setNotice(null);
+    try {
+      await (paused ? workoutApi.resume(sessionUuid) : workoutApi.pause(sessionUuid));
+      await refreshSession();
+    } catch (error) {
+      setNotice(isApiError(error) && error.code === 'SESSION_CLOSED' ? t('treino.erro.encerrado') : t('treino.erro.pausar'));
+    }
+  }, [paused, workoutApi, sessionUuid, refreshSession]);
+
+  /** Descarta o treino (cancela). `true` se foi cancelado. */
+  const discard = useCallback(async (): Promise<boolean> => {
+    setFinishing(true);
+    setNotice(null);
+    try {
+      await workoutApi.cancel(sessionUuid);
+      return true;
+    } catch (error) {
+      setNotice(isApiError(error) && error.code === 'SESSION_CLOSED' ? t('treino.erro.encerrado') : t('treino.erro.descartar'));
+      return false;
+    } finally {
+      setFinishing(false);
+    }
+  }, [workoutApi, sessionUuid]);
+
   const totals = useMemo(() => {
     const all = items.flatMap((i) => i.item.series);
     return { total: all.length, done: all.filter((s) => s.status === 'realizada').length };
@@ -187,6 +220,9 @@ export function useWorkout(sessionUuid: string, injected?: WorkoutApi) {
     index: safeIndex,
     setIndex,
     totals,
+    paused,
+    togglePause,
+    discard,
     notice,
     finishing,
     reload: () => {

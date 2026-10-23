@@ -182,6 +182,32 @@ export function createSessionsRepo(db: LocalDb, userUuid: string) {
       return { id: seriesUuid, serie_prescrita_id: null, ordem, tipo: type, status: 'pendente', carga_kg: null, repeticoes: null, duracao_segundos: null, rir_real: null, concluida_em: null, revision: 0 };
     },
 
+    /** A pausa em aberto da sessão, se houver. */
+    async openPause(sessionUuid: string): Promise<{ id: string; iniciada_em: string } | null> {
+      const row = await db.getFirstAsync<{ uuid: string; iniciada_em: string }>(
+        'SELECT p.uuid, p.iniciada_em FROM sessao_pausa p JOIN sessao s ON s.uuid = p.sessao_uuid WHERE p.sessao_uuid = ? AND s.usuario_uuid = ? AND p.encerrada_em IS NULL ORDER BY p.iniciada_em DESC LIMIT 1',
+        [sessionUuid, userUuid],
+      );
+      return row ? { id: row.uuid, iniciada_em: row.iniciada_em } : null;
+    },
+
+    async startPause(sessionUuid: string, pauseUuid: string, at: string): Promise<boolean> {
+      const owned = await db.getFirstAsync<{ uuid: string }>('SELECT uuid FROM sessao WHERE uuid = ? AND usuario_uuid = ?', [sessionUuid, userUuid]);
+      if (!owned) {
+        return false;
+      }
+      await db.runAsync('INSERT OR IGNORE INTO sessao_pausa (uuid, sessao_uuid, iniciada_em, encerrada_em) VALUES (?, ?, ?, NULL)', [pauseUuid, sessionUuid, at]);
+      return true;
+    },
+
+    async endPause(pauseUuid: string, at: string): Promise<boolean> {
+      const result = await db.runAsync(
+        'UPDATE sessao_pausa SET encerrada_em = ? WHERE uuid = ? AND encerrada_em IS NULL AND sessao_uuid IN (SELECT uuid FROM sessao WHERE usuario_uuid = ?)',
+        [at, pauseUuid, userUuid],
+      );
+      return result.changes > 0;
+    },
+
     /** A sessão em andamento, se houver (só uma por vez). */
     async open(): Promise<Session | null> {
       const row = await db.getFirstAsync<SessionRow>("SELECT * FROM sessao WHERE usuario_uuid = ? AND status = 'em_andamento' ORDER BY iniciada_em DESC LIMIT 1", [userUuid]);

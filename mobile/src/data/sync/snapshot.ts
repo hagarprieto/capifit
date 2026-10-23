@@ -9,7 +9,7 @@ export type OfflineSession = {
   /** A sessão como o executor a lê (mesmo formato da API), já com todos os UUIDs. */
   session: Session;
   /** O corpo da operação `criar` da fila: o mesmo snapshot, no formato do `/sync/push`. */
-  payload: CreatePayload;
+  payload: CreatePayload & { tipo: 'programado' | 'avulso' };
 };
 
 type Origin = { ficha: Ficha; programId: string; versionNumber: number } | { title?: string };
@@ -40,8 +40,9 @@ export function buildOfflineSession(origin: Origin, startedAt: string, uuid: () 
         }))
     : [];
 
-  const payload: CreatePayload = {
+  const payload: OfflineSession['payload'] = {
     sessao_uuid: sessionUuid,
+    tipo: ficha ? 'programado' : 'avulso',
     iniciada_em: startedAt,
     ...(ficha ? { ficha_uuid: ficha.id } : 'title' in origin && origin.title ? { titulo_avulso: origin.title } : {}),
     exercicios: exercises.map(({ exercicio: _exercicio, ...snapshot }) => snapshot),

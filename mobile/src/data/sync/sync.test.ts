@@ -6,6 +6,7 @@ import { migrate } from '../local/migrations';
 import { createQueueRepo } from '../local/queueRepo';
 import { createSessionsRepo } from '../local/sessionsRepo';
 import { buildOfflineSession } from './snapshot';
+import { serverContractProblems } from './contract';
 import { BATCH_SIZE, createSyncEngine } from './syncEngine';
 
 type Ficha = Schemas['Ficha'];
@@ -49,6 +50,7 @@ describe('snapshot offline (RG-020)', () => {
 
     expect(payload).toEqual({
       sessao_uuid: uuid(1001),
+      tipo: 'programado',
       iniciada_em: '2026-10-22T10:00:00.000Z',
       ficha_uuid: uuid(101),
       exercicios: [
@@ -66,6 +68,7 @@ describe('snapshot offline (RG-020)', () => {
         { uuid: uuid(1005), ficha_exercicio_uuid: uuid(112), exercicio_uuid: uuid(502), tipo_item: 'prescrito', ordem: 2, series: [{ uuid: uuid(1006), serie_prescrita_uuid: uuid(122), ordem: 1, tipo: 'normal' }] },
       ],
     });
+    expect(serverContractProblems({ entidade: 'sessao_treino', tipo: 'criar', payload })).toEqual([]);
     expect(session).toMatchObject({ id: uuid(1001), tipo: 'programado', titulo: 'Treino A', status: 'em_andamento', programa_id: uuid(100), versao_numero: 2, ficha_id: uuid(101), series_total: 3 });
     expect(session.exercicios[0].exercicio.nome).toBe('Supino');
     expect(session.exercicios[0].series.map((s) => [s.id, s.status])).toEqual([[uuid(1003), 'pendente'], [uuid(1004), 'pendente']]);
@@ -74,7 +77,8 @@ describe('snapshot offline (RG-020)', () => {
   it('treino avulso começa sem exercícios e sem ficha', () => {
     const { session, payload } = buildOfflineSession({ title: 'Peito livre' }, '2026-10-22T10:00:00.000Z', counter());
 
-    expect(payload).toEqual({ sessao_uuid: uuid(1001), iniciada_em: '2026-10-22T10:00:00.000Z', titulo_avulso: 'Peito livre', exercicios: [] });
+    expect(payload).toEqual({ sessao_uuid: uuid(1001), tipo: 'avulso', iniciada_em: '2026-10-22T10:00:00.000Z', titulo_avulso: 'Peito livre', exercicios: [] });
+    expect(serverContractProblems({ entidade: 'sessao_treino', tipo: 'criar', payload })).toEqual([]);
     expect(session).toMatchObject({ tipo: 'avulso', titulo: 'Peito livre', ficha_id: null, programa_id: null, series_total: 0 });
   });
 });

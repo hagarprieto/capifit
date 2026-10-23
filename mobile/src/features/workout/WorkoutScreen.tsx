@@ -35,6 +35,7 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
   const { uuid } = useLocalSearchParams<{ uuid: string }>();
   const workout = useWorkout(String(uuid), api);
   const [confirming, setConfirming] = useState(false);
+  const [discarding, setDiscarding] = useState(false);
   const rest = useRestTimer();
   const [autoRest, setAutoRest] = useState(true);
 
@@ -79,6 +80,16 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
     const outcome = await workout.complete(seriesId);
     if (outcome === 'new' && autoRest) {
       rest.start();
+    }
+  }
+
+  async function confirmDiscard() {
+    if (await workout.discard()) {
+      rest.skip();
+      setDiscarding(false);
+      router.replace('/');
+    } else {
+      setDiscarding(false);
     }
   }
 
@@ -174,7 +185,21 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
         </>
       )}
 
+      {workout.paused ? <Notice kind="info" message={t('treino.pausado')} /> : null}
+      <Button label={t(workout.paused ? 'treino.retomar' : 'treino.pausar')} variant={workout.paused ? 'primary' : 'secondary'} onPress={() => void workout.togglePause()} />
       <Button label={t('treino.finalizar')} onPress={() => setConfirming(true)} />
+      <Button label={t('treino.descartar')} variant="text" onPress={() => setDiscarding(true)} />
+
+      <ConfirmDialog
+        visible={discarding}
+        title={t('treino.descartarTitulo')}
+        message={t('treino.descartarTexto')}
+        confirmLabel={t('treino.descartarConfirma')}
+        destructive
+        loading={workout.finishing}
+        onCancel={() => setDiscarding(false)}
+        onConfirm={() => void confirmDiscard()}
+      />
 
       <ConfirmDialog
         visible={confirming}

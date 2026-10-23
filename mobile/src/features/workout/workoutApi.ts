@@ -10,6 +10,7 @@ import type { Target } from './prefill';
 export type Session = Schemas['Sessao'];
 export type SessionItem = Schemas['SessaoExercicio'];
 export type SessionSeries = Schemas['SessaoSerie'];
+export type SessionPause = Schemas['Pausa'];
 export type LastRecord = Schemas['UltimoRegistro'];
 export type { ExerciseSummary } from '../exercises/exercisesApi';
 
@@ -126,6 +127,20 @@ export function createWorkoutApi(api: ApiClient) {
     async addExercise(sessionUuid: string, exerciseUuid: string): Promise<SessionItem> {
       const result = await api.post<SessionItem>(`/me/sessoes/${sessionUuid}/exercicios`, { uuid: newUuid(), exercicio_uuid: exerciseUuid });
       return result.data;
+    },
+
+    /** Pausa o treino (o tempo parado não conta na duração). Repetir não cria outra pausa. */
+    async pause(sessionUuid: string): Promise<SessionPause> {
+      return (await api.post<SessionPause>(`/me/sessoes/${sessionUuid}/pausar`)).data;
+    },
+
+    async resume(sessionUuid: string): Promise<SessionPause> {
+      return (await api.post<SessionPause>(`/me/sessoes/${sessionUuid}/retomar`)).data;
+    },
+
+    /** Descarta o treino: ele é cancelado e não entra no histórico. */
+    async cancel(sessionUuid: string): Promise<void> {
+      await api.post(`/me/sessoes/${sessionUuid}/cancelar`, {}, { idempotencyKey: true });
     },
 
     async finish(sessionUuid: string): Promise<void> {
