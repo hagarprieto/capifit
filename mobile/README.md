@@ -63,6 +63,10 @@ npm run mock:api       # servidor mock do contrato em http://localhost:4010 (Pri
 - **Falhas:** resumo e histórico carregam separados; se algum falhar, aparece o aviso com "Tentar de novo". Ao voltar de outra tela a aba atualiza sozinha. Lógica em `features/progress/progress.ts`.
 - **Fora desta entrega:** gráfico por exercício e tendências (E13-01) e leitura offline do histórico (E08).
 
+## Cópia de programa (E06-09)
+
+- No detalhe de qualquer programa, **Criar cópia** (para programa de coach: **Criar minha cópia para editar**, em destaque, com o aviso de que o original não pode ser editado). Pede confirmação dizendo que o original não muda, cria um programa **novo, seu** (origem "Criado por você", `derivado_de` apontando para o original) com as fichas da versão vigente e abre a cópia. A API é a `POST /programas/{uuid}/copiar` (E06-01), com chave de idempotência (repetir por engano não cria duas). Erro de rede e erro genérico avisam e deixam tentar de novo. É o caminho previsto pela RG-005 para personalizar o que veio de um coach.
+
 ## Biblioteca de exercícios (E06-06, TEL-024/025)
 
 - **Onde fica:** não é uma aba (Doc 02: a biblioteca é acessada em contexto). Entradas: botão "Biblioteca de exercícios" na aba Treinos (`/exercicios`); botão **Detalhes** em cada exercício ao escolher exercício para a ficha ou para o treino; e **Como fazer este exercício** no executor.

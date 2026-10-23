@@ -73,6 +73,14 @@ export function createProgramsApi(api: ApiClient) {
     },
 
     /** Arquiva (sem apagar histórico); se estava em uso, deixa de ser o ativo. Não há desarquivar. */
+    /**
+     * Cria um programa NOVO do usuário (origem "usuario", `derivado_de` apontando para o original) com as fichas da
+     * versão vigente. O original nunca é alterado — é o caminho para personalizar um programa do coach (RG-005).
+     */
+    async copy(programUuid: string): Promise<Program> {
+      return (await api.post<Program>(`/programas/${programUuid}/copiar`, undefined, { idempotencyKey: true })).data;
+    },
+
     async archive(programUuid: string): Promise<Program> {
       return (await api.post<Program>(`/programas/${programUuid}/arquivar`)).data;
     },

@@ -1,6 +1,6 @@
 # CapiFit — Documento 14: Roteiro de validação do app em aparelho
 
-**Versão:** 2.3 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07 e E07-10
+**Versão:** 2.4 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07, E07-10 e E06-09
 **Por que existe:** os testes automáticos (Jest, tipos, lint) já passam no CI, mas só um aparelho de verdade mostra teclado, rolagem, tema, notificação, vibração, leitor de tela e desempenho. Este roteiro transforma "falta validar em aparelho" em uma lista que você executa e marca.
 
 ## 0. Como usar
@@ -220,6 +220,10 @@ Pré-requisito: exercícios publicados de convenções diferentes (§1.2): barra
 | V-05.14 🟡 | Modo avião → **Salvar rascunho**. | Aviso de falta de conexão; o rascunho continua na tela; salva ao voltar a rede. | Perde as alterações. |
 | V-05.15 🟡 | Compare dois programas de origens diferentes (só "Criado por você" é possível sem coach). | Rótulo e símbolo legíveis nos dois temas. | Origem só por cor. |
 
+| V-05.16 🔴 | Detalhe de um programa publicado → **Criar cópia** → Cancelar; depois de novo → Criar cópia. | O diálogo diz que o original não muda; Cancelar não cria nada; confirmar abre um programa novo "Cópia de …" em **Rascunhos**, com as mesmas fichas e exercícios. | Cria sem perguntar, altera o original, ou cópia sem fichas. |
+| V-05.17 🔴 | Edite a cópia (renomeie, mude um exercício) e volte ao original. | O original **não mudou**. | Alteração vazou para o original. |
+| V-05.18 🟡 | Modo avião → Criar cópia. | Aviso de falta de conexão; nada criado; dá para tentar de novo. | Cria duplicado ou trava. |
+
 > Programas **do coach** e **sugeridos pelo app** não têm como ser criados nesta fase (sem tela de coach nem motor); a regra "coach não edita" tem teste automático e será validada em aparelho quando houver como gerar um.
 
 ### R6 — Acessibilidade transversal
@@ -348,6 +352,7 @@ Copie e preencha (uma cópia por aparelho). **P**/**F**/**N/A** e uma observaç�
 | V-03.1 … V-03.9 |  |  |  |
 | V-04.1 … V-04.4 |  |  |  |
 | V-05.1 … V-05.12 |  |  |  |
+| V-05.16 … V-05.17 |  |  |  |
 | V-06.1 … V-06.4 |  |  |  |
 | V-07.1 … V-07.9 |  |  |  |
 | V-08.1 … V-08.8 |  |  |  |
@@ -384,6 +389,7 @@ Não coloque senhas, tokens nem e-mails reais no relato.
 | E06-03 (Meus treinos) | V-05.1, V-05.2, V-06.4 |
 | E06-04 (editor de programa e ficha) | V-05.3, V-05.4, V-05.7 a V-05.12 |
 | E06-05 (configurar exercício) | V-05.5, V-05.6 |
+| E06-09 (cópia de programa) | V-05.16, V-05.17 |
 | E05-03 (Início) | V-07.2 a V-07.5, V-07.9 |
 | E04-03 (abas e voltar ao treino) | V-07.1, V-07.5, V-07.7, V-07.8 |
 | E04-04 (SyncStatus, semana, números) | V-07.9, V-10.1, V-10.7 |
@@ -425,6 +431,7 @@ adb logcat *:E ReactNativeJS:V
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0 | 22/10/2026 | Primeira versão: preparação, 6 roteiros, quadro de resultados e critério de conclusão para as histórias do app já entregues. |
+| 2.4 | 23/10/2026 | Testes V-05.16 a V-05.18 (cópia de programa, E06-09). |
 | 2.3 | 23/10/2026 | R2c (rótulos de carga por convenção e unilaterais, E07-10). |
 | 2.2 | 23/10/2026 | R2b (substituir e acrescentar exercício, E07-07). |
 | 2.1 | 23/10/2026 | R12 (biblioteca de exercícios, E06-06) e critérios correspondentes. |

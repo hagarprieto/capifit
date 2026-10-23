@@ -61,6 +61,7 @@ function fakeApi(over: Partial<ProgramsApi> = {}): ProgramsApi {
     create: jest.fn().mockResolvedValue(program('p-novo', { status: 'rascunho', versao_atual: null })),
     activate: jest.fn().mockResolvedValue({ programa_id: 'p-1', versao_numero: 2, ativado_em: '2026-10-22T12:00:00.000Z' }),
     archive: jest.fn().mockResolvedValue(program('p-1', { status: 'arquivado' })),
+    copy: jest.fn().mockResolvedValue(program('p-copia', { titulo: 'Cópia de Programa p-1', status: 'rascunho', versao_atual: null, derivado_de: 'p-1' })),
     ...over,
   } as ProgramsApi;
 }
@@ -380,5 +381,63 @@ describe('ativar, trocar e arquivar (E06-08)', () => {
 
     expect(await screen.findByText('Não foi possível concluir agora. Tente de novo.')).toBeTruthy();
     expect(mockRouter.replace).not.toHaveBeenCalled();
+  });
+});
+
+describe('cópia de programa (E06-09)', () => {
+  it('pede confirmação explicando que o original não muda e abre a cópia criada', async () => {
+    const api = fakeApi();
+    await show(<ProgramDetailScreen api={api} />);
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'Criar cópia' }));
+    expect(screen.getByText('Criar uma cópia?')).toBeTruthy();
+    expect(screen.getByText('Cria um programa novo, seu, com as mesmas fichas e exercícios, para você editar. O original não muda.')).toBeTruthy();
+    expect(api.copy).not.toHaveBeenCalled();
+    const buttons = screen.getAllByRole('button', { name: 'Criar cópia' });
+    await fireEvent.press(buttons[buttons.length - 1]);
+
+    await waitFor(() => expect(api.copy).toHaveBeenCalledWith('p-1'));
+    expect(mockRouter.replace).toHaveBeenCalledWith({ pathname: '/programas/[uuid]', params: { uuid: 'p-copia' } });
+  });
+
+  it('cancelar não cria nada', async () => {
+    const api = fakeApi();
+    await show(<ProgramDetailScreen api={api} />);
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'Criar cópia' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancelar' }));
+
+    expect(api.copy).not.toHaveBeenCalled();
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+  });
+
+  it('programa do coach não edita: explica e a cópia é o caminho principal', async () => {
+    const coach = program('p-1', { origem: 'coach', autor: { id: 'c', nome: 'Marcos', papeis: ['coach'] } });
+    await show(<ProgramDetailScreen api={fakeApi({ get: jest.fn().mockResolvedValue(coach) })} />);
+
+    expect(await screen.findByText('Este programa foi prescrito por Marcos e não pode ser editado. Crie uma cópia sua para personalizar; o original continua como está.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Criar minha cópia para editar' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Editar programa' })).toBeNull();
+  });
+
+  it('falha de rede e erro genérico avisam e deixam tentar de novo', async () => {
+    const network = fakeApi({ copy: jest.fn().mockRejectedValue(new ApiError({ status: 0, code: 'NETWORK_ERROR', message: '' })) });
+    await show(<ProgramDetailScreen api={network} />);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Criar cópia' }));
+    const buttons = screen.getAllByRole('button', { name: 'Criar cópia' });
+    await fireEvent.press(buttons[buttons.length - 1]);
+
+    expect(await screen.findByText('Sem conexão. Verifique a internet e tente de novo.')).toBeTruthy();
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Criar cópia' })).toBeTruthy();
+  });
+
+  it('a API manda o POST de cópia com chave de idempotência', async () => {
+    const post = jest.fn().mockResolvedValue({ data: { id: 'p-copia' } });
+    const { createProgramsApi } = jest.requireActual('./programsApi') as typeof import('./programsApi');
+
+    await createProgramsApi({ post } as never).copy('p-1');
+
+    expect(post).toHaveBeenCalledWith('/programas/p-1/copiar', undefined, { idempotencyKey: true });
   });
 });

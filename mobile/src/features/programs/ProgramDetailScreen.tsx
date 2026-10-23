@@ -16,7 +16,7 @@ import { t, type MessageKey } from '@/i18n';
 import { createProgramsApi, type ActiveProgram, type Program, type ProgramVersion, type ProgramsApi } from './programsApi';
 
 type Load = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; program: Program; version: ProgramVersion | null; active: ActiveProgram | null };
-type Dialog = 'activate' | 'archive' | null;
+type Dialog = 'activate' | 'archive' | 'copy' | null;
 
 /**
  * Detalhe do programa (versão vigente ou, se ainda não publicado, o rascunho) com as ações do ciclo de vida:
@@ -111,6 +111,20 @@ export function ProgramDetailScreen({ api }: { api?: ProgramsApi }) {
       'programas.ativadoOk',
       refresh,
     );
+  const copy = async () => {
+    setBusy(true);
+    setFeedback(null);
+    try {
+      const created = await programsApi.copy(program.id);
+      setDialog(null);
+      router.replace({ pathname: '/programas/[uuid]', params: { uuid: created.id } });
+    } catch (error) {
+      setDialog(null);
+      setFeedback({ kind: 'error', message: isApiError(error) && error.isNetwork ? 'auth.erro.rede' : 'programas.erroCopia' });
+    } finally {
+      setBusy(false);
+    }
+  };
   const archive = () =>
     run(
       async () => {
@@ -131,6 +145,7 @@ export function ProgramDetailScreen({ api }: { api?: ProgramsApi }) {
         {version ? t('programas.versaoEstado', { numero: version.numero, estado: t(version.estado === 'rascunho' ? 'programas.estadoRascunho' : 'programas.estadoPublicada') }) : ''}
       </Text>
 
+      {program.origem === 'coach' ? <Notice kind="info" message={t('programas.copiarAvisoCoach', { nome: program.autor.nome })} /> : null}
       {isActive ? <Notice kind="success" message={t('programas.emUsoAviso')} /> : null}
       {program.status === 'arquivado' ? <Notice kind="info" message={t('programas.arquivadoAviso')} /> : null}
       {feedback ? <Notice kind={feedback.kind === 'success' ? 'success' : 'error'} message={t(feedback.message)} /> : null}
@@ -166,8 +181,19 @@ export function ProgramDetailScreen({ api }: { api?: ProgramsApi }) {
         </Text>
       ) : null}
       {canEdit ? <Button label={t('programas.editar')} variant={canActivate ? 'secondary' : 'primary'} onPress={() => router.push({ pathname: '/programas/[uuid]/editar', params: { uuid: program.id } })} /> : null}
+      <Button label={t(program.origem === 'coach' ? 'programas.copiarCoach' : 'programas.copiar')} variant={program.origem === 'coach' ? 'primary' : 'secondary'} onPress={() => setDialog('copy')} />
       {canArchive ? <Button label={t('programas.arquivar')} variant="secondary" onPress={() => setDialog('archive')} /> : null}
       <Button label={t('programas.voltar')} variant="text" onPress={() => router.back()} />
+
+      <ConfirmDialog
+        visible={dialog === 'copy'}
+        title={t('programas.copiarTitulo')}
+        message={t('programas.copiarTexto')}
+        confirmLabel={t('programas.copiarConfirma')}
+        loading={busy}
+        onCancel={() => setDialog(null)}
+        onConfirm={() => void copy()}
+      />
 
       <ConfirmDialog
         visible={dialog === 'activate'}
