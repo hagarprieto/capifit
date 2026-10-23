@@ -1,14 +1,14 @@
 # CapiFit — Documento 14: Roteiro de validação do app em aparelho
 
-**Versão:** 2.9 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07, E07-10, E06-09, E06-07, E04-06 e E09-04
+**Versão:** 3.0 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07, E07-10, E06-09, E06-07, E04-06 e E09-04
 **Por que existe:** os testes automáticos (Jest, tipos, lint) já passam no CI, mas só um aparelho de verdade mostra teclado, rolagem, tema, notificação, vibração, leitor de tela e desempenho. Este roteiro transforma "falta validar em aparelho" em uma lista que você executa e marca.
 
 ## 0. Como usar
 
 1. Faça a **preparação (§1)** uma vez. Leva cerca de 30 minutos na primeira vez.
-2. Execute os roteiros **R0 a R12 (§2)** num **Android** e num **iPhone** (veja a matriz mínima em §1.4). Para cada passo, confira o **Esperado**.
+2. Execute os roteiros **R0 a R12 (§2)** num **Android** (a matriz mínima está em §1.4; o iPhone fica para uma fase posterior, ver a decisão abaixo). Para cada passo, confira o **Esperado**.
 3. Marque cada teste no **quadro de resultados (§3)**: **P** (passou), **F** (falhou), **N/A** (não se aplica neste aparelho) e, se falhou, anote o que viu (§4).
-4. Uma história só vira **concluída** quando todos os testes **obrigatórios (🔴)** dela passam em **pelo menos um Android e um iPhone** (§5). Os desejáveis (🟡) viram pendência, não bloqueio.
+4. Uma história só vira **concluída** quando todos os testes **obrigatórios (🔴)** dela passam em **pelo menos um Android** (§5). Os desejáveis (🟡) viram pendência, não bloqueio.
 
 **Regra de ouro:** se algo parecer estranho mas não estiver no roteiro, anote mesmo assim. Um roteiro nunca prevê tudo.
 
@@ -86,7 +86,7 @@ Com isso, use `EXPO_PUBLIC_API_URL=http://localhost:8080` no `mobile\.env` e, em
 |---|---|---|---|
 | Android de entrada (🔴) | ex.: Android 12 | pequena | o pior caso de desempenho e de espaço |
 | Android recente (🟡) | ex.: Android 14 | média | notificações exigem permissão no 13+ |
-| iPhone (🔴) | ex.: iOS 17 | qualquer | Keychain, háptico e VoiceOver |
+| iPhone (fase posterior) | ex.: iOS 17 | qualquer | Keychain, háptico e VoiceOver — **fora da regra de conclusão** (ver a decisão abaixo) |
 
 ### 1.5 Contas e dados de teste
 
@@ -423,7 +423,11 @@ Não coloque senhas, tokens nem e-mails reais no relato.
 | E08-09 (sair da conta) | V-11.4 a V-11.8 |
 | E06-06 (biblioteca e detalhe do exercício) | V-12.1 a V-12.9 |
 
-Regra: **todos os 🔴 da história em um Android e em um iPhone**. Se faltar um dos dois SO, a história continua "em andamento" com a nota do que falta. Falhas viram defeitos (§4) e a história volta a ser marcada depois da correção e de uma nova rodada só dos testes que falharam.
+Regra: **todos os 🔴 da história em pelo menos um Android**. Se algum falhar, a história continua "em andamento" com a nota do que falta. Falhas viram defeitos (§4) e a história volta a ser marcada depois da correção e de uma nova rodada só dos testes que falharam.
+
+### 5.1 Decisão de 23/10/2026: iPhone em fase posterior
+
+A conclusão das histórias passa a depender **só dos testes em Android**. A validação em **iPhone** (Keychain, háptico, VoiceOver, notificações, teclado, comportamento do iOS) fica para uma **fase posterior, depois da conclusão da versão comercial** para Android. Consequências: (1) as histórias podem ser marcadas concluídas com o Android; (2) o que for específico do iOS vira um conjunto de testes próprio dessa fase, e os itens de iPhone deste roteiro (V-01.9 pelo Safari, V-06 com VoiceOver, "limpar dados" no §6) ficam como pendência dela; (3) o risco assumido é descobrir defeitos de iOS só depois do lançamento no Android, então o app deve continuar sem código específico de plataforma além do que o Expo já cobre.
 
 ## 6. Anexo: comandos úteis
 
@@ -449,6 +453,7 @@ adb logcat *:E ReactNativeJS:V
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0 | 22/10/2026 | Primeira versão: preparação, 6 roteiros, quadro de resultados e critério de conclusão para as histórias do app já entregues. |
+| 3.0 | 23/10/2026 | Regra de conclusão passa a exigir só Android; iPhone em fase posterior à versão comercial (§5.1). |
 | 2.9 | 23/10/2026 | Como simular "sem rede" com o cabo USB; V-01.7 validado em aparelho. |
 | 2.8 | 23/10/2026 | Primeira rodada em aparelho (Motorola edge 60 pro, Android 16, Expo Go 58.0.5): nota sobre notificações no Expo Go. |
 | 2.7 | 23/10/2026 | Testes V-08.9 e V-08.10 (explicação do volume, E09-04). |

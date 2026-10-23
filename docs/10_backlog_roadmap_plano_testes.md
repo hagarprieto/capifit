@@ -473,7 +473,7 @@ Suíte dedicada (E08-08) com simulador de rede capaz de: cortar a conexão no me
 | API: leitura / escrita (percentil 95) | ≤ 300 ms / ≤ 500 ms, a confirmar após teste de carga |
 | `sync/push` com 50 operações | ≤ 2 s |
 | Cache de mídia | Limite configurável (padrão 200 MB), expiração definida |
-| Aparelho de referência | Android de entrada e iPhone com 3 gerações |
+| Aparelho de referência | Android de entrada (conclusão das histórias). iPhone com 3 gerações: fase posterior à versão comercial (decisão de 23/10/2026, Doc 14 §5.1) |
 
 Medições: M1 (executor básico), M3 (cache e sync) e M4 (completo). Excesso do orçamento abre defeito S2.
 

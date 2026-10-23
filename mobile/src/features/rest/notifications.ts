@@ -1,3 +1,4 @@
+import { requireOptionalNativeModule } from 'expo-modules-core';
 import { Platform } from 'react-native';
 
 import { t } from '@/i18n';
@@ -14,20 +15,26 @@ type NotificationsModule = typeof import('expo-notifications');
 let loaded: NotificationsModule | null | undefined;
 
 /**
- * Carrega o módulo de notificações só quando preciso e de forma defensiva. No Expo Go (SDK 58) a parte nativa
- * `ExpoTopicSubscriptionModule` não existe, e importar `expo-notifications` no topo do arquivo derrubava o app inteiro
- * ao abrir. Sem o módulo, o descanso segue funcionando só dentro do app (o aviso local é um reforço, não requisito).
+ * Carrega o módulo de notificações só quando preciso e só se a parte nativa existir. No Expo Go (SDK 58) a parte nativa
+ * `ExpoTopicSubscriptionModule` não existe, e carregar `expo-notifications` assim mesmo derrubava o app. Um `try/catch`
+ * em volta do `require` NÃO resolve: o Metro trata erro de carga de módulo como erro fatal (tela vermelha) e ainda engole
+ * a exceção, então o teste de existência vem ANTES. Sem o módulo, o descanso segue só dentro do app (o aviso local é um
+ * reforço, não requisito).
  */
 function notifications(): NotificationsModule | null {
   if (loaded === undefined) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      loaded = require('expo-notifications') as NotificationsModule;
-    } catch {
+    if (requireOptionalNativeModule('ExpoTopicSubscriptionModule') === null) {
       loaded = null;
+    } else {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        loaded = require('expo-notifications') as NotificationsModule;
+      } catch {
+        loaded = null;
+      }
     }
   }
-  return loaded;
+  return loaded ?? null;
 }
 
 const CHANNEL_ID = 'descanso';
