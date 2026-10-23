@@ -33,7 +33,14 @@ npm run mock:api       # servidor mock do contrato em http://localhost:4010 (Pri
 
 - **Estrutura:** `src/app/(tabs)` tem as quatro abas fixas do Doc 03 §3.1: Início, Treinos (`/programas`), Evolução e Perfil. Telas de detalhe, edição e execução ficam no stack da raiz, por cima das abas (a barra some nelas). A barra é própria (`features/shell/AppTabBar.tsx`), com texto sempre visível e alvo de toque mínimo.
 - **Voltar ao treino:** enquanto houver sessão aberta, a barra mostra o botão "Voltar ao treino" em qualquer aba (UX-02). A consulta roda ao montar e a cada mudança de aba ou de rota; se falhar, o botão só não aparece.
-- **Evolução e Perfil:** a Evolução é um espaço reservado até a E09-03. O Perfil traz o nome, a verificação do tema e Sair (que saíram do Início).
+- **Perfil:** traz o nome, a verificação do tema e Sair (que saíram do Início).
+
+## Evolução e histórico (TEL-030/031)
+
+- **Aba Evolução:** escolha entre 4 e 12 semanas (a semana atual conta como a última). Mostra treinos, tempo de treino, séries e volume do período (`GET /me/progresso/resumo`, com o fuso do aparelho), a frequência por semana em barras com rótulo falado e a explicação do volume (indicador de acompanhamento, não nota). Sem metas, sem comparação e sem ranking.
+- **Histórico:** sessões concluídas, mais recentes primeiro, paginadas ("Carregar mais"); tocar abre o resumo da sessão (`treino/[uuid]/resumo`) com os registros de cada série. Sem treino ainda, mostra um estado vazio.
+- **Falhas:** resumo e histórico carregam separados; se algum falhar, aparece o aviso com "Tentar de novo". Ao voltar de outra tela a aba atualiza sozinha. Lógica em `features/progress/progress.ts`.
+- **Fora desta entrega:** gráfico por exercício e tendências (E13-01) e leitura offline do histórico (E08).
 
 ## Início (TEL-010)
 

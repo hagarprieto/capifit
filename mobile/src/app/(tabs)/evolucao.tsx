@@ -1,4 +1,4 @@
-import { ProgressScreen } from '@/features/shell/ProgressScreen';
+import { ProgressScreen } from '@/features/progress/ProgressScreen';
 
 export default function Route() {
   return <ProgressScreen />;

@@ -5,7 +5,6 @@ import type { WorkoutApi } from '@/features/workout/workoutApi';
 
 import { AppTabBar } from './AppTabBar';
 import { ProfileScreen } from './ProfileScreen';
-import { ProgressScreen } from './ProgressScreen';
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
 let mockPathname = '/';
@@ -114,8 +113,8 @@ describe('AppTabBar', () => {
   });
 });
 
-describe('abas Perfil e Evolução', () => {
-  it('Perfil mostra o nome, abre a verificação do tema e sai', async () => {
+describe('aba Perfil', () => {
+  it('mostra o nome, abre a verificação do tema e sai', async () => {
     await render(
       <ThemeProvider initialPreference="dark">
         <ProfileScreen />
@@ -127,15 +126,5 @@ describe('abas Perfil e Evolução', () => {
     expect(mockRouter.push).toHaveBeenCalledWith('/tema');
     await fireEvent.press(screen.getByRole('button', { name: 'Sair' }));
     expect(mockAuth.signOut).toHaveBeenCalledTimes(1);
-  });
-
-  it('Evolução explica que o histórico ainda vem', async () => {
-    await render(
-      <ThemeProvider initialPreference="dark">
-        <ProgressScreen />
-      </ThemeProvider>,
-    );
-
-    expect(screen.getByText('Sua evolução aparece aqui')).toBeTruthy();
   });
 });
