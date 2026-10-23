@@ -27,7 +27,10 @@ export function Text({ variant = 'body', color = 'primary', tabular = variant ==
           fontSize: scale.size,
           lineHeight: scale.line,
           color: theme.colors.text[color],
-          fontVariant: tabular ? ['tabular-nums'] : undefined,
+          // Sempre um valor, nunca `undefined`: quando a mesma instância de Text deixa de ser tabular (ex.: o cartão do
+          // descanso troca o relógio pela mensagem de fim), `undefined` vira `null` na atualização nativa e o React Native
+          // quebra em `processFontVariant` ("Cannot read property 'split' of null"). Achado na validação em aparelho.
+          fontVariant: tabular ? ['tabular-nums'] : ['proportional-nums'],
         },
         style,
       ]}
