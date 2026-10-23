@@ -9,7 +9,8 @@ import { Button } from '@/design-system/Button';
 import { Notice } from '@/design-system/Notice';
 import { OriginBadge } from '@/design-system/OriginBadge';
 import { Screen } from '@/design-system/Screen';
-import { StatTile, SyncStatus, WeekStrip } from '@/design-system/StatusAndStats';
+import { StatTile, WeekStrip } from '@/design-system/StatusAndStats';
+import { SyncBanner } from '@/features/shell/SyncBanner';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
 import { createProgramsApi, type ActiveProgram, type ProgramsApi } from '@/features/programs/programsApi';
@@ -30,7 +31,7 @@ export function HomeScreen({ api, programsApi: programsOverride, now }: { api?: 
   const router = useRouter();
   const { theme } = useTheme();
   const auth = useAuth();
-  const { user, offline } = auth;
+  const { user } = auth;
   const workoutApi = useWorkoutApi(api);
   const programsApi = useMemo(() => programsOverride ?? createProgramsApi(auth.api), [programsOverride, auth.api]);
   const { ready, today } = useLocalData();
@@ -99,13 +100,12 @@ export function HomeScreen({ api, programsApi: programsOverride, now }: { api?: 
     <Screen>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text variant="title">{t('app.nome')}</Text>
-        <SyncStatus state={offline || data?.failed ? 'offline' : 'synced'} />
       </View>
       <Text variant="headline" accessibilityRole="header">
         {t('inicio.saudacao', { nome: user?.nome ?? '' })}
       </Text>
 
-      {offline ? <Notice kind="info" message={t('home.offline')} /> : null}
+      <SyncBanner />
       {data?.failed ? (
         <>
           <Notice kind="warning" message={t('inicio.erroResumo')} />

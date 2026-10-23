@@ -10,6 +10,7 @@ import { Screen } from '@/design-system/Screen';
 import { SetRow } from '@/design-system/SetRow';
 import { Text } from '@/design-system/Text';
 import { useTheme } from '@/design-system/ThemeProvider';
+import { SyncBanner } from '@/features/shell/SyncBanner';
 import { t } from '@/i18n';
 
 import { RestTimerCard } from '../rest/RestTimerCard';
@@ -101,6 +102,7 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
           {t('treino.progresso', { feitas: workout.totals.done, total: workout.totals.total })}
         </Text>
       </View>
+      <SyncBanner compact />
 
       {workout.notice ? <Notice kind="error" message={workout.notice} /> : null}
 

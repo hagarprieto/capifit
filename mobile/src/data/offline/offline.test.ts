@@ -88,7 +88,7 @@ async function setup(options: { cached?: boolean } = {}) {
     addExercise: jest.fn(),
     searchExercises: jest.fn(),
   };
-  const api = createLocalFirstWorkoutApi({ remote: remote as unknown as WorkoutApi, sessions, queue, engine: { flush: jest.fn().mockResolvedValue({ status: 'offline', applied: 0 }) }, today, now: () => clock });
+  const api = createLocalFirstWorkoutApi({ remote: remote as unknown as WorkoutApi, sessions, queue, engine: { flush: jest.fn().mockResolvedValue({ status: 'offline', applied: 0 }) } as never, today, now: () => clock });
   return { db, sessions, queue, today, post, engine, remote, api };
 }
 

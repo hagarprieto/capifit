@@ -18,7 +18,8 @@ const mockAuth = { user: { id: 'u1', nome: 'Ana' }, offline: false, signOut: jes
 jest.mock('@/auth/AuthProvider', () => ({ useAuth: () => mockAuth }));
 
 let mockLocal: { ready: boolean; today: unknown } = { ready: true, today: null };
-jest.mock('@/data/LocalDataProvider', () => ({ useLocalData: () => mockLocal }));
+let mockSync = { state: 'synced', waiting: 0, review: 0, retry: undefined as (() => void) | undefined };
+jest.mock('@/data/LocalDataProvider', () => ({ useLocalData: () => mockLocal, useSyncStatus: () => mockSync }));
 
 // Quinta-feira, 22/10/2026, 12h (horário local do aparelho).
 const NOW = new Date(2026, 9, 22, 12, 0, 0);
@@ -65,6 +66,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockAuth.offline = false;
   mockLocal = { ready: true, today: null };
+  mockSync = { state: 'synced', waiting: 0, review: 0, retry: undefined };
 });
 
 describe('regras da semana', () => {
@@ -220,10 +222,10 @@ describe('HomeScreen', () => {
   });
 
   it('offline avisa e mostra o estado de sincronização', async () => {
-    mockAuth.offline = true;
+    mockSync = { state: 'offline', waiting: 0, review: 0, retry: undefined };
     await show(workoutApi(), programsApi(null));
 
-    expect(await screen.findByText('Sem conexão: você pode treinar normalmente.')).toBeTruthy();
+    expect(await screen.findByText('Sem conexão. Seus registros ficam neste dispositivo e sincronizam depois.')).toBeTruthy();
     expect(screen.getAllByLabelText('Offline — salvo neste dispositivo').length).toBeGreaterThan(0);
   });
 });

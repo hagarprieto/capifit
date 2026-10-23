@@ -25,6 +25,9 @@ type Deps = { api: ApiClient; queue: QueueRepo; sessions: SessionsRepo; deviceUu
  */
 export function createSyncEngine({ api, queue, sessions, deviceUuid }: Deps) {
   let running: Promise<FlushOutcome> | null = null;
+  let reachable: boolean | null = null;
+  const listeners = new Set<() => void>();
+  const notify = () => listeners.forEach((listener) => listener());
 
   async function sendBatch(batch: QueuedOperation[]): Promise<{ applied: number; answered: number } | { stop: FlushOutcome }> {
     await queue.markSending(batch.map((op) => op.operacao_uuid));
@@ -107,11 +110,32 @@ export function createSyncEngine({ api, queue, sessions, deviceUuid }: Deps) {
   return {
     flush(): Promise<FlushOutcome> {
       if (!running) {
-        running = run().finally(() => {
-          running = null;
-        });
+        notify(); // o envio vai começar: quem mostra o estado relê a fila
+        running = run()
+          .then((outcome) => {
+            // Só um envio que de fato falou com o servidor diz se há rede; fila vazia não diz nada.
+            if (outcome.status === 'offline') {
+              reachable = false;
+            } else if (outcome.applied > 0 || outcome.status === 'blocked' || (outcome.status === 'done' && outcome.needsReview > 0)) {
+              reachable = true;
+            }
+            return outcome;
+          })
+          .finally(() => {
+            running = null;
+            notify();
+          });
       }
       return running;
+    },
+
+    /** `true` = o último envio falou com o servidor; `false` = falhou por conexão; `null` = ainda não se sabe. */
+    isReachable: (): boolean | null => reachable,
+
+    /** Avisa quando um envio começa ou termina. Devolve a função que cancela o aviso. */
+    subscribe(listener: () => void): () => void {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
     },
   };
 }

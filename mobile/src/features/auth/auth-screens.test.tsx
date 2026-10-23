@@ -286,6 +286,6 @@ describe('HomeScreen', () => {
     await show(<HomeScreen />);
 
     expect(screen.getByText('Olá, Ana! Bora treinar?')).toBeTruthy();
-    expect(screen.getByText('Sem conexão: você pode treinar normalmente.')).toBeTruthy();
+    expect(screen.getByText('Sem conexão. Seus registros ficam neste dispositivo e sincronizam depois.')).toBeTruthy();
   });
 });

@@ -82,7 +82,6 @@ export const ptBR = {
 
   'home.ola': 'Olá, {nome}',
   'home.texto': 'Sua área de treino chega nos próximos marcos.',
-  'home.offline': 'Sem conexão: você pode treinar normalmente.',
   'home.sair': 'Sair',
   'home.verTema': 'Verificação do tema',
   'home.meusTreinos': 'Meus treinos',
@@ -118,6 +117,11 @@ export const ptBR = {
   'sync.pendente': 'Pendente de sincronização',
   'sync.offline': 'Offline — salvo neste dispositivo',
   'sync.conflito': 'Conflito — revisar',
+  'sync.avisoOffline': 'Sem conexão. Seus registros ficam neste dispositivo e sincronizam depois.',
+  'sync.avisoOfflinePendente': 'Sem conexão. {quantidade} registro(s) salvo(s) neste dispositivo vão sincronizar quando a conexão voltar.',
+  'sync.avisoFalha': 'Não conseguimos sincronizar agora. Seus dados estão salvos neste dispositivo.',
+  'sync.tentar': 'Tentar novamente',
+  'sync.avisoRevisar': '{quantidade} registro(s) não foram aceitos pelo servidor. Eles continuam guardados neste dispositivo.',
   'sync.icone.ok': '✓',
   'sync.icone.atencao': '!',
 
