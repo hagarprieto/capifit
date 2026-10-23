@@ -5,7 +5,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { t } from '@/i18n';
 
 import { EMPTY_DRAFT, validateDraft, type Draft, type Modality } from './input';
-import { initialDraft, type LastRecord } from './prefill';
+import { initialDraft, type LastRecord, type Target } from './prefill';
 import { createWorkoutApi, type Session, type SessionItem, type SessionSeries, type WorkoutApi } from './workoutApi';
 
 export type RowView = {
@@ -22,6 +22,8 @@ export type ItemView = {
   modality: Modality;
   rows: RowView[];
   last: LastRecord | undefined;
+  /** Meta prescrita das séries de TRABALHO (sem aquecimento) deste exercício; vazio se o treino não veio de uma ficha. */
+  workTargets: (Target | undefined)[];
 };
 
 type Load = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; session: Session };
@@ -33,6 +35,7 @@ export function useWorkout(sessionUuid: string, injected?: WorkoutApi) {
 
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [last, setLast] = useState<Record<string, LastRecord>>({});
+  const [targets, setTargets] = useState<Record<string, Target>>({});
   const [edits, setEdits] = useState<Record<string, Draft>>({});
   const [correcting, setCorrecting] = useState<Record<string, true>>({});
   const [saving, setSaving] = useState<Record<string, true>>({});
@@ -47,9 +50,13 @@ export function useWorkout(sessionUuid: string, injected?: WorkoutApi) {
     (async () => {
       try {
         const session = await workoutApi.getSession(sessionUuid);
-        const records = await workoutApi.lastRecords(session.exercicios.map((e) => e.exercicio.id));
+        const [records, prescribed] = await Promise.all([
+          workoutApi.lastRecords(session.exercicios.map((e) => e.exercicio.id)),
+          session.programa_id && session.versao_numero != null ? workoutApi.programTargets(session.programa_id, session.versao_numero) : Promise.resolve({} as Record<string, Target>),
+        ]);
         if (!cancelled) {
           setLast(records);
+          setTargets(prescribed);
           setLoad({ kind: 'ready', session });
         }
       } catch {
@@ -69,9 +76,10 @@ export function useWorkout(sessionUuid: string, injected?: WorkoutApi) {
     return (session?.exercicios ?? []).map((item) => {
       const modality = (item.exercicio.modalidade ?? 'reps_carga') as Modality;
       const record = last[item.exercicio.id];
+      const targetOf = (seriesId: string | null | undefined) => (seriesId ? targets[seriesId] : undefined);
       const rows = item.series.map((series) => {
         const isDone = series.status === 'realizada' && !correcting[series.id];
-        const base = initialDraft(series, item.series, record);
+        const base = initialDraft(series, item.series, record, targetOf(series.serie_prescrita_id));
         const edited = edits[series.id];
         return {
           series,
@@ -82,9 +90,10 @@ export function useWorkout(sessionUuid: string, injected?: WorkoutApi) {
           errors: errors[series.id] ?? {},
         };
       });
-      return { item, modality, rows, last: record };
+      const workTargets = item.series.filter((s) => s.tipo !== 'aquecimento').map((s) => targetOf(s.serie_prescrita_id));
+      return { item, modality, rows, last: record, workTargets };
     });
-  }, [session, last, edits, correcting, saving, errors]);
+  }, [session, last, targets, edits, correcting, saving, errors]);
 
   const safeIndex = Math.min(index, Math.max(0, items.length - 1));
 

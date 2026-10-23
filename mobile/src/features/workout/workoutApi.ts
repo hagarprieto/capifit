@@ -5,6 +5,7 @@ import { newUuid } from '@/lib/uuid';
 import { createExercisesApi } from '../exercises/exercisesApi';
 
 import type { SeriesValues } from './input';
+import type { Target } from './prefill';
 
 export type Session = Schemas['Sessao'];
 export type SessionItem = Schemas['SessaoExercicio'];
@@ -72,6 +73,32 @@ export function createWorkoutApi(api: ApiClient) {
       try {
         const result = await api.get<LastRecord[]>('/me/exercicios/ultimos-registros', { query: { ids: ids.join(',') } });
         return Object.fromEntries(result.data.map((record) => [record.exercicio_id, record]));
+      } catch {
+        return {};
+      }
+    },
+
+    /**
+     * Metas prescritas da versão do programa de onde a sessão nasceu, por id da série prescrita (a sessão guarda esse
+     * vínculo em `serie_prescrita_id`). Serve só de sugestão: se falhar, o treino segue com o último registro.
+     */
+    async programTargets(programId: string, versionNumber: number): Promise<Record<string, Target>> {
+      try {
+        const version = (await api.get<Schemas['Versao']>(`/programas/${programId}/versoes/${versionNumber}`)).data;
+        const targets: Record<string, Target> = {};
+        for (const ficha of version.fichas) {
+          for (const item of ficha.exercicios) {
+            for (const series of item.series) {
+              targets[series.id] = {
+                repsMin: series.reps_min ?? null,
+                repsMax: series.reps_max ?? null,
+                loadKg: series.carga_alvo_kg ?? null,
+                durationSeconds: series.duracao_alvo_segundos ?? null,
+              };
+            }
+          }
+        }
+        return targets;
       } catch {
         return {};
       }

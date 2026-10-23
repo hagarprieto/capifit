@@ -1,5 +1,5 @@
 import { formatDecimal, parseDecimal, parseWhole, requiredFields, validateDraft } from './input';
-import { initialDraft, lastTimeSummary, type LastRecord, type SessionSeries } from './prefill';
+import { initialDraft, lastTimeSummary, targetSummary, type LastRecord, type SessionSeries, type Target } from './prefill';
 
 const series = (ordem: number, over: Partial<SessionSeries> = {}): SessionSeries => ({ id: `s${ordem}`, ordem, tipo: 'normal', status: 'pendente', revision: 1, ...over });
 const last: LastRecord = {
@@ -90,5 +90,69 @@ describe('lastTimeSummary', () => {
     expect(lastTimeSummary('reps_carga', varied)).toEqual({ load: null, values: '10/8' });
     expect(lastTimeSummary('reps_carga', undefined)).toBeNull();
     expect(lastTimeSummary('tempo', { ...last, series: [{ ordem: 1, duracao_segundos: 45 }, { ordem: 2, duracao_segundos: 40 }] })).toEqual({ load: null, values: '45/40' });
+  });
+});
+
+describe('initialDraft com a meta prescrita (D-14)', () => {
+  const goal = (over: Partial<Target> = {}): Target => ({ repsMin: 8, repsMax: 12, loadKg: null, durationSeconds: null, ...over });
+
+  it('sem histórico, sugere o mínimo da faixa e a carga-alvo', () => {
+    expect(initialDraft(series(1), [series(1)], undefined, goal({ loadKg: 60 }))).toEqual({ draft: { carga: '60', reps: '8', duracao: '' }, prefilled: true });
+  });
+
+  it('a carga-alvo manda sobre a do último treino; as repetições partem do último treino', () => {
+    expect(initialDraft(series(1), [series(1)], last, goal({ loadKg: 50 })).draft).toMatchObject({ carga: '50', reps: '10' });
+  });
+
+  it('sem carga-alvo, a carga vem do último treino', () => {
+    expect(initialDraft(series(1), [series(1)], last, goal()).draft).toMatchObject({ carga: '40', reps: '10' });
+  });
+
+  it('as repetições sugeridas ficam dentro da faixa (15 numa meta de 8–12 vira 12; 5 vira 8)', () => {
+    const high: LastRecord = { ...last, series: [{ ordem: 1, carga_kg: 40, repeticoes: 15 }] };
+    const low: LastRecord = { ...last, series: [{ ordem: 1, carga_kg: 40, repeticoes: 5 }] };
+
+    expect(initialDraft(series(1), [series(1)], high, goal()).draft.reps).toBe('12');
+    expect(initialDraft(series(1), [series(1)], low, goal()).draft.reps).toBe('8');
+    expect(initialDraft(series(1), [series(1)], high).draft.reps).toBe('15'); // sem meta, vale o que foi feito
+  });
+
+  it('a série concluída antes neste treino ainda tem preferência sobre a meta', () => {
+    const done = series(1, { status: 'realizada', carga_kg: 55, repeticoes: 9 });
+
+    expect(initialDraft(series(2), [done, series(2)], last, goal({ loadKg: 60 })).draft).toMatchObject({ carga: '55', reps: '9' });
+  });
+
+  it('aquecimento não copia a carga de trabalho nem é semeado por série de trabalho concluída', () => {
+    const work = series(2, { status: 'realizada', carga_kg: 60, repeticoes: 10 });
+    const warmup = series(1, { tipo: 'aquecimento' });
+
+    expect(initialDraft(warmup, [warmup, work], last, goal()).draft).toMatchObject({ carga: '', reps: '10' });
+    expect(initialDraft(series(3), [warmup, work, series(3)], last, goal()).draft).toMatchObject({ carga: '60', reps: '10' });
+  });
+
+  it('exercício de tempo sugere a duração da meta, senão a do último treino', () => {
+    const timeGoal = goal({ repsMin: null, repsMax: null, durationSeconds: 45 });
+    const timeLast: LastRecord = { ...last, series: [{ ordem: 1, duracao_segundos: 40 }] };
+
+    expect(initialDraft(series(1), [series(1)], timeLast, timeGoal).draft.duracao).toBe('45');
+    expect(initialDraft(series(1), [series(1)], timeLast).draft.duracao).toBe('40');
+  });
+});
+
+describe('targetSummary', () => {
+  const g = (over: Partial<Target> = {}): Target => ({ repsMin: 8, repsMax: 12, loadKg: null, durationSeconds: null, ...over });
+
+  it('resume a meta comum das séries de trabalho', () => {
+    expect(targetSummary('reps_carga', [g({ loadKg: 60.5 }), g({ loadKg: 60.5 })])).toEqual({ kind: 'reps', range: '8–12', load: '60,5' });
+    expect(targetSummary('reps_carga', [g({ repsMin: 10, repsMax: 10 })])).toEqual({ kind: 'reps', range: '10', load: null });
+    expect(targetSummary('tempo', [g({ repsMin: null, repsMax: null, durationSeconds: 45 })])).toEqual({ kind: 'time', range: '45', load: null });
+  });
+
+  it('sem meta ou com metas diferentes entre as séries não mostra resumo', () => {
+    expect(targetSummary('reps_carga', [undefined, undefined])).toBeNull();
+    expect(targetSummary('reps_carga', [])).toBeNull();
+    expect(targetSummary('reps_carga', [g(), g({ repsMax: 15 })])).toBeNull();
+    expect(targetSummary('reps_carga', [g({ repsMin: null, repsMax: null })])).toBeNull();
   });
 });

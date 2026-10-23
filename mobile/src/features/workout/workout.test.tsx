@@ -224,6 +224,59 @@ describe('WorkoutScreen', () => {
   });
 });
 
+describe('WorkoutScreen com treino vindo de uma ficha (metas prescritas)', () => {
+  function programmed(): Session {
+    const base = makeSession();
+    return {
+      ...base,
+      tipo: 'programado',
+      titulo: 'Treino A',
+      programa_id: 'prog-1',
+      versao_numero: 2,
+      exercicios: [
+        {
+          ...base.exercicios[0],
+          tipo_item: 'prescrito',
+          series: [serie('w1', 1, { tipo: 'aquecimento', serie_prescrita_id: 'sp-0' }), serie('w2', 2, { serie_prescrita_id: 'sp-1' }), serie('w3', 3, { serie_prescrita_id: 'sp-2' })],
+        },
+      ],
+    } as unknown as Session;
+  }
+
+  const targets = {
+    'sp-0': { repsMin: 12, repsMax: 12, loadKg: null, durationSeconds: null },
+    'sp-1': { repsMin: 8, repsMax: 12, loadKg: 60, durationSeconds: null },
+    'sp-2': { repsMin: 8, repsMax: 12, loadKg: 60, durationSeconds: null },
+  };
+
+  it('mostra a meta, sugere a carga-alvo (e não a do último treino) e não carrega carga no aquecimento', async () => {
+    const api = fakeApi({ getSession: jest.fn().mockResolvedValue(programmed()), lastRecords: jest.fn().mockResolvedValue({}), programTargets: jest.fn().mockResolvedValue(targets) } as Partial<WorkoutApi>);
+    await ready(api);
+
+    expect(api.programTargets).toHaveBeenCalledWith('prog-1', 2);
+    expect(screen.getByText('Meta: 8–12 repetições · 60 kg')).toBeTruthy();
+    expect(screen.getByLabelText('Carga em kg, série 1 de Supino reto').props.value).toBe(''); // aquecimento: sem carga
+    expect(screen.getByLabelText('Repetições, série 1 de Supino reto').props.value).toBe('12');
+    expect(screen.getByLabelText('Carga em kg, série 2 de Supino reto').props.value).toBe('60');
+    expect(screen.getByLabelText('Repetições, série 2 de Supino reto').props.value).toBe('8');
+  });
+
+  it('falha ao buscar as metas não impede treinar: cai no último treino', async () => {
+    const api = fakeApi({ getSession: jest.fn().mockResolvedValue(programmed()), programTargets: jest.fn().mockResolvedValue({}) } as Partial<WorkoutApi>);
+    await ready(api);
+
+    expect(screen.queryByText(/^Meta:/)).toBeNull();
+    expect(screen.getByLabelText('Carga em kg, série 2 de Supino reto').props.value).toBe('40');
+  });
+
+  it('treino avulso não busca metas', async () => {
+    const api = fakeApi();
+    await ready(api);
+
+    expect(screen.queryByText(/^Meta:/)).toBeNull();
+  });
+});
+
 describe('ExercisePickerScreen', () => {
   const found = [{ id: 'ex-1', nome: 'Remada baixa', equipamento: { id: '1', nome: 'Polia' }, grupos_primarios: [], modalidade: 'reps_carga', miniatura_url: null }];
 

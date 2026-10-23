@@ -16,7 +16,7 @@ import { RestTimerCard } from '../rest/RestTimerCard';
 import { useRestTimer } from '../rest/useRestTimer';
 
 import { formatDecimal } from './input';
-import { lastTimeSummary } from './prefill';
+import { lastTimeSummary, targetSummary } from './prefill';
 import { useWorkout, type RowView } from './useWorkout';
 import type { WorkoutApi } from './workoutApi';
 
@@ -115,6 +115,7 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
             <Text variant="headline" accessibilityRole="header">
               {current.item.exercicio.nome}
             </Text>
+            <Goal modality={current.modality} targets={current.workTargets} />
             <LastTime modality={current.modality} record={current.last} />
           </View>
 
@@ -183,6 +184,20 @@ export function WorkoutScreen({ api }: { api?: WorkoutApi }) {
         onConfirm={() => void confirmFinish()}
       />
     </Screen>
+  );
+}
+
+/** "Meta: 8–12 repetições · 60 kg" quando o treino veio de uma ficha e as séries de trabalho têm a mesma meta. */
+function Goal({ modality, targets }: { modality: Parameters<typeof targetSummary>[0]; targets: Parameters<typeof targetSummary>[1] }) {
+  const summary = targetSummary(modality, targets);
+  if (!summary) {
+    return null;
+  }
+  const text = summary.kind === 'time' ? t('treino.metaTempo', { segundos: summary.range }) : summary.load === null ? t('treino.meta', { faixa: summary.range }) : t('treino.metaComCarga', { faixa: summary.range, carga: summary.load });
+  return (
+    <Text variant="bodySmall" color="secondary">
+      {text}
+    </Text>
   );
 }
 
