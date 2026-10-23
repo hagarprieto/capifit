@@ -1,6 +1,6 @@
 # CapiFit — Documento 14: Roteiro de validação do app em aparelho
 
-**Versão:** 2.7 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07, E07-10, E06-09, E06-07, E04-06 e E09-04
+**Versão:** 2.8 (23/10/2026) · **Aplica-se a:** histórias E01-06, E01-07, E07-05, E07-06, E07-09, E06-03, E06-04, E06-05, E06-08, E07-04 (e metas D-14), E05-03, E04-03, E04-04, E09-03, E08-01, E08-02, E08-03, E08-05, E08-06, E08-07, E08-09, E07-08, E07-11, E06-06, E07-07, E07-10, E06-09, E06-07, E04-06 e E09-04
 **Por que existe:** os testes automáticos (Jest, tipos, lint) já passam no CI, mas só um aparelho de verdade mostra teclado, rolagem, tema, notificação, vibração, leitor de tela e desempenho. Este roteiro transforma "falta validar em aparelho" em uma lista que você executa e marca.
 
 ## 0. Como usar
@@ -76,7 +76,7 @@ Com isso, use `EXPO_PUBLIC_API_URL=http://localhost:8080` no `mobile\.env` e, em
 
 **Expo Go ou build de desenvolvimento?** O Expo Go basta para quase tudo. Duas exceções:
 - **Link do e-mail de recuperação** (`capifit://…`): no Expo Go o esquema é outro (veja R1). Em build de desenvolvimento o esquema `capifit://` funciona de verdade.
-- **Notificação com a tela bloqueada** (R3): as notificações *locais* funcionam no Expo Go, mas o comportamento fiel (canal, som, entrega em segundo plano) só se confirma em build de desenvolvimento. Faça R3 nos dois, se possível.
+- **Notificação com a tela bloqueada** (R3): **no Expo Go 58 o módulo de notificações não está disponível** (falta a parte nativa `ExpoTopicSubscriptionModule`; foi achado na primeira validação em aparelho). O app abre normalmente e o descanso funciona só dentro do app; os testes V-03.5, V-03.6, V-03.8 e V-03.9 ficam **N/A no Expo Go** e só valem em build de desenvolvimento. Detalhe do que mudou: as notificações *locais* funcionam no Expo Go, mas o comportamento fiel (canal, som, entrega em segundo plano) só se confirma em build de desenvolvimento. Faça R3 nos dois, se possível.
 
 **Matriz mínima** (preencha no quadro §3 o que usou):
 
@@ -447,6 +447,7 @@ adb logcat *:E ReactNativeJS:V
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0 | 22/10/2026 | Primeira versão: preparação, 6 roteiros, quadro de resultados e critério de conclusão para as histórias do app já entregues. |
+| 2.8 | 23/10/2026 | Primeira rodada em aparelho (Motorola edge 60 pro, Android 16, Expo Go 58.0.5): nota sobre notificações no Expo Go. |
 | 2.7 | 23/10/2026 | Testes V-08.9 e V-08.10 (explicação do volume, E09-04). |
 | 2.6 | 23/10/2026 | Testes V-00.6 e V-00.7 (estados padrão, E04-06). |
 | 2.5 | 23/10/2026 | Testes V-05.19 a V-05.23 (rascunho local do editor, E06-07). |

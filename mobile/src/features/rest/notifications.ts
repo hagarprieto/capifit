@@ -1,5 +1,3 @@
-import * as Notifications from 'expo-notifications';
-import { AndroidImportance, SchedulableTriggerInputTypes } from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { t } from '@/i18n';
@@ -11,11 +9,32 @@ export type RestNotifier = {
   cancel(id: string | null): Promise<void>;
 };
 
+type NotificationsModule = typeof import('expo-notifications');
+
+let loaded: NotificationsModule | null | undefined;
+
+/**
+ * Carrega o módulo de notificações só quando preciso e de forma defensiva. No Expo Go (SDK 58) a parte nativa
+ * `ExpoTopicSubscriptionModule` não existe, e importar `expo-notifications` no topo do arquivo derrubava o app inteiro
+ * ao abrir. Sem o módulo, o descanso segue funcionando só dentro do app (o aviso local é um reforço, não requisito).
+ */
+function notifications(): NotificationsModule | null {
+  if (loaded === undefined) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      loaded = require('expo-notifications') as NotificationsModule;
+    } catch {
+      loaded = null;
+    }
+  }
+  return loaded;
+}
+
 const CHANNEL_ID = 'descanso';
 let handlerReady = false;
 let asked = false;
 
-function prepare(): void {
+function prepare(Notifications: NotificationsModule): void {
   if (handlerReady) {
     return;
   }
@@ -26,7 +45,7 @@ function prepare(): void {
   });
 }
 
-async function permitted(): Promise<boolean> {
+async function permitted(Notifications: NotificationsModule): Promise<boolean> {
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) {
     return true;
@@ -46,16 +65,20 @@ async function permitted(): Promise<boolean> {
 export const restNotifier: RestNotifier = {
   async schedule(seconds) {
     try {
-      prepare();
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync(CHANNEL_ID, { name: t('descanso.canal'), importance: AndroidImportance.HIGH });
+      const Notifications = notifications();
+      if (!Notifications) {
+        return null;
       }
-      if (!(await permitted())) {
+      prepare(Notifications);
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync(CHANNEL_ID, { name: t('descanso.canal'), importance: Notifications.AndroidImportance.HIGH });
+      }
+      if (!(await permitted(Notifications))) {
         return null;
       }
       return await Notifications.scheduleNotificationAsync({
         content: { title: t('descanso.notificacaoTitulo'), body: t('descanso.notificacaoTexto') },
-        trigger: { type: SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: Math.max(1, Math.round(seconds)), channelId: CHANNEL_ID },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: Math.max(1, Math.round(seconds)), channelId: CHANNEL_ID },
       });
     } catch {
       return null;
@@ -67,7 +90,7 @@ export const restNotifier: RestNotifier = {
       return;
     }
     try {
-      await Notifications.cancelScheduledNotificationAsync(id);
+      await notifications()?.cancelScheduledNotificationAsync(id);
     } catch {
       // já disparada ou inexistente: nada a desfazer
     }

@@ -64,6 +64,10 @@ npm run mock:api       # servidor mock do contrato em http://localhost:4010 (Pri
 - **Explicação do volume (E09-04):** sob o volume, tanto na Evolução quanto no resumo da sessão, a frase curta fica sempre visível e **Como calculamos o volume** abre o detalhe: a conta (carga × repetições das séries de trabalho feitas, com exemplo), o que não entra (aquecimento, tempo, assistidos, séries sem carga), por que comparar só o mesmo exercício (a carga vale como registrada: por halter, total, máquina) e que não é nota nem meta. Período sem nenhuma série com carga mostra "—" no volume, com texto falado claro, em vez de "0 kg". Os estados vazios da Evolução e do histórico já existiam (E09-03). Componente: `features/workout/VolumeExplainer.tsx`.
 - **Fora desta entrega:** gráfico por exercício e tendências (E13-01) e leitura offline do histórico (E08).
 
+## Notificação de descanso no Expo Go
+
+- `expo-notifications` é carregado só quando preciso e dentro de `try/catch` (`features/rest/notifications.ts`). No Expo Go 58 a parte nativa `ExpoTopicSubscriptionModule` não existe; antes, importar o módulo no topo do arquivo derrubava o app inteiro ao abrir (achado na primeira validação em aparelho). Sem o módulo, o aviso de fim de descanso não é agendado e o descanso segue só dentro do app. O aviso com a tela bloqueada só pode ser validado em build de desenvolvimento.
+
 ## Estados padrão das telas (E04-06, Doc 03 §9.1)
 
 - `src/design-system/States.tsx` reúne os estados que toda tela de dados precisa: **LoadingState** (indicador + texto anunciado ao leitor de tela, sem bloquear a navegação), **EmptyState** (explicação e próximo passo), **ErrorState** (mensagem clara + "Tentar de novo"; `warning` quando só um bloco falhou, `primary` quando é a tela inteira), **OfflineState** (últimos dados e pendências locais) e **PermissionState** (por que não pode e o que pode fazer). Todas as telas de dados (Início, Treinos, detalhe e editor de programa, ficha, executor, resumo, Evolução, biblioteca, detalhe do exercício e revisão de conflitos) usam estes componentes.
