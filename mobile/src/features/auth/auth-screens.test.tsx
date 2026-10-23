@@ -17,7 +17,10 @@ let mockParams: Record<string, string | undefined> = {};
 jest.mock('expo-router', () => ({
   useRouter: () => mockRouter,
   useLocalSearchParams: () => mockParams,
-  useFocusEffect: () => undefined,
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    // Como o de verdade: roda ao abrir a tela e DE NOVO sempre que a função recebida muda de identidade.
+    jest.requireActual('react').useEffect(callback, [callback]);
+  },
 }));
 
 const mockAuth = {

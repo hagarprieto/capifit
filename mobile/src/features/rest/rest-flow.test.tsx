@@ -15,7 +15,10 @@ jest.mock('expo-haptics', () => ({ notificationAsync: jest.fn().mockResolvedValu
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useLocalSearchParams: () => ({ uuid: 'sessao-1' }),
-  useFocusEffect: () => undefined,
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    // Como o de verdade: roda ao abrir a tela e DE NOVO sempre que a função recebida muda de identidade.
+    jest.requireActual('react').useEffect(callback, [callback]);
+  },
 }));
 jest.mock('@/auth/AuthProvider', () => ({ useAuth: () => ({ api: {} }) }));
 

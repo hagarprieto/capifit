@@ -10,7 +10,10 @@ import type { HistoryItem, ProgressApi, ProgressSummary } from './progressApi';
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
 jest.mock('expo-router', () => ({
   useRouter: () => mockRouter,
-  useFocusEffect: () => undefined,
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    // Como o de verdade: roda ao abrir a tela e DE NOVO sempre que a função recebida muda de identidade.
+    jest.requireActual('react').useEffect(callback, [callback]);
+  },
 }));
 jest.mock('@/auth/AuthProvider', () => ({ useAuth: () => ({ api: {} }) }));
 

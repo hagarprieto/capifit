@@ -11,7 +11,10 @@ const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
 jest.mock('expo-router', () => ({
   useRouter: () => mockRouter,
   useLocalSearchParams: () => ({ uuid: 'sessao-1' }),
-  useFocusEffect: () => undefined,
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    // Como o de verdade: roda ao abrir a tela e DE NOVO sempre que a função recebida muda de identidade.
+    jest.requireActual('react').useEffect(callback, [callback]);
+  },
 }));
 jest.mock('@/auth/AuthProvider', () => ({ useAuth: () => ({ api: {}, user: { id: 'u', nome: 'Ana' }, offline: false, signOut: jest.fn() }) }));
 

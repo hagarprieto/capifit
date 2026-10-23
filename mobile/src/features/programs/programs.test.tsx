@@ -16,7 +16,10 @@ let mockParams: Record<string, string> = { uuid: 'p-1' };
 jest.mock('expo-router', () => ({
   useRouter: () => mockRouter,
   useLocalSearchParams: () => mockParams,
-  useFocusEffect: () => undefined,
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    // Como o de verdade: roda ao abrir a tela e DE NOVO sempre que a função recebida muda de identidade.
+    jest.requireActual('react').useEffect(callback, [callback]);
+  },
 }));
 jest.mock('@/auth/AuthProvider', () => ({ useAuth: () => ({ api: {} }) }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => '00000000-0000-4000-8000-000000000001' }));

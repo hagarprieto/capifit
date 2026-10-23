@@ -215,6 +215,13 @@ export function useWorkout(sessionUuid: string, injected?: WorkoutApi) {
     }
   }, [workoutApi, sessionUuid]);
 
+  // Estável de propósito: a tela usa isto como dependência de `useFocusEffect`; uma função nova a cada renderização
+  // faria o efeito rodar de novo a cada renderização e recarregar o treino sem parar (achado na validação em aparelho).
+  const reload = useCallback(() => {
+    setLoad({ kind: 'loading' });
+    setAttempt((n) => n + 1);
+  }, []);
+
   const totals = useMemo(() => {
     const all = items.flatMap((i) => i.item.series);
     return { total: all.length, done: all.filter((s) => s.status === 'realizada').length };
@@ -232,10 +239,7 @@ export function useWorkout(sessionUuid: string, injected?: WorkoutApi) {
     discard,
     notice,
     finishing,
-    reload: () => {
-      setLoad({ kind: 'loading' });
-      setAttempt((n) => n + 1);
-    },
+    reload,
     change,
     complete,
     correct,
