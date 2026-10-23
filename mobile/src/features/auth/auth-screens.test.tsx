@@ -17,6 +17,7 @@ let mockParams: Record<string, string | undefined> = {};
 jest.mock('expo-router', () => ({
   useRouter: () => mockRouter,
   useLocalSearchParams: () => mockParams,
+  useFocusEffect: () => undefined,
 }));
 
 const mockAuth = {
@@ -284,7 +285,7 @@ describe('HomeScreen', () => {
     mockAuth.offline = true;
     await show(<HomeScreen />);
 
-    expect(screen.getByText('Olá, Ana')).toBeTruthy();
+    expect(screen.getByText('Olá, Ana! Bora treinar?')).toBeTruthy();
     expect(screen.getByText('Sem conexão: você pode treinar normalmente.')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Sair' }));
     expect(mockAuth.signOut).toHaveBeenCalledTimes(1);

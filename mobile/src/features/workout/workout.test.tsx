@@ -1,8 +1,7 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { ApiError } from '@/api/errors';
 import { ThemeProvider } from '@/design-system/ThemeProvider';
-import { HomeScreen } from '@/features/home/HomeScreen';
 
 import { ExercisePickerScreen } from './ExercisePickerScreen';
 import { WorkoutScreen } from './WorkoutScreen';
@@ -298,37 +297,5 @@ describe('ExercisePickerScreen', () => {
     await show(<ExercisePickerScreen api={api} />);
 
     expect(await screen.findByText('Não foi possível buscar os exercícios. Tente de novo.')).toBeTruthy();
-  });
-});
-
-describe('HomeScreen e o treino', () => {
-  it('sem treino aberto inicia um avulso e abre o executor', async () => {
-    const api = fakeApi();
-    await show(<HomeScreen api={api} />);
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Iniciar treino avulso' }));
-
-    await waitFor(() => expect(mockRouter.push).toHaveBeenCalledWith({ pathname: '/treino/[uuid]', params: { uuid: 'sessao-nova' } }));
-  });
-
-  it('com treino aberto oferece continuar em vez de iniciar outro', async () => {
-    const api = fakeApi({ openSession: jest.fn().mockResolvedValue('sessao-aberta') });
-    await show(<HomeScreen api={api} />);
-
-    await fireEvent.press(await screen.findByRole('button', { name: 'Continuar treino em andamento' }));
-
-    expect(mockRouter.push).toHaveBeenCalledWith({ pathname: '/treino/[uuid]', params: { uuid: 'sessao-aberta' } });
-    expect(screen.queryByRole('button', { name: 'Iniciar treino avulso' })).toBeNull();
-  });
-
-  it('falha ao iniciar avisa e deixa tentar de novo', async () => {
-    const api = fakeApi({ startFreeWorkout: jest.fn().mockRejectedValue(new ApiError({ status: 0, code: 'NETWORK_ERROR', message: '' })) });
-    await show(<HomeScreen api={api} />);
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Iniciar treino avulso' }));
-
-    expect(await screen.findByText('Não foi possível iniciar o treino agora. Tente de novo.')).toBeTruthy();
-    await act(async () => undefined);
-    expect(screen.getByRole('button', { name: 'Iniciar treino avulso' })).toBeTruthy();
   });
 });

@@ -42,6 +42,11 @@ export function createWorkoutApi(api: ApiClient) {
     /** Resumo da sessão em andamento (com a ficha de origem, se for programada), ou `null`. */
     openSessionSummary: openSummary,
 
+    /** Sessões concluídas mais recentes primeiro (para a semana, a última sessão e a próxima ficha do Início). */
+    async recentCompleted(limit = 30): Promise<Schemas['SessaoResumo'][]> {
+      return (await api.get<Schemas['SessaoResumo'][]>('/me/sessoes', { query: { status: 'concluida', limit } })).data;
+    },
+
     /** UUID da sessão em andamento, se houver. */
     async openSession(): Promise<string | null> {
       return (await openSummary())?.id ?? null;
