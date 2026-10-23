@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 import { useSyncStatus } from '@/data/LocalDataProvider';
@@ -14,6 +15,7 @@ import { t } from '@/i18n';
  */
 export function SyncBanner({ compact = false }: { compact?: boolean }) {
   const { theme } = useTheme();
+  const router = useRouter();
   const { state, waiting, review, retry } = useSyncStatus();
 
   return (
@@ -28,7 +30,12 @@ export function SyncBanner({ compact = false }: { compact?: boolean }) {
               {retry ? <Button label={t('sync.tentar')} variant="secondary" onPress={retry} /> : null}
             </>
           ) : null}
-          {state === 'conflict' ? <Notice kind="warning" message={t('sync.avisoRevisar', { quantidade: review })} /> : null}
+          {state === 'conflict' ? (
+            <>
+              <Notice kind="warning" message={t('sync.avisoRevisar', { quantidade: review })} />
+              <Button label={t('sync.revisar')} variant="secondary" onPress={() => router.push('/sincronizacao')} />
+            </>
+          ) : null}
         </>
       )}
     </View>

@@ -48,6 +48,7 @@ function ThemedStack({ fontsReady }: { fontsReady: boolean }) {
         <Stack.Protected guard={status === 'signedIn'}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="tema" />
+          <Stack.Screen name="sincronizacao" />
           <Stack.Screen name="treino/[uuid]/index" />
           <Stack.Screen name="treino/[uuid]/exercicios" />
           <Stack.Screen name="treino/[uuid]/resumo" />

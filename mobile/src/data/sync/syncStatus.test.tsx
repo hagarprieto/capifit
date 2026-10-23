@@ -12,6 +12,8 @@ import { migrate } from '../local/migrations';
 import { createQueueRepo } from '../local/queueRepo';
 import { deriveSyncState, NO_COUNTS } from './syncState';
 
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
+
 const mockAuth = {
   status: 'signedIn' as const,
   user: { id: 'user-ana', nome: 'Ana' },
@@ -133,6 +135,7 @@ describe('com a fila de verdade', () => {
 
     expect(await screen.findByText('conflict:0:1')).toBeTruthy();
     expect(screen.getByText('1 registro(s) não foram aceitos pelo servidor. Eles continuam guardados neste dispositivo.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Revisar registros' })).toBeTruthy();
     db.close();
   });
 

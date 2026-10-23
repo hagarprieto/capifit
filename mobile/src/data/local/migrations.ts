@@ -89,6 +89,10 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE fila_operacao ADD COLUMN sessao_uuid TEXT;
   CREATE INDEX idx_fila_sessao ON fila_operacao (usuario_uuid, sessao_uuid, estado);
   `,
+  // v3: o que o servidor tinha quando recusou a operação (a série dele, num conflito), para o usuário comparar.
+  `
+  ALTER TABLE fila_operacao ADD COLUMN estado_servidor TEXT;
+  `,
 ];
 
 export const LATEST_VERSION = MIGRATIONS.length;

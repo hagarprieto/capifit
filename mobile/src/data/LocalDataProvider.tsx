@@ -12,6 +12,7 @@ import { openLocalDb } from './local/open';
 import { createQueueRepo, type QueueRepo } from './local/queueRepo';
 import { createSessionsRepo } from './local/sessionsRepo';
 import { createLocalFirstWorkoutApi } from './offline/localFirstWorkoutApi';
+import { createReview, type Review } from './sync/review';
 import { createSyncEngine, type SyncEngine } from './sync/syncEngine';
 import { deriveSyncState, NO_COUNTS, type QueueCounts } from './sync/syncState';
 
@@ -26,9 +27,11 @@ type LocalData = {
   engine: SyncEngine | null;
   /** Fila de operações do usuário atual; `null` sem banco local. */
   queue: QueueRepo | null;
+  /** Revisão do que o servidor não aceitou; `null` sem banco local. */
+  review: Review | null;
 };
 
-const IDLE: LocalData = { ready: true, today: null, workout: null, engine: null, queue: null };
+const IDLE: LocalData = { ready: true, today: null, workout: null, engine: null, queue: null, review: null };
 const LocalDataContext = createContext<LocalData>(IDLE);
 
 export function useLocalData(): LocalData {
@@ -103,11 +106,11 @@ export function LocalDataProvider({ children }: { children: ReactNode }) {
         const engine = createSyncEngine({ api, queue, sessions, deviceUuid });
         const workout = createLocalFirstWorkoutApi({ remote: createWorkoutApi(api), sessions, queue, engine, today });
         if (!cancelled) {
-          setOpened({ userId, data: { today, workout, engine, queue } });
+          setOpened({ userId, data: { today, workout, engine, queue, review: createReview({ queue, sessions, engine }) } });
         }
       } catch {
         if (!cancelled) {
-          setOpened({ userId, data: { today: null, workout: null, engine: null, queue: null } });
+          setOpened({ userId, data: { today: null, workout: null, engine: null, queue: null, review: null } });
         }
       }
     })();
@@ -131,7 +134,7 @@ export function LocalDataProvider({ children }: { children: ReactNode }) {
     if (userId === null) {
       return IDLE;
     }
-    return opened?.userId === userId ? { ready: true, ...opened.data } : { ready: false, today: null, workout: null, engine: null, queue: null };
+    return opened?.userId === userId ? { ready: true, ...opened.data } : { ready: false, today: null, workout: null, engine: null, queue: null, review: null };
   }, [userId, opened]);
 
   return <LocalDataContext.Provider value={value}>{children}</LocalDataContext.Provider>;

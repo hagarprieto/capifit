@@ -213,6 +213,18 @@ export function createSessionsRepo(db: LocalDb, userUuid: string) {
       return result.changes > 0;
     },
 
+    /** Grava na cópia local a série como o servidor a tem (o usuário aceitou a versão do servidor). */
+    async applyServerSeries(seriesUuid: string, server: Partial<Pick<SessionSeries, 'carga_kg' | 'repeticoes' | 'duracao_segundos' | 'rir_real' | 'status' | 'concluida_em'>>): Promise<boolean> {
+      return this.updateSeries(seriesUuid, {
+        carga_kg: server.carga_kg ?? null,
+        repeticoes: server.repeticoes ?? null,
+        duracao_segundos: server.duracao_segundos ?? null,
+        rir_real: server.rir_real ?? null,
+        status: server.status ?? 'pendente',
+        concluida_em: server.concluida_em ?? null,
+      });
+    },
+
     /** Muda o estado da sessão (concluir, cancelar). */
     async setStatus(uuid: string, status: Session['status'], endedAt: string | null, activeSeconds: number | null): Promise<boolean> {
       const result = await db.runAsync('UPDATE sessao SET status = ?, encerrada_em = ?, duracao_ativa_segundos = ? WHERE uuid = ? AND usuario_uuid = ?', [status, endedAt, activeSeconds, uuid, userUuid]);

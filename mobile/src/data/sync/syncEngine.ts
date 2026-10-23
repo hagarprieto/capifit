@@ -72,7 +72,7 @@ export function createSyncEngine({ api, queue, sessions, deviceUuid }: Deps) {
         answered += 1;
       } else {
         answered += 1;
-        await queue.markFailed(op.operacao_uuid, result.resultado, result.erro?.code ?? 'UNKNOWN', result.erro?.message ?? '');
+        await queue.markFailed(op.operacao_uuid, result.resultado, result.erro?.code ?? 'UNKNOWN', result.erro?.message ?? '', result.estado_servidor ?? null);
       }
     }
     return { applied, answered };

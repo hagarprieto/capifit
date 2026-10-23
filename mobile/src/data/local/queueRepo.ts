@@ -18,12 +18,22 @@ export type QueuedOperation = {
   tentativas: number;
   erro_codigo: string | null;
   erro_mensagem: string | null;
+  /** O que o servidor tinha (ex.: a série dele num conflito); `null` se ele não informou. */
+  estado_servidor: Record<string, unknown> | null;
   criada_em: string;
 };
 
-type Row = Omit<QueuedOperation, 'payload'> & { payload: string };
+type Row = Omit<QueuedOperation, 'payload' | 'estado_servidor'> & { payload: string; estado_servidor: string | null };
 
-const parse = (row: Row): QueuedOperation => ({ ...row, payload: JSON.parse(row.payload) as Record<string, unknown> });
+function parseJson(text: string | null): Record<string, unknown> | null {
+  try {
+    return text === null ? null : (JSON.parse(text) as Record<string, unknown>);
+  } catch {
+    return null;
+  }
+}
+
+const parse = (row: Row): QueuedOperation => ({ ...row, payload: parseJson(row.payload) ?? {}, estado_servidor: parseJson(row.estado_servidor) });
 const now = () => new Date().toISOString();
 
 /**
@@ -77,8 +87,55 @@ export function createQueueRepo(db: LocalDb, userUuid: string) {
       await db.runAsync("UPDATE fila_operacao SET estado = 'aplicada', erro_codigo = NULL, erro_mensagem = NULL, atualizada_em = ? WHERE operacao_uuid = ? AND usuario_uuid = ?", [now(), operacaoUuid, userUuid]);
     },
 
-    async markFailed(operacaoUuid: string, state: 'rejeitada' | 'conflito', code: string, message: string): Promise<void> {
-      await db.runAsync('UPDATE fila_operacao SET estado = ?, erro_codigo = ?, erro_mensagem = ?, atualizada_em = ? WHERE operacao_uuid = ? AND usuario_uuid = ?', [state, code, message, now(), operacaoUuid, userUuid]);
+    async markFailed(operacaoUuid: string, state: 'rejeitada' | 'conflito', code: string, message: string, serverState?: Record<string, unknown> | null): Promise<void> {
+      await db.runAsync('UPDATE fila_operacao SET estado = ?, erro_codigo = ?, erro_mensagem = ?, estado_servidor = ?, atualizada_em = ? WHERE operacao_uuid = ? AND usuario_uuid = ?', [
+        state,
+        code,
+        message,
+        serverState ? JSON.stringify(serverState) : null,
+        now(),
+        operacaoUuid,
+        userUuid,
+      ]);
+    },
+
+    async get(operacaoUuid: string): Promise<QueuedOperation | null> {
+      const row = await db.getFirstAsync<Row>('SELECT * FROM fila_operacao WHERE operacao_uuid = ? AND usuario_uuid = ?', [operacaoUuid, userUuid]);
+      return row ? parse(row) : null;
+    },
+
+    /** Tira uma operação da fila (o usuário descartou). */
+    async remove(operacaoUuid: string): Promise<boolean> {
+      return (await db.runAsync('DELETE FROM fila_operacao WHERE operacao_uuid = ? AND usuario_uuid = ?', [operacaoUuid, userUuid])).changes > 0;
+    },
+
+    /**
+     * Troca uma operação em revisão por uma nova, com OUTRO `operacao_uuid`, no fim da fila. O servidor guarda o
+     * resultado de cada `operacao_uuid`: reenviar o mesmo devolveria a mesma recusa (ou barraria um conteúdo diferente).
+     */
+    async replace(oldUuid: string, op: { payload?: Record<string, unknown> }): Promise<QueuedOperation | null> {
+      let created: QueuedOperation | null = null;
+      await db.transaction(async (tx) => {
+        const row = await tx.getFirstAsync<Row>("SELECT * FROM fila_operacao WHERE operacao_uuid = ? AND usuario_uuid = ? AND estado IN ('rejeitada', 'conflito')", [oldUuid, userUuid]);
+        if (!row) {
+          return;
+        }
+        const old = parse(row);
+        const at = now();
+        const fresh = newUuid();
+        await tx.runAsync('DELETE FROM fila_operacao WHERE operacao_uuid = ?', [oldUuid]);
+        await tx.runAsync(
+          'INSERT INTO fila_operacao (operacao_uuid, usuario_uuid, entidade, entidade_uuid, sessao_uuid, tipo, payload, criada_em, atualizada_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [fresh, userUuid, old.entidade, old.entidade_uuid, old.sessao_uuid, old.tipo, JSON.stringify(op.payload ?? old.payload), at, at],
+        );
+        created = { ...old, operacao_uuid: fresh, payload: op.payload ?? old.payload, estado: 'pendente', tentativas: 0, erro_codigo: null, erro_mensagem: null, estado_servidor: null, criada_em: at };
+      });
+      return created;
+    },
+
+    /** Tira da fila todas as operações de uma sessão (o treino foi descartado neste aparelho). */
+    async removeForSession(sessionUuid: string): Promise<number> {
+      return (await db.runAsync('DELETE FROM fila_operacao WHERE usuario_uuid = ? AND sessao_uuid = ?', [userUuid, sessionUuid])).changes;
     },
 
     /**
