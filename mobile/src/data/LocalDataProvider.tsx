@@ -7,7 +7,7 @@ import { getDeviceId } from '@/auth/tokenStore';
 import { createWorkoutApi, type WorkoutApi } from '@/features/workout/workoutApi';
 
 import { createTodayCache, type TodayCache } from './cache/todayWorkout';
-import { createCacheRepo } from './local/cacheRepo';
+import { createCacheRepo, purgeUserData } from './local/cacheRepo';
 import { openLocalDb } from './local/open';
 import { createQueueRepo, type QueueRepo } from './local/queueRepo';
 import { createSessionsRepo } from './local/sessionsRepo';
@@ -29,9 +29,11 @@ type LocalData = {
   queue: QueueRepo | null;
   /** Revisão do que o servidor não aceitou; `null` sem banco local. */
   review: Review | null;
+  /** Apaga do aparelho TUDO do usuário atual (treinos, fila e cache); `null` sem banco local. */
+  erase: (() => Promise<void>) | null;
 };
 
-const IDLE: LocalData = { ready: true, today: null, workout: null, engine: null, queue: null, review: null };
+const IDLE: LocalData = { ready: true, today: null, workout: null, engine: null, queue: null, review: null, erase: null };
 const LocalDataContext = createContext<LocalData>(IDLE);
 
 export function useLocalData(): LocalData {
@@ -106,11 +108,11 @@ export function LocalDataProvider({ children }: { children: ReactNode }) {
         const engine = createSyncEngine({ api, queue, sessions, deviceUuid });
         const workout = createLocalFirstWorkoutApi({ remote: createWorkoutApi(api), sessions, queue, engine, today });
         if (!cancelled) {
-          setOpened({ userId, data: { today, workout, engine, queue, review: createReview({ queue, sessions, engine }) } });
+          setOpened({ userId, data: { today, workout, engine, queue, review: createReview({ queue, sessions, engine }), erase: () => purgeUserData(db, userId) } });
         }
       } catch {
         if (!cancelled) {
-          setOpened({ userId, data: { today: null, workout: null, engine: null, queue: null, review: null } });
+          setOpened({ userId, data: { today: null, workout: null, engine: null, queue: null, review: null, erase: null } });
         }
       }
     })();
@@ -134,7 +136,7 @@ export function LocalDataProvider({ children }: { children: ReactNode }) {
     if (userId === null) {
       return IDLE;
     }
-    return opened?.userId === userId ? { ready: true, ...opened.data } : { ready: false, today: null, workout: null, engine: null, queue: null, review: null };
+    return opened?.userId === userId ? { ready: true, ...opened.data } : { ready: false, today: null, workout: null, engine: null, queue: null, review: null, erase: null };
   }, [userId, opened]);
 
   return <LocalDataContext.Provider value={value}>{children}</LocalDataContext.Provider>;
